@@ -459,7 +459,7 @@
           </div>
           {filtered.length === 0
             ? <div className="py-16 text-center text-gray-400 text-sm">해당 조건의 로고가 없습니다.</div>
-            : <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))'}}>
+            : <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))'}}>
                 {filtered.map(logo => (
                   <LogoCard key={logo.id} logo={logo} rating={ratings[logo.id]}
                     onRate={onRate} onPreview={onPreview} onHover={onHover} onHoverEnd={onHoverEnd} />
@@ -612,7 +612,7 @@
       useEffect(() => {
         const onMove = (e) => {
           if (!isResizing.current) return;
-          const newW = Math.max(160, Math.min(520, resizeStartW.current + e.clientX - resizeStartX.current));
+          const newW = Math.max(160, Math.min(window.innerWidth - 250, resizeStartW.current + e.clientX - resizeStartX.current));
           setSidebarWidth(newW);
         };
         const onUp = () => {

@@ -78,7 +78,7 @@ export default function App() {
   useEffect(() => {
     const onMove = (e) => {
       if (!isResizing.current) return;
-      const newW = Math.max(160, Math.min(520, resizeStartW.current + e.clientX - resizeStartX.current));
+      const newW = Math.max(160, Math.min(window.innerWidth - 250, resizeStartW.current + e.clientX - resizeStartX.current));
       setSidebarWidth(newW);
     };
     const onUp = () => {
