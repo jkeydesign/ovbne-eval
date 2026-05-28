@@ -61,6 +61,39 @@ export default function App() {
   const [hoverPreview, setHoverPreview] = useState(null);
   const [resultData, setResultData] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const isResizing = useRef(false);
+  const resizeStartX = useRef(0);
+  const resizeStartW = useRef(0);
+
+  const startResize = useCallback((e) => {
+    e.preventDefault();
+    isResizing.current = true;
+    resizeStartX.current = e.clientX;
+    resizeStartW.current = sidebarWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!isResizing.current) return;
+      const newW = Math.max(160, Math.min(520, resizeStartW.current + e.clientX - resizeStartX.current));
+      setSidebarWidth(newW);
+    };
+    const onUp = () => {
+      if (!isResizing.current) return;
+      isResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, []);
 
   const [participantId] = useState(generateId);
   const [timestampStart] = useState(() => new Date().toISOString());
@@ -129,23 +162,35 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 flex">
       {/* PC Sidebar */}
       {sidebarOpen && (
-        <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white border-r border-gray-200">
-          <div className="sticky top-0 h-screen overflow-y-auto flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <span className="text-xs font-semibold text-gray-500 tracking-widest uppercase">평가 참고 기준</span>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="text-gray-300 hover:text-gray-600 text-xs"
-                title="패널 닫기"
-              >
-                ✕
-              </button>
+        <>
+          <aside
+            className="hidden lg:flex flex-col shrink-0 bg-white border-r border-gray-200"
+            style={{ width: sidebarWidth }}
+          >
+            <div className="sticky top-0 h-screen overflow-y-auto flex flex-col">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <span className="text-xs font-semibold text-gray-500 tracking-widest uppercase">평가 참고 기준</span>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="text-gray-300 hover:text-gray-600 text-xs"
+                  title="패널 닫기"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <CriteriaPanel />
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              <CriteriaPanel />
-            </div>
-          </div>
-        </aside>
+          </aside>
+          {/* Resizer handle */}
+          <div
+            className="hidden lg:block w-1 shrink-0 bg-gray-200 hover:bg-gray-400 transition-colors duration-150"
+            style={{ cursor: 'col-resize' }}
+            onMouseDown={startResize}
+            title="드래그하여 패널 너비 조절"
+          />
+        </>
       )}
 
       {/* Main */}
