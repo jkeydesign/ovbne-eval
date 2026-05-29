@@ -60,7 +60,7 @@ export default function App() {
   const [previewLogo, setPreviewLogo] = useState(null);
   const [hoverPreview, setHoverPreview] = useState(null);
   const [resultData, setResultData] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const sidebarOpen = true;
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const isResizing = useRef(false);
   const resizeStartX = useRef(0);
@@ -168,15 +168,8 @@ export default function App() {
             style={{ width: sidebarWidth }}
           >
             <div className="sticky top-0 h-screen overflow-y-auto flex flex-col">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <div className="px-4 py-3 border-b border-gray-100">
                 <span className="text-xs font-semibold text-gray-500 tracking-widest uppercase">평가 참고 기준</span>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="text-gray-300 hover:text-gray-600 text-xs"
-                  title="패널 닫기"
-                >
-                  ✕
-                </button>
               </div>
               <div className="flex-1 overflow-y-auto">
                 <CriteriaPanel />
@@ -216,8 +209,6 @@ export default function App() {
             total={LOGOS.length}
             allDone={allDone}
             onSubmit={handleSubmit}
-            sidebarOpen={sidebarOpen}
-            onShowSidebar={() => setSidebarOpen(true)}
             onBack={() => setScreen('brief')}
           />
         </div>
@@ -252,7 +243,7 @@ export default function App() {
   );
 }
 
-function ProgressBar({ completedCount, total, allDone, onSubmit, sidebarOpen, onShowSidebar, onBack }) {
+function ProgressBar({ completedCount, total, allDone, onSubmit, onBack }) {
   const pct = (completedCount / total) * 100;
   return (
     <div className="bg-white border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
@@ -263,14 +254,6 @@ function ProgressBar({ completedCount, total, allDone, onSubmit, sidebarOpen, on
           title="브랜드 브리프로 돌아가기"
         >
           ← 브리프
-        </button>
-      )}
-      {onShowSidebar && !sidebarOpen && (
-        <button
-          onClick={onShowSidebar}
-          className="text-xs text-gray-500 hover:text-gray-800 whitespace-nowrap flex items-center gap-1"
-        >
-          ☰ 기준 보기
         </button>
       )}
       <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
