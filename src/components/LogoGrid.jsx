@@ -114,7 +114,7 @@ export default function LogoGrid({
           해당 조건의 로고가 없습니다.
         </div>
       ) : (
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))' }}>
+        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
           {filtered.map(logo => (
             <LogoCard
               key={logo.id}
