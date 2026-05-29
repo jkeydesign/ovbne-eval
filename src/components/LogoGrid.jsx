@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import LogoCard from './LogoCard';
 import { calcTotalScore, isCompleted } from '../utils/scoring';
 
@@ -28,6 +28,8 @@ export default function LogoGrid({
   onHover,
   onHoverEnd,
 }) {
+  const [cardSize, setCardSize] = useState(180);
+
   const filtered = useMemo(() => {
     let items = [...logos];
 
@@ -62,7 +64,7 @@ export default function LogoGrid({
   return (
     <div className="p-3 sm:p-4">
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <div className="flex gap-1">
           {FILTERS.map(f => (
             <button
@@ -92,6 +94,21 @@ export default function LogoGrid({
         </span>
       </div>
 
+      {/* Card size slider */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[10px] text-gray-400 shrink-0">카드 크기</span>
+        <input
+          type="range"
+          min="100"
+          max="600"
+          step="10"
+          value={cardSize}
+          onChange={e => setCardSize(Number(e.target.value))}
+          className="flex-1 max-w-[200px] accent-gray-800 cursor-pointer"
+        />
+        <span className="text-[10px] text-gray-400 w-12 shrink-0">{cardSize}px</span>
+      </div>
+
       {/* Legend */}
       <div className="flex gap-4 mb-3 text-[10px] text-gray-400">
         <span>
@@ -114,7 +131,13 @@ export default function LogoGrid({
           해당 조건의 로고가 없습니다.
         </div>
       ) : (
-        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: `repeat(auto-fill, minmax(${cardSize}px, 1fr))`,
+            gap: cardSize < 150 ? '6px' : '10px',
+          }}
+        >
           {filtered.map(logo => (
             <LogoCard
               key={logo.id}

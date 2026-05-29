@@ -446,6 +446,7 @@
     ];
 
     function LogoGrid({ logos, ratings, filter, sort, onFilter, onSort, onRate, onPreview, onHover, onHoverEnd }) {
+      const [cardSize, setCardSize] = useState(180);
       const filtered = useMemo(() => {
         let items = [...logos];
         if (filter === 'incomplete') items = items.filter(l => !isCompleted(ratings[l.id]));
@@ -477,6 +478,14 @@
             </select>
             <span className="text-xs text-gray-400 ml-auto">{filtered.length}개 표시</span>
           </div>
+          {/* Card size slider */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-gray-400 shrink-0" style={{fontSize:'10px'}}>카드 크기</span>
+            <input type="range" min="100" max="600" step="10" value={cardSize}
+              onChange={e => setCardSize(Number(e.target.value))}
+              style={{flex:'1', maxWidth:'200px', accentColor:'#1f2937', cursor:'pointer'}} />
+            <span className="text-gray-400 shrink-0" style={{fontSize:'10px', width:'36px'}}>{cardSize}px</span>
+          </div>
           <div className="flex gap-4 mb-3 text-gray-400" style={{fontSize:'10px'}}>
             <span><span className="inline-block w-3 h-3 bg-gray-900 rounded-sm mr-1 align-middle" />B = 브랜드 적합도</span>
             <span><span className="inline-block w-3 h-3 bg-gray-500 rounded-sm mr-1 align-middle" />V = 시각 완성도</span>
@@ -484,7 +493,7 @@
           </div>
           {filtered.length === 0
             ? <div className="py-16 text-center text-gray-400 text-sm">해당 조건의 로고가 없습니다.</div>
-            : <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))'}}>
+            : <div className="grid" style={{gridTemplateColumns:`repeat(auto-fill, minmax(${cardSize}px, 1fr))`, gap: cardSize<150?'6px':'10px'}}>
                 {filtered.map(logo => (
                   <LogoCard key={logo.id} logo={logo} rating={ratings[logo.id]}
                     onRate={onRate} onPreview={onPreview} onHover={onHover} onHoverEnd={onHoverEnd} />
