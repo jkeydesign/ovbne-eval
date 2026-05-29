@@ -309,34 +309,15 @@
     /* ─── LogoCard ────────────────────────────────────────── */
     function LogoCard({ logo, rating, onRate, onPreview, onHover, onHoverEnd }) {
       const [imgError, setImgError] = useState(false);
-      const [cardW, setCardW] = useState(300);
       const cardRef = useRef(null);
       const B = rating?.brand_score ?? null;
       const V = rating?.visual_score ?? null;
       const done = B !== null && V !== null;
 
-      useEffect(() => {
-        if (!cardRef.current) return;
-        const ro = new ResizeObserver(entries => setCardW(entries[0].contentRect.width));
-        ro.observe(cardRef.current);
-        return () => ro.disconnect();
-      }, []);
-
-      const sm = cardW < 150;
-      const lg = cardW >= 300;
-      const imgPad  = sm ? '4px'  : lg ? '24px' : '10px';
-      const wPad    = sm ? '3px 5px 5px' : lg ? '12px 16px 16px' : '6px 10px 10px';
-      const btnH    = sm ? '14px' : lg ? '40px' : '22px';
-      const fs      = sm ? '8px'  : lg ? '14px' : '11px';
-      const lbW     = sm ? '10px' : lg ? '22px' : '14px';
-      const rGap    = sm ? '2px'  : lg ? '6px'  : '3px';
-      const rMb     = sm ? '2px'  : lg ? '8px'  : '4px';
-      const dotS    = sm ? '7px'  : lg ? '16px' : '10px';
-      const dotP    = sm ? '3px'  : lg ? '8px'  : '4px';
-
       return (
         <div ref={cardRef} className="bg-white flex flex-col select-none transition-shadow hover:shadow-md"
           style={{borderRadius:'8px', border: done ? '2px solid #6b7280' : '2px solid #e5e7eb'}}>
+          {/* Image — scales with card width */}
           <div
             className="aspect-square bg-gray-50 cursor-pointer overflow-hidden relative"
             style={{borderRadius:'6px 6px 0 0'}}
@@ -346,42 +327,40 @@
           >
             {!imgError
               ? <img src={logo.imagePath} alt={logo.id} draggable={false} onError={() => setImgError(true)}
-                  className="w-full h-full object-contain" style={{padding: imgPad}} />
+                  className="w-full h-full object-contain p-3" />
               : <div className="w-full h-full flex flex-col items-center justify-center" style={{color:'#d1d5db'}}>
-                  {!sm && <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    style={{width: lg?'48px':'28px', height: lg?'48px':'28px', marginBottom:'6px'}}>
+                  <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="1" />
                     <path d="M3 9l4-4 4 4 4-4 4 4" strokeWidth="1" strokeLinecap="round" />
-                  </svg>}
-                  <span style={{fontSize:fs, color:'#9ca3af'}}>{logo.id}</span>
+                  </svg>
+                  <span className="text-xs text-gray-400">{logo.id}</span>
                 </div>
             }
             {done && (
-              <div className="absolute bg-gray-700 rounded-full flex items-center justify-center"
-                style={{top:dotP, right:dotP, width:dotS, height:dotS}} title="평가 완료">
-                {!sm && <svg fill="none" stroke="white" viewBox="0 0 24 24" style={{width:'60%', height:'60%'}}>
+              <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-gray-700 rounded-full flex items-center justify-center" title="평가 완료">
+                <svg fill="none" stroke="white" viewBox="0 0 24 24" style={{width:'9px', height:'9px'}}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" />
-                </svg>}
+                </svg>
               </div>
             )}
           </div>
-          <div style={{padding: wPad}}>
-            {!sm && <p className="font-mono text-gray-400 text-center"
-              style={{fontSize:fs, marginBottom: lg?'10px':'5px', letterSpacing:'0.06em'}}>{logo.id}</p>}
-            <div className="flex items-center" style={{gap:rGap, marginBottom:rMb}}>
-              <span className="font-bold text-gray-800 shrink-0 text-center" style={{fontSize:fs, width:lbW}}>B</span>
+          {/* Score panel — fixed size */}
+          <div className="p-2">
+            <p className="font-mono text-gray-400 mb-1.5 text-center" style={{fontSize:'10px', letterSpacing:'0.1em'}}>{logo.id}</p>
+            <div className="flex items-center gap-0.5 mb-1">
+              <span className="font-bold text-gray-800 shrink-0 text-center" style={{fontSize:'11px', width:'14px'}}>B</span>
               {[1,2,3,4,5].map(n => (
                 <button key={n} onClick={() => onRate(logo.id, 'brand_score', n)}
-                  className={`flex-1 font-semibold rounded transition-colors leading-none ${B===n?'bg-gray-900 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300'}`}
-                  style={{height:btnH, fontSize:fs}}>{n}</button>
+                  className={`flex-1 text-xs font-semibold rounded transition-colors leading-none ${B===n?'bg-gray-900 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300'}`}
+                  style={{height:'28px'}}>{n}</button>
               ))}
             </div>
-            <div className="flex items-center" style={{gap:rGap}}>
-              <span className="font-bold text-gray-400 shrink-0 text-center" style={{fontSize:fs, width:lbW}}>V</span>
+            <div className="flex items-center gap-0.5">
+              <span className="font-bold text-gray-400 shrink-0 text-center" style={{fontSize:'11px', width:'14px'}}>V</span>
               {[1,2,3,4,5].map(n => (
                 <button key={n} onClick={() => onRate(logo.id, 'visual_score', n)}
-                  className={`flex-1 font-semibold rounded transition-colors leading-none ${V===n?'bg-gray-500 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300'}`}
-                  style={{height:btnH, fontSize:fs}}>{n}</button>
+                  className={`flex-1 text-xs font-semibold rounded transition-colors leading-none ${V===n?'bg-gray-500 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300'}`}
+                  style={{height:'28px'}}>{n}</button>
               ))}
             </div>
           </div>
