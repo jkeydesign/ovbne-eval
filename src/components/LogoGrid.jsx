@@ -89,24 +89,25 @@ export default function LogoGrid({
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
-        <span className="text-xs text-gray-400 ml-auto">
+
+        {/* Card size slider — right side */}
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-[10px] text-gray-400 shrink-0">카드 크기</span>
+          <input
+            type="range"
+            min="100"
+            max="600"
+            step="10"
+            value={cardSize}
+            onChange={e => setCardSize(Number(e.target.value))}
+            className="w-28 accent-gray-800 cursor-pointer"
+          />
+          <span className="text-[10px] text-gray-400 shrink-0 w-10 text-right">{cardSize}px</span>
+        </div>
+
+        <span className="text-xs text-gray-400 shrink-0">
           {filtered.length}개 표시 중
         </span>
-      </div>
-
-      {/* Card size slider */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] text-gray-400 shrink-0">카드 크기</span>
-        <input
-          type="range"
-          min="100"
-          max="600"
-          step="10"
-          value={cardSize}
-          onChange={e => setCardSize(Number(e.target.value))}
-          className="flex-1 max-w-[200px] accent-gray-800 cursor-pointer"
-        />
-        <span className="text-[10px] text-gray-400 w-12 shrink-0">{cardSize}px</span>
       </div>
 
       {/* Legend */}
