@@ -59,8 +59,10 @@ export default function LogoCard({ logo, rating, onRate, onPreview, onHover, onH
             <button
               key={n}
               onClick={() => onRate(logo.id, 'brand_score', n)}
-              className={`flex-1 h-7 text-xs font-semibold rounded transition-colors leading-none
-                ${brandScore === n ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300'}`}
+              className={`flex-1 h-7 rounded transition-colors leading-none
+                ${brandScore === n
+                  ? 'bg-gray-900 text-white text-sm font-bold'
+                  : 'bg-gray-100 text-gray-500 text-xs font-semibold hover:bg-gray-200 active:bg-gray-300'}`}
             >
               {n}
             </button>
@@ -74,8 +76,10 @@ export default function LogoCard({ logo, rating, onRate, onPreview, onHover, onH
             <button
               key={n}
               onClick={() => onRate(logo.id, 'visual_score', n)}
-              className={`flex-1 h-7 text-xs font-semibold rounded transition-colors leading-none
-                ${visualScore === n ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300'}`}
+              className={`flex-1 h-7 rounded transition-colors leading-none
+                ${visualScore === n
+                  ? 'bg-gray-500 text-white text-sm font-bold'
+                  : 'bg-gray-100 text-gray-500 text-xs font-semibold hover:bg-gray-200 active:bg-gray-300'}`}
             >
               {n}
             </button>
