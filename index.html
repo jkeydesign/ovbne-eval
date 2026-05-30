@@ -241,7 +241,7 @@
                       )}
                     </div>
                     <div className="p-1.5">
-                      <p className="font-mono text-gray-400 text-center mb-1" style={{fontSize:'10px'}}>{logo.id}</p>
+                      <p className="text-xs font-mono text-gray-500 text-center mb-1 font-medium">{logo.id}</p>
                       <button onClick={()=>toggle(logo.id)} disabled={!isElim&&!canAdd}
                         className={`w-full py-1 text-xs font-medium rounded transition-colors ${isElim?'bg-red-500 text-white hover:bg-red-600':canAdd?'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500 border border-gray-200':'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100'}`}>
                         {isElim?'취소':'탈락'}

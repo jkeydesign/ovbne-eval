@@ -117,7 +117,7 @@ export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, 
                   )}
                 </div>
                 <div className="p-1.5">
-                  <p className="text-[10px] font-mono text-gray-400 text-center mb-1">{logo.id}</p>
+                  <p className="text-xs font-mono text-gray-500 text-center mb-1 font-medium">{logo.id}</p>
                   <button
                     onClick={() => toggle(logo.id)}
                     disabled={!isElim && !canAdd}
