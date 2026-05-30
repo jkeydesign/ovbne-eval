@@ -9,7 +9,7 @@ import ResultSummary from './components/ResultSummary';
 import { LOGOS } from './data/logos';
 import { buildResponseData, downloadJSON, downloadCSV } from './utils/exportData';
 import { save, load } from './utils/storage';
-import { getCompletedCount } from './utils/scoring';
+import { isCompleted } from './utils/scoring';
 
 function generateId() {
   return 'xxxxxxxxxxxx'.replace(/x/g, () =>
@@ -112,7 +112,8 @@ export default function App() {
     }
   }, [ratings, participantId, timestampStart]);
 
-  const completedCount = getCompletedCount(ratings);
+  // LOGOS 배열의 ID만 카운트 (stale localStorage 항목 제외)
+  const completedCount = LOGOS.filter(l => isCompleted(ratings[l.id])).length;
   const allDone = completedCount === LOGOS.length;
 
   const handleRate = useCallback((logoId, field, score) => {

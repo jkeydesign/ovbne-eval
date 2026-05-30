@@ -829,7 +829,8 @@
       useEffect(() => { const s = loadData(); if (s?.ratings) setRatings(s.ratings); }, []);
       useEffect(() => { if (Object.keys(ratings).length > 0) saveData({ pid, tsStart, ratings }); }, [ratings]);
 
-      const count = Object.values(ratings).filter(isCompleted).length;
+      // LOGOS 배열의 ID만 카운트 (stale localStorage 항목 제외)
+      const count = LOGOS.filter(l => isCompleted(ratings[l.id])).length;
       const allDone = count === LOGOS.length;
 
       const handleRate = useCallback((id, field, score) => {
