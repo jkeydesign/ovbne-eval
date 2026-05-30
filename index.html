@@ -858,11 +858,20 @@
     const PB_FILTERS = [{value:'all',label:'전체'},{value:'incomplete',label:'미완료'},{value:'completed',label:'완료'}];
     const PB_SORTS = [{value:'default',label:'기본 순서'},{value:'brand_desc',label:'브랜드 점수 높은 순'},{value:'visual_desc',label:'시각 점수 높은 순'},{value:'total_desc',label:'종합 점수 높은 순'},{value:'incomplete_first',label:'미완료 우선'}];
 
-    function ProgressBar({ count, total, allDone, onSubmit, onBack, filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings: rtgs }) {
+    function ProgressBar({ count, total, allDone, onSubmit, onBack, filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings: rtgs, timestampStart }) {
       const filteredCount = logos
         ? filter==='incomplete' ? logos.filter(l=>!(rtgs[l.id]?.brand_score&&rtgs[l.id]?.visual_score)).length
         : filter==='completed'  ? logos.filter(l=> (rtgs[l.id]?.brand_score&&rtgs[l.id]?.visual_score)).length
         : logos.length : total;
+      const [elapsedMin, setElapsedMin] = useState(() =>
+        timestampStart ? Math.floor((Date.now()-new Date(timestampStart).getTime())/60000) : 0
+      );
+      useEffect(() => {
+        if (!timestampStart) return;
+        const calc = () => setElapsedMin(Math.floor((Date.now()-new Date(timestampStart).getTime())/60000));
+        const id = setInterval(calc, 30000);
+        return () => clearInterval(id);
+      }, [timestampStart]);
       return (
         <div className="bg-white border-b border-gray-200">
           {/* 1행 */}
@@ -876,6 +885,12 @@
             <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
               <div className="bg-gray-800 h-1.5 rounded-full transition-all duration-300" style={{width:`${count/total*100}%`}} />
             </div>
+            {timestampStart && (
+              <div className={`text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded ${elapsedMin<5?'text-amber-600 bg-amber-50':'text-gray-400'}`}>
+                시작 후 <span className="font-semibold">{elapsedMin}분</span> 경과
+                {elapsedMin<5 && <span className="ml-1" style={{fontSize:'10px'}}>(5분 이상 권장)</span>}
+              </div>
+            )}
             <div className="flex flex-col items-end gap-0.5">
               <button onClick={onSubmit} disabled={!allDone}
                 title={!allDone?'아직 평가가 완료되지 않은 로고가 있습니다.':undefined}
@@ -1031,11 +1046,11 @@
             {/* 모바일 */}
             <div className="lg:hidden sticky top-0 z-20">
               <CriteriaPanel mobile />
-              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} cardSize={cardSize} onCardSize={setCardSize} logos={evaluationLogos} ratings={ratings} />
+              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} cardSize={cardSize} onCardSize={setCardSize} logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} />
             </div>
             {/* PC */}
             <div className="hidden lg:block sticky top-0 z-10">
-              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} cardSize={cardSize} onCardSize={setCardSize} logos={evaluationLogos} ratings={ratings} />
+              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} cardSize={cardSize} onCardSize={setCardSize} logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} />
             </div>
             <LogoGrid logos={evaluationLogos} ratings={ratings} filter={filter} sort={sort}
               cardSize={cardSize} onRate={handleRate} onPreview={setPreviewLogo} />

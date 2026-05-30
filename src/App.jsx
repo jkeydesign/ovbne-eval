@@ -232,6 +232,7 @@ export default function App() {
             sort={sort} onSort={setSort}
             cardSize={cardSize} onCardSize={setCardSize}
             logos={evaluationLogos} ratings={ratings}
+            timestampStart={timestampStart}
           />
         </div>
 
@@ -247,6 +248,7 @@ export default function App() {
             sort={sort} onSort={setSort}
             cardSize={cardSize} onCardSize={setCardSize}
             logos={evaluationLogos} ratings={ratings}
+            timestampStart={timestampStart}
           />
         </div>
 
@@ -286,8 +288,20 @@ const SORTS = [
 ];
 
 function ProgressBar({ completedCount, total, allDone, onSubmit, onBack,
-  filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings }) {
+  filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings, timestampStart }) {
   const pct = (completedCount / total) * 100;
+
+  // 경과 시간 (분 단위, 30초마다 업데이트)
+  const [elapsedMin, setElapsedMin] = useState(() =>
+    timestampStart ? Math.floor((Date.now() - new Date(timestampStart).getTime()) / 60000) : 0
+  );
+  useEffect(() => {
+    if (!timestampStart) return;
+    const calc = () => setElapsedMin(Math.floor((Date.now() - new Date(timestampStart).getTime()) / 60000));
+    const id = setInterval(calc, 30000);
+    return () => clearInterval(id);
+  }, [timestampStart]);
+
   const filteredCount = logos
     ? filter === 'incomplete' ? logos.filter(l => !(ratings[l.id]?.brand_score && ratings[l.id]?.visual_score)).length
     : filter === 'completed'  ? logos.filter(l =>  (ratings[l.id]?.brand_score && ratings[l.id]?.visual_score)).length
@@ -311,6 +325,12 @@ function ProgressBar({ completedCount, total, allDone, onSubmit, onBack,
         <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
           <div className="bg-gray-800 h-1.5 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
+        {timestampStart && (
+          <div className={`text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded ${elapsedMin < 5 ? 'text-amber-600 bg-amber-50' : 'text-gray-400'}`}>
+            시작 후 <span className="font-semibold">{elapsedMin}분</span> 경과
+            {elapsedMin < 5 && <span className="ml-1 text-[10px]">(5분 이상 권장)</span>}
+          </div>
+        )}
         <div className="flex flex-col items-end gap-0.5">
           <button onClick={onSubmit} disabled={!allDone}
             title={!allDone ? '아직 평가가 완료되지 않은 로고가 있습니다.' : undefined}
