@@ -76,7 +76,7 @@ function WarnBox({ children }) {
 export default function ReviewScreen({ ratings, timestampStart, onBack, onSubmit }) {
   const [confirmed, setConfirmed] = useState(false);
 
-  const logos = Array.from({ length: 50 }, (_, i) => `L${String(i + 1).padStart(2, '0')}`);
+  const logos = Array.from({ length: 50 }, (_, i) => `L-${i + 1}`);
   const completedIds = logos.filter(id => isCompleted(ratings[id]));
   const incompleteIds = logos.filter(id => !isCompleted(ratings[id]));
   const allDone = incompleteIds.length === 0;
