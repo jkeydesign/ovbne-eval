@@ -6,12 +6,26 @@ const CHECKS = [
   '필요 시 후속 의견 확인 요청을 받을 수 있으며, 후속 인터뷰 참여는 별도 동의 후 선택적으로 진행된다는 점을 확인했습니다.',
 ];
 
+function Section({ title, items }) {
+  return (
+    <div>
+      <p className="font-semibold text-gray-800 mb-1.5">{title}</p>
+      <ul className="space-y-1 pl-1">
+        {items.map((item, i) => (
+          <li key={i} className="flex gap-2 text-gray-600">
+            <span className="shrink-0 mt-0.5">•</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function IntroScreen({ onStart }) {
   const [checked, setChecked] = useState([false, false, false]);
   const allChecked = checked.every(Boolean);
-
-  const toggle = (i) =>
-    setChecked(prev => prev.map((v, idx) => (idx === i ? !v : v)));
+  const toggle = (i) => setChecked(prev => prev.map((v, idx) => (idx === i ? !v : v)));
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
@@ -20,7 +34,7 @@ export default function IntroScreen({ onStart }) {
         {/* 제목 */}
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
-            생성형 AI 기반 OVBNE 로고 시안 예비평가
+            OVBNE 브랜드 AI 로고 시안 예비평가
           </h1>
           <div className="w-12 h-px bg-gray-300 mt-4" />
         </div>
@@ -32,21 +46,34 @@ export default function IntroScreen({ onStart }) {
 
           <p>
             본 예비평가는 박사학위논문 본실험에 사용할 생성형 AI 기반 OVBNE 브랜드 로고 시안 자극을 선별하기 위한 사전 평가입니다.
-            본 예비평가의 목적은 AI 로고 생성 기술의 성능이나 로고 시안의 객관적 우열을 판정하는 것이 아니라,
-            OVBNE 브랜드 브리프를 기준으로 각 로고 시안의 브랜드 적합도와 시각 완성도를 확인하는 데 있습니다.
           </p>
 
           <p>
-            본 예비평가는 5명~10명의 전문 예비평가 결과를 종합하여 분석합니다.
-            최종 시안 선정은 개별 평가자의 단일 판단이 아니라, 평가자 간 평균 점수, 평균 순위, 점수 분포, 일관성 검토를 함께 고려하여 진행됩니다.
-            자료의 신뢰성을 위해 평가 완료 시간, 점수 분포, 평가자 간 일관성을 확인할 예정입니다.
-            응답 패턴이 매우 불규칙하거나 기준 적용 의도를 확인할 필요가 있는 경우, 별도의 동의를 거쳐 후속 의견 확인을 요청드릴 수 있습니다.
+            제시되는 로고는 생성형 AI로 제작된 예비 시안입니다. 완벽한 최종 로고를 찾는 것이 아니라,
+            50개 시안 중 OVBNE 브랜드 브리프에 상대적으로 적합하고 본실험 자극으로 활용 가능한 로고를 평가하는 절차입니다.
           </p>
 
+          <Section
+            title="평가 목적"
+            items={[
+              'AI 로고 생성 기술의 성능을 평가하는 것이 아닙니다.',
+              '로고 시안의 객관적 우열을 판정하는 것이 아닙니다.',
+              'OVBNE 브랜드 브리프를 기준으로 각 시안의 브랜드 적합도와 시각 완성도를 확인하는 절차입니다.',
+            ]}
+          />
+
+          <Section
+            title="평가 방법"
+            items={[
+              '총 50개의 로고 시안을 확인합니다.',
+              '각 시안에 대해 2개 항목을 5점 리커트 척도로 평가합니다.',
+              '평가 결과는 5명~10명의 전문 예비평가 자료를 종합하여 분석합니다.',
+              '평균 점수, 평균 순위, 점수 분포, 평가자 간 일관성을 함께 검토하여 최종 27개 시안과 3개의 실험 세트를 구성합니다.',
+            ]}
+          />
+
           <div>
-            <p className="font-semibold text-gray-800 mb-2">
-              평가자는 총 50개의 로고 시안을 확인하고, 각 시안에 대해 다음 두 항목을 5점 리커트 척도로 평가합니다.
-            </p>
+            <p className="font-semibold text-gray-800 mb-2">평가 항목</p>
             <div className="space-y-3 pl-1">
               <div>
                 <p className="font-medium text-gray-800">1. 브랜드 종합 적합도</p>
@@ -59,26 +86,29 @@ export default function IntroScreen({ onStart }) {
             </div>
           </div>
 
-          <p>
-            예비평가 결과는 평가자들의 평균값을 기준으로 집계되며, 이를 바탕으로 본실험에 사용할 최종 27개 로고 시안과 3개의 실험 세트를 구성합니다.
-          </p>
+          <Section
+            title="평가 기준"
+            items={[
+              '본 예비평가에서는 AI 추천, AI 순위, AI 평가 설명이 제공되지 않습니다.',
+              '로고 이미지 자체와 브랜드 브리프를 기준으로 판단해 주세요.',
+              '전문 디자이너로서의 분석적·전략적 실무 경험을 바탕으로 평가해 주세요.',
+            ]}
+          />
 
-          <p>
-            본 예비평가에서는 AI 추천, AI 순위, AI 평가 설명은 제공되지 않습니다. 로고 이미지 자체와 브랜드 브리프를 기준으로 판단해 주세요.
-          </p>
+          <Section
+            title="자료 신뢰성 확인"
+            items={[
+              '평가 완료 시간, 점수 분포, 평가자 간 일관성을 함께 확인합니다.',
+              '응답 패턴이 매우 불규칙하거나 기준 적용 의도를 확인할 필요가 있는 경우, 별도 동의 후 후속 의견 확인을 요청드릴 수 있습니다.',
+            ]}
+          />
 
-          <p>
-            정답은 없습니다만 전문 디자이너로서의 판단이 중요한 연구인 만큼, 분석적·전략적 실무경험을 바탕으로 평가해 주시면 됩니다.
-          </p>
         </div>
 
         {/* 체크박스 */}
         <div className="space-y-3 mb-8">
           {CHECKS.map((label, i) => (
-            <label
-              key={i}
-              className="flex items-start gap-3 cursor-pointer group"
-            >
+            <label key={i} className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={checked[i]}
