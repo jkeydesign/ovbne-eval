@@ -38,6 +38,7 @@ export default function App() {
   const [eliminatedIds, setEliminatedIds] = useState([]);
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('default');
+  const [cardSize, setCardSize] = useState(180);
   const [previewLogo, setPreviewLogo] = useState(null);
   const [resultData, setResultData] = useState(null);
   const sidebarOpen = true;
@@ -218,7 +219,7 @@ export default function App() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile/Tablet: sticky header with criteria + progress */}
+        {/* Mobile: criteria + progress */}
         <div className="lg:hidden sticky top-0 z-20">
           <CriteriaPanel mobile />
           <ProgressBar
@@ -226,13 +227,15 @@ export default function App() {
             total={evaluationLogos.length}
             allDone={allDone}
             onSubmit={handleSubmit}
-            sidebarOpen={false}
-            onShowSidebar={null}
             onBack={() => setScreen('brief')}
+            filter={filter} onFilter={setFilter}
+            sort={sort} onSort={setSort}
+            cardSize={cardSize} onCardSize={setCardSize}
+            logos={evaluationLogos} ratings={ratings}
           />
         </div>
 
-        {/* PC: sticky progress bar only */}
+        {/* PC: sticky header with progress + controls */}
         <div className="hidden lg:block sticky top-0 z-10">
           <ProgressBar
             completedCount={completedCount}
@@ -240,6 +243,10 @@ export default function App() {
             allDone={allDone}
             onSubmit={handleSubmit}
             onBack={() => setScreen('brief')}
+            filter={filter} onFilter={setFilter}
+            sort={sort} onSort={setSort}
+            cardSize={cardSize} onCardSize={setCardSize}
+            logos={evaluationLogos} ratings={ratings}
           />
         </div>
 
@@ -248,8 +255,7 @@ export default function App() {
           ratings={ratings}
           filter={filter}
           sort={sort}
-          onFilter={setFilter}
-          onSort={setSort}
+          cardSize={cardSize}
           onRate={handleRate}
           onPreview={setPreviewLogo}
         />
@@ -266,47 +272,89 @@ export default function App() {
   );
 }
 
-function ProgressBar({ completedCount, total, allDone, onSubmit, onBack }) {
+const FILTERS = [
+  { value: 'all', label: '전체' },
+  { value: 'incomplete', label: '미완료' },
+  { value: 'completed', label: '완료' },
+];
+const SORTS = [
+  { value: 'default', label: '기본 순서' },
+  { value: 'brand_desc', label: '브랜드 점수 높은 순' },
+  { value: 'visual_desc', label: '시각 점수 높은 순' },
+  { value: 'total_desc', label: '종합 점수 높은 순' },
+  { value: 'incomplete_first', label: '미완료 우선' },
+];
+
+function ProgressBar({ completedCount, total, allDone, onSubmit, onBack,
+  filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings }) {
   const pct = (completedCount / total) * 100;
+  const filteredCount = logos
+    ? filter === 'incomplete' ? logos.filter(l => !(ratings[l.id]?.brand_score && ratings[l.id]?.visual_score)).length
+    : filter === 'completed'  ? logos.filter(l =>  (ratings[l.id]?.brand_score && ratings[l.id]?.visual_score)).length
+    : logos.length
+    : total;
+
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
-      {onBack && (
-        <button
-          onClick={onBack}
-          className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0"
-          title="브랜드 브리프로 돌아가기"
-        >
-          ← 이전
-        </button>
-      )}
-      <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
-        평가 완료:{' '}
-        <span className="font-bold text-gray-900">{completedCount}</span>
-        <span className="text-gray-400"> / {total}</span>
-      </div>
-      <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
-        <div
-          className="bg-gray-800 h-1.5 rounded-full transition-all duration-300"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div className="flex flex-col items-end gap-0.5">
-        <button
-          onClick={onSubmit}
-          disabled={!allDone}
-          title={!allDone ? '아직 평가가 완료되지 않은 로고가 있습니다. 미완료 로고를 확인한 뒤 제출해 주세요.' : undefined}
-          className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap transition-colors ${
-            allDone
-              ? 'bg-gray-900 text-white hover:bg-gray-700'
-              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-          }`}
-        >
-          제출 전 검토
-        </button>
-        {!allDone && (
-          <span className="text-[10px] text-gray-400 whitespace-nowrap">미완료 {total - completedCount}개 남음</span>
+    <div className="bg-white border-b border-gray-200">
+      {/* 1행: 이전 | 진행 | 제출 */}
+      <div className="px-4 py-2.5 flex items-center gap-3">
+        {onBack && (
+          <button onClick={onBack}
+            className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
+            ← 이전
+          </button>
         )}
+        <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          평가 완료: <span className="font-bold text-gray-900">{completedCount}</span>
+          <span className="text-gray-400"> / {total}</span>
+        </div>
+        <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
+          <div className="bg-gray-800 h-1.5 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex flex-col items-end gap-0.5">
+          <button onClick={onSubmit} disabled={!allDone}
+            title={!allDone ? '아직 평가가 완료되지 않은 로고가 있습니다.' : undefined}
+            className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap transition-colors ${
+              allDone ? 'bg-gray-900 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}>
+            제출 전 검토
+          </button>
+          {!allDone && (
+            <span className="text-[10px] text-gray-400 whitespace-nowrap">미완료 {total - completedCount}개 남음</span>
+          )}
+        </div>
       </div>
+
+      {/* 2행: 필터·정렬·슬라이더 (onFilter가 있을 때만) */}
+      {onFilter && (
+        <div className="px-4 pb-2 flex items-center gap-2 border-t border-gray-100 pt-2">
+          {/* 필터 버튼 */}
+          <div className="flex gap-1">
+            {FILTERS.map(f => (
+              <button key={f.value} onClick={() => onFilter(f.value)}
+                className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                  filter === f.value ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          {/* 정렬 */}
+          <select value={sort} onChange={e => onSort(e.target.value)}
+            className="text-xs px-2 py-1 border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:border-gray-400">
+            {SORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          {/* 카드 크기 슬라이더 */}
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-[10px] text-gray-400 shrink-0">카드 크기</span>
+            <input type="range" min="100" max="600" step="10" value={cardSize}
+              onChange={e => onCardSize(Number(e.target.value))}
+              className="w-28 accent-gray-800 cursor-pointer" />
+            <span className="text-[10px] text-gray-400 w-10 text-right shrink-0">{cardSize}px</span>
+          </div>
+          <span className="text-xs text-gray-400 shrink-0">{filteredCount}개 표시 중</span>
+        </div>
+      )}
     </div>
   );
 }
