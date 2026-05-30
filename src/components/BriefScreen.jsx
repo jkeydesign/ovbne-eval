@@ -28,7 +28,6 @@ export default function BriefScreen({ onStart, onBack }) {
 
         {/* 헤더 */}
         <div className="mb-6">
-          <p className="text-xs font-medium tracking-widest text-gray-400 uppercase mb-2">박사학위논문 예비평가</p>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">브랜드 브리프</h1>
           <p className="text-sm text-gray-500 leading-relaxed">
             로고 시안을 보기 전, 브랜드의 맥락과 판단 기준이 되는 핵심 정보를 먼저 확인해 주세요.
