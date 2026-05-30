@@ -1,11 +1,19 @@
+import { useState, useEffect } from 'react';
 import { LOGOS } from '../data/logos';
 
 const LIMIT = 23;
 
-export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, onBack }) {
+export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, onBack, timestampElimStart }) {
   const count = eliminatedIds.length;
   const isComplete = count === LIMIT;
   const canAdd = count < LIMIT;
+
+  const calcMin = (ts) => ts ? Math.floor((Date.now() - new Date(ts).getTime()) / 60000) : 0;
+  const [elimMin, setElimMin] = useState(() => calcMin(timestampElimStart));
+  useEffect(() => {
+    const id = setInterval(() => setElimMin(calcMin(timestampElimStart)), 30000);
+    return () => clearInterval(id);
+  }, [timestampElimStart]);
 
   const toggle = (id) => {
     if (eliminatedIds.includes(id)) {
@@ -42,6 +50,14 @@ export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, 
 
         {isComplete && (
           <span className="text-xs font-semibold text-red-600 whitespace-nowrap shrink-0">✓ 23개 선택 완료</span>
+        )}
+
+        {/* 경과 시간 */}
+        {timestampElimStart && (
+          <div className={`text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded ${elimMin < 5 ? 'text-amber-600 bg-amber-50' : 'text-gray-400'}`}>
+            탈락 선별 <span className="font-semibold">{elimMin}분</span> 경과
+            {elimMin < 5 && <span className="ml-1 text-[10px]">(5분 이상 권장)</span>}
+          </div>
         )}
 
         <button

@@ -39,6 +39,8 @@ export default function App() {
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('default');
   const [cardSize, setCardSize] = useState(180);
+  const [timestampElimStart, setTimestampElimStart] = useState(null);
+  const [timestampEvalStart, setTimestampEvalStart] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
   const [resultData, setResultData] = useState(null);
   const sidebarOpen = true;
@@ -110,15 +112,23 @@ export default function App() {
   }, []);
 
 
+  const goToEliminate = () => {
+    if (!timestampElimStart) setTimestampElimStart(new Date().toISOString());
+    setScreen('eliminate');
+  };
+  const goToEvaluate = () => {
+    if (!timestampEvalStart) setTimestampEvalStart(new Date().toISOString());
+    setScreen('evaluate');
+  };
   const handleSubmit      = () => setScreen('review');
   const handleFinalSubmit = () => {
-    const data = buildResponseData(participantId, ratings, timestampStart, evaluationLogos, eliminatedIds);
+    const data = buildResponseData(participantId, ratings, timestampStart, evaluationLogos, eliminatedIds, timestampElimStart, timestampEvalStart);
     setResultData(data);
     setScreen('result');
   };
 
   if (screen === 'intro') return <IntroScreen onStart={() => setScreen('brief')} />;
-  if (screen === 'brief') return <BriefScreen onStart={() => setScreen('eliminate')} onBack={() => setScreen('intro')} />;
+  if (screen === 'brief') return <BriefScreen onStart={goToEliminate} onBack={() => setScreen('intro')} />;
 
   if (screen === 'eliminate') {
     return (
@@ -154,6 +164,7 @@ export default function App() {
             onEliminate={setEliminatedIds}
             onNext={() => setScreen('eliminateReview')}
             onBack={() => setScreen('brief')}
+            timestampElimStart={timestampElimStart}
           />
         </div>
       </div>
@@ -165,7 +176,7 @@ export default function App() {
       <EliminationReviewScreen
         eliminatedIds={eliminatedIds}
         onBack={() => setScreen('eliminate')}
-        onNext={() => setScreen('evaluate')}
+        onNext={goToEvaluate}
       />
     );
   }
@@ -176,6 +187,8 @@ export default function App() {
         logos={evaluationLogos}
         ratings={ratings}
         timestampStart={timestampStart}
+        timestampElimStart={timestampElimStart}
+        timestampEvalStart={timestampEvalStart}
         onBack={() => setScreen('evaluate')}
         onSubmit={handleFinalSubmit}
       />
@@ -232,7 +245,8 @@ export default function App() {
             sort={sort} onSort={setSort}
             cardSize={cardSize} onCardSize={setCardSize}
             logos={evaluationLogos} ratings={ratings}
-            timestampStart={timestampStart}
+            timestampElimStart={timestampElimStart}
+            timestampEvalStart={timestampEvalStart}
           />
         </div>
 
@@ -248,7 +262,8 @@ export default function App() {
             sort={sort} onSort={setSort}
             cardSize={cardSize} onCardSize={setCardSize}
             logos={evaluationLogos} ratings={ratings}
-            timestampStart={timestampStart}
+            timestampElimStart={timestampElimStart}
+            timestampEvalStart={timestampEvalStart}
           />
         </div>
 
@@ -288,19 +303,22 @@ const SORTS = [
 ];
 
 function ProgressBar({ completedCount, total, allDone, onSubmit, onBack,
-  filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings, timestampStart }) {
+  filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings,
+  timestampElimStart, timestampEvalStart }) {
   const pct = (completedCount / total) * 100;
 
-  // 경과 시간 (분 단위, 30초마다 업데이트)
-  const [elapsedMin, setElapsedMin] = useState(() =>
-    timestampStart ? Math.floor((Date.now() - new Date(timestampStart).getTime()) / 60000) : 0
-  );
+  // 탈락 시작 기준 총 경과 시간 (분, 30초마다 갱신)
+  const calcMin = (ts) => ts ? Math.floor((Date.now() - new Date(ts).getTime()) / 60000) : 0;
+  const [totalMin, setTotalMin] = useState(() => calcMin(timestampElimStart));
+  const [evalMin,  setEvalMin]  = useState(() => calcMin(timestampEvalStart));
   useEffect(() => {
-    if (!timestampStart) return;
-    const calc = () => setElapsedMin(Math.floor((Date.now() - new Date(timestampStart).getTime()) / 60000));
-    const id = setInterval(calc, 30000);
+    const tick = () => {
+      setTotalMin(calcMin(timestampElimStart));
+      setEvalMin(calcMin(timestampEvalStart));
+    };
+    const id = setInterval(tick, 30000);
     return () => clearInterval(id);
-  }, [timestampStart]);
+  }, [timestampElimStart, timestampEvalStart]);
 
   const filteredCount = logos
     ? filter === 'incomplete' ? logos.filter(l => !(ratings[l.id]?.brand_score && ratings[l.id]?.visual_score)).length
@@ -325,10 +343,14 @@ function ProgressBar({ completedCount, total, allDone, onSubmit, onBack,
         <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
           <div className="bg-gray-800 h-1.5 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
-        {timestampStart && (
-          <div className={`text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded ${elapsedMin < 5 ? 'text-amber-600 bg-amber-50' : 'text-gray-400'}`}>
-            시작 후 <span className="font-semibold">{elapsedMin}분</span> 경과
-            {elapsedMin < 5 && <span className="ml-1 text-[10px]">(5분 이상 권장)</span>}
+        {timestampElimStart && (
+          <div className={`text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded flex flex-col items-end gap-0.5 ${totalMin < 10 ? 'text-amber-600 bg-amber-50' : 'text-gray-400'}`}>
+            <span>총 <span className="font-semibold">{totalMin}분</span> 경과
+              {totalMin < 10 && <span className="ml-1 text-[10px]">(권장 10분)</span>}
+            </span>
+            {timestampEvalStart && (
+              <span className="text-[10px]">평가 {evalMin}분 / 탈락 {totalMin - evalMin}분</span>
+            )}
           </div>
         )}
         <div className="flex flex-col items-end gap-0.5">

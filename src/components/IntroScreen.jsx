@@ -103,6 +103,16 @@ export default function IntroScreen({ onStart }) {
             ]}
           />
 
+          <div className="border border-amber-200 bg-amber-50 rounded-md p-3">
+            <p className="text-xs font-semibold text-amber-700 mb-1">⏱ 최소 소요 시간 안내</p>
+            <ul className="space-y-0.5 text-xs text-amber-700">
+              <li>• 탈락 시안 선별 단계: <strong>최소 5분</strong></li>
+              <li>• 로고 시안 평가 단계: <strong>최소 5분</strong></li>
+              <li>• 전체 최소 소요 권장: <strong>10분 이상</strong></li>
+            </ul>
+            <p className="text-[10px] text-amber-600 mt-1.5">소요 시간은 각 화면 상단에 실시간으로 표시됩니다.</p>
+          </div>
+
         </div>
 
         {/* 체크박스 */}

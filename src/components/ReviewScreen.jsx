@@ -73,7 +73,7 @@ function WarnBox({ children }) {
 }
 
 /* ── main component ──────────────────────────────────── */
-export default function ReviewScreen({ logos: logoProp, ratings, timestampStart, onBack, onSubmit }) {
+export default function ReviewScreen({ logos: logoProp, ratings, timestampStart, timestampElimStart, timestampEvalStart, onBack, onSubmit }) {
   const [confirmed, setConfirmed] = useState(false);
 
   // logos prop = 27개 평가 대상 로고 배열
@@ -101,8 +101,18 @@ export default function ReviewScreen({ logos: logoProp, ratings, timestampStart,
   const visualWarn = completedIds.length >= 40 && visualMax >= 40;
   const sameScoreWarn = brandWarn || visualWarn;
 
-  const durationSec = Math.round((Date.now() - new Date(timestampStart).getTime()) / 1000);
-  const fastWarn = durationSec < 300;
+  const now = Date.now();
+  const elimSec = timestampElimStart ? Math.round((now - new Date(timestampElimStart).getTime()) / 1000) : null;
+  const evalSec  = timestampEvalStart  ? Math.round((now - new Date(timestampEvalStart).getTime())  / 1000) : null;
+  const durationSec = elimSec ?? Math.round((now - new Date(timestampStart).getTime()) / 1000);
+
+  const elimMin = elimSec !== null ? Math.floor(elimSec / 60) : null;
+  const evalMin  = evalSec  !== null ? Math.floor(evalSec  / 60) : null;
+  const elimOnlyMin = (elimMin !== null && evalMin !== null) ? elimMin - evalMin : elimMin;
+
+  const fastWarn      = durationSec < 600; // 총 10분 미만
+  const elimFastWarn  = elimOnlyMin !== null && elimOnlyMin < 5;
+  const evalFastWarn  = evalMin     !== null && evalMin     < 5;
 
   const canSubmit = allDone && confirmed;
 
@@ -150,12 +160,29 @@ export default function ReviewScreen({ logos: logoProp, ratings, timestampStart,
         </div>
 
         {/* 소요 시간 */}
-        <div className="bg-white border border-gray-200 rounded-md px-4 py-3 flex items-center justify-between">
-          <span className="text-sm text-gray-600">평가 소요 시간</span>
-          <span className={`text-sm font-semibold ${fastWarn ? 'text-amber-600' : 'text-gray-900'}`}>
-            {formatDuration(durationSec)}
-            {fastWarn && <span className="text-amber-500 ml-1">⚠</span>}
-          </span>
+        <div className="bg-white border border-gray-200 rounded-md px-4 py-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">총 소요 시간 <span className="text-[10px] text-gray-400">(권장 10분 이상)</span></span>
+            <span className={`text-sm font-semibold ${fastWarn ? 'text-amber-600' : 'text-gray-900'}`}>
+              {formatDuration(durationSec)}{fastWarn && ' ⚠'}
+            </span>
+          </div>
+          {elimOnlyMin !== null && (
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>탈락 선별 시간 <span className="text-[10px] text-gray-400">(권장 5분 이상)</span></span>
+              <span className={elimFastWarn ? 'text-amber-600 font-medium' : ''}>
+                {elimOnlyMin}분{elimFastWarn && ' ⚠'}
+              </span>
+            </div>
+          )}
+          {evalMin !== null && (
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>시안 평가 시간 <span className="text-[10px] text-gray-400">(권장 5분 이상)</span></span>
+              <span className={evalFastWarn ? 'text-amber-600 font-medium' : ''}>
+                {evalMin}분{evalFastWarn && ' ⚠'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 미완료 로고 목록 */}
