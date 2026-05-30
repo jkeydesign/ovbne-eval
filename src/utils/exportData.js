@@ -6,7 +6,7 @@ export function buildResponseData(participantId, ratings, timestampStart) {
   const logos = [];
 
   for (let i = 1; i <= 50; i++) {
-    const logoId = `L-${i}`;
+    const logoId = `L-${String(i).padStart(2, '0')}`;
     const r = ratings[logoId];
     const brandScore  = r?.brand_score  ?? null;
     const visualScore = r?.visual_score ?? null;
