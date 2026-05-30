@@ -143,7 +143,7 @@ export default function ReviewScreen({ logos: logoProp, ratings, timestampStart,
 
         {/* 요약 카드 */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <StatCard label="평가 완료" value={`${completedIds.length} / 50`} highlight={!allDone} />
+          <StatCard label="평가 완료" value={`${completedIds.length} / ${logos.length}`} highlight={!allDone} />
           <StatCard label="브랜드 평균" value={brandAvg ?? '—'} />
           <StatCard label="시각 평균"   value={visualAvg ?? '—'} />
           <StatCard label="종합 평균"   value={totalAvg ?? '—'} />
@@ -215,7 +215,7 @@ export default function ReviewScreen({ logos: logoProp, ratings, timestampStart,
               style={{ accentColor: '#111827' }}
             />
             <span className={`text-sm leading-relaxed transition-colors ${confirmed ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-              50개 로고 시안을 모두 확인하고, 브랜드 브리프와 판단 기준에 따라 평가했음을 확인합니다.
+              {logos.length}개 로고 시안을 모두 확인하고, 브랜드 브리프와 판단 기준에 따라 평가했음을 확인합니다.
             </span>
           </label>
         </div>

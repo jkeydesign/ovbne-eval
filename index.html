@@ -742,7 +742,7 @@
             )}
             {/* 요약 */}
             <div className="grid grid-cols-2 gap-2" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
-              {[['평가 완료',`${completedIds.length} / 50`,!allDone],['브랜드 평균',avg(bScores)??'—',false],['시각 평균',avg(vScores)??'—',false],['종합 평균',avg(tScores)??'—',false]].map(([label,value,hl])=>(
+              {[['평가 완료',`${completedIds.length} / ${logoIds.length}`,!allDone],['브랜드 평균',avg(bScores)??'—',false],['시각 평균',avg(vScores)??'—',false],['종합 평균',avg(tScores)??'—',false]].map(([label,value,hl])=>(
                 <div key={label} className="bg-white border border-gray-200 rounded-md p-3 text-center">
                   <p className="text-gray-400 uppercase tracking-widest mb-1" style={{fontSize:'10px'}}>{label}</p>
                   <p className={`text-lg font-semibold ${hl?'text-red-600':'text-gray-900'}`}>{value}</p>
@@ -785,7 +785,7 @@
                 <input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}
                   className="mt-0.5 w-4 h-4 shrink-0 cursor-pointer" style={{accentColor:'#111827'}} />
                 <span className={`text-sm leading-relaxed transition-colors ${confirmed?'text-gray-900 font-medium':'text-gray-500'}`}>
-                  50개 로고 시안을 모두 확인하고, 브랜드 브리프와 판단 기준에 따라 평가했음을 확인합니다.
+                  {logoIds.length}개 로고 시안을 모두 확인하고, 브랜드 브리프와 판단 기준에 따라 평가했음을 확인합니다.
                 </span>
               </label>
             </div>
