@@ -45,7 +45,8 @@
     const loadData = () => { try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
 
     function buildResponseData(pid, ratings, tsStart) {
-      const now = new Date().toISOString();
+      const now = new Date();
+      const nowISO = now.toISOString();
       const logos = [];
       for (let i = 1; i <= 50; i++) {
         const id = `L${String(i).padStart(2, '0')}`;
@@ -57,7 +58,21 @@
       const done = logos.filter(l => l.completed);
       const avg = k => done.length ? Math.round(done.reduce((s, l) => s + l[k], 0) / done.length * 100) / 100 : null;
       const top27 = [...done].sort((a, b) => b.total_score - a.total_score).slice(0, 27).map(l => l.logo_id);
-      return { participant_id: pid, timestamp_start: tsStart, timestamp_submit: now, logos, summary: { completed_count: done.length, brand_average: avg('brand_score'), visual_average: avg('visual_score'), total_average: avg('total_score'), top_27_logo_ids: top27 } };
+      const durationSeconds = Math.round((now - new Date(tsStart)) / 1000);
+      const distOf = key => { const d={1:0,2:0,3:0,4:0,5:0}; done.forEach(l=>{ if(l[key]!==null) d[l[key]]++; }); return d; };
+      const bDist = distOf('brand_score'), vDist = distOf('visual_score');
+      const bMax = Math.max(...Object.values(bDist)), vMax = Math.max(...Object.values(vDist));
+      const quality_check = {
+        duration_seconds: durationSeconds,
+        completed_count: done.length,
+        incomplete_logo_ids: logos.filter(l=>!l.completed).map(l=>l.logo_id),
+        brand_score_distribution: bDist,
+        visual_score_distribution: vDist,
+        brand_same_score_warning:  done.length >= 40 && bMax >= 40,
+        visual_same_score_warning: done.length >= 40 && vMax >= 40,
+        fast_completion_warning:   durationSeconds < 300,
+      };
+      return { participant_id: pid, timestamp_start: tsStart, timestamp_submit: nowISO, logos, summary: { completed_count: done.length, brand_average: avg('brand_score'), visual_average: avg('visual_score'), total_average: avg('total_score'), top_27_logo_ids: top27 }, quality_check };
     }
 
     function triggerDownload(blob, filename) {
@@ -67,8 +82,9 @@
     }
     const downloadJSON = data => triggerDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `ovbne_eval_${data.participant_id}.json`);
     const downloadCSV = data => {
-      const cols = ['participant_id','logo_id','brand_score','visual_score','total_score','completed','updated_at','timestamp_submit'];
-      const rows = data.logos.map(l => [data.participant_id, l.logo_id, l.brand_score??'', l.visual_score??'', l.total_score??'', l.completed, l.updated_at??'', data.timestamp_submit]);
+      const qc = data.quality_check || {};
+      const cols = ['participant_id','logo_id','brand_score','visual_score','total_score','completed','updated_at','timestamp_submit','duration_seconds','brand_same_score_warning','visual_same_score_warning','fast_completion_warning'];
+      const rows = data.logos.map(l => [data.participant_id, l.logo_id, l.brand_score??'', l.visual_score??'', l.total_score??'', l.completed, l.updated_at??'', data.timestamp_submit, qc.duration_seconds??'', qc.brand_same_score_warning??'', qc.visual_same_score_warning??'', qc.fast_completion_warning??'']);
       const csv = [cols, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
       triggerDownload(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }), `ovbne_eval_${data.participant_id}.csv`);
     };
@@ -529,6 +545,132 @@
       );
     }
 
+    /* ─── ReviewScreen ───────────────────────────────────── */
+    function ReviewScreen({ ratings, timestampStart, onBack, onSubmit }) {
+      const [confirmed, setConfirmed] = useState(false);
+      const logoIds = Array.from({length:50},(_,i)=>`L${String(i+1).padStart(2,'0')}`);
+      const completedIds  = logoIds.filter(id => isCompleted(ratings[id]));
+      const incompleteIds = logoIds.filter(id => !isCompleted(ratings[id]));
+      const allDone = incompleteIds.length === 0;
+      const bScores = completedIds.map(id => ratings[id].brand_score);
+      const vScores = completedIds.map(id => ratings[id].visual_score);
+      const tScores = completedIds.map(id => calcTotalScore(ratings[id].brand_score, ratings[id].visual_score));
+      const avg = arr => arr.length ? Math.round(arr.reduce((s,v)=>s+v,0)/arr.length*100)/100 : null;
+      const distOf = arr => { const d={1:0,2:0,3:0,4:0,5:0}; arr.forEach(v=>{d[v]=(d[v]||0)+1;}); return d; };
+      const bDist = distOf(bScores), vDist = distOf(vScores);
+      const bMax = Math.max(...Object.values(bDist)), vMax = Math.max(...Object.values(vDist));
+      const brandWarn  = completedIds.length>=40 && bMax>=40;
+      const visualWarn = completedIds.length>=40 && vMax>=40;
+      const sameWarn   = brandWarn || visualWarn;
+      const durationSec = Math.round((Date.now()-new Date(timestampStart).getTime())/1000);
+      const fastWarn = durationSec < 300;
+      const canSubmit = allDone && confirmed;
+      const fmtDur = s => { if(s<60) return `${s}초`; const m=Math.floor(s/60),r=s%60; return r>0?`${m}분 ${r}초`:`${m}분`; };
+
+      function DistChart({title, dist, warn}) {
+        const maxV = Math.max(...Object.values(dist),1);
+        const total = Object.values(dist).reduce((s,v)=>s+v,0);
+        return (
+          <div>
+            <p className={`text-gray-400 uppercase tracking-widest mb-3 ${warn?'text-amber-600':''}`} style={{fontSize:'10px',fontWeight:600}}>{title}{warn?' ⚠':''}</p>
+            <div className="space-y-2">
+              {[1,2,3,4,5].map(n=>{
+                const cnt=dist[n]||0, pct=total>0?Math.round(cnt/total*100):0, bar=(cnt/maxV)*100;
+                return (
+                  <div key={n} className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 font-mono shrink-0" style={{width:'16px',textAlign:'right'}}>{n}</span>
+                    <div className="flex-1 bg-gray-100 rounded-full overflow-hidden" style={{height:'16px'}}>
+                      <div className={`h-full rounded-full transition-all ${cnt>=40?'bg-amber-400':'bg-gray-700'}`} style={{width:`${bar}%`}} />
+                    </div>
+                    <span className="text-xs text-gray-600 shrink-0" style={{width:'64px',textAlign:'right'}}>{cnt}개 ({pct}%)</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-gray-50 py-8 px-4">
+          <div className="max-w-2xl mx-auto space-y-4">
+            {/* 헤더 */}
+            <div className="mb-2">
+              <p className="text-gray-400 uppercase tracking-widest mb-1" style={{fontSize:'10px',fontWeight:600}}>제출 전 확인</p>
+              <h1 className="text-xl font-semibold text-gray-900">제출 전 평가 내용 확인</h1>
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">아래 내용은 응답 누락과 입력 오류를 줄이기 위한 확인 절차입니다. 평가 결과를 수정하려면 '평가 화면으로 돌아가기'를 눌러 주세요.</p>
+            </div>
+            {/* 경고 */}
+            {(!allDone||fastWarn||sameWarn) && (
+              <div className="space-y-2">
+                {!allDone && <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800 leading-relaxed">아직 평가가 완료되지 않은 로고가 있습니다. 미완료 로고를 확인한 뒤 제출해 주세요.</div>}
+                {fastWarn  && <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800 leading-relaxed">평가 시간이 비교적 짧게 기록되었습니다. 모든 로고 시안을 충분히 확인했는지 제출 전 다시 확인해 주세요.</div>}
+                {sameWarn  && <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800 leading-relaxed">대부분의 시안에 동일하거나 매우 유사한 점수가 입력되었습니다. 의도한 평가인지 제출 전 한 번 더 확인해 주세요.</div>}
+              </div>
+            )}
+            {/* 요약 */}
+            <div className="grid grid-cols-2 gap-2" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
+              {[['평가 완료',`${completedIds.length} / 50`,!allDone],['브랜드 평균',avg(bScores)??'—',false],['시각 평균',avg(vScores)??'—',false],['종합 평균',avg(tScores)??'—',false]].map(([label,value,hl])=>(
+                <div key={label} className="bg-white border border-gray-200 rounded-md p-3 text-center">
+                  <p className="text-gray-400 uppercase tracking-widest mb-1" style={{fontSize:'10px'}}>{label}</p>
+                  <p className={`text-lg font-semibold ${hl?'text-red-600':'text-gray-900'}`}>{value}</p>
+                </div>
+              ))}
+            </div>
+            {/* 소요시간 */}
+            <div className="bg-white border border-gray-200 rounded-md px-4 py-3 flex items-center justify-between">
+              <span className="text-sm text-gray-600">평가 소요 시간</span>
+              <span className={`text-sm font-semibold ${fastWarn?'text-amber-600':'text-gray-900'}`}>{fmtDur(durationSec)}{fastWarn?' ⚠':''}</span>
+            </div>
+            {/* 미완료 목록 */}
+            {incompleteIds.length>0 && (
+              <div className="bg-white border border-red-200 rounded-md p-4">
+                <p className="text-red-600 uppercase tracking-widest mb-2" style={{fontSize:'10px',fontWeight:600}}>미완료 로고 ({incompleteIds.length}개)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {incompleteIds.map(id=>(
+                    <span key={id} className="px-2 py-0.5 bg-red-50 text-red-600 text-xs rounded border border-red-200 font-mono">{id}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* 분포 차트 */}
+            <div className="bg-white border border-gray-200 rounded-md p-5">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <DistChart title="브랜드 점수 분포" dist={bDist} warn={brandWarn} />
+                <DistChart title="시각 점수 분포"   dist={vDist} warn={visualWarn} />
+              </div>
+              {sameWarn && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-amber-600 uppercase tracking-widest mb-1" style={{fontSize:'10px',fontWeight:600}}>동일 점수 반복 감지</p>
+                  {brandWarn  && <p className="text-xs text-amber-700">• 브랜드 점수: 최빈값 {bMax}개 집중</p>}
+                  {visualWarn && <p className="text-xs text-amber-700">• 시각 점수: 최빈값 {vMax}개 집중</p>}
+                </div>
+              )}
+            </div>
+            {/* 확인 체크박스 */}
+            <div className="bg-white border border-gray-200 rounded-md p-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 shrink-0 cursor-pointer" style={{accentColor:'#111827'}} />
+                <span className={`text-sm leading-relaxed transition-colors ${confirmed?'text-gray-900 font-medium':'text-gray-500'}`}>
+                  50개 로고 시안을 모두 확인하고, 브랜드 브리프와 판단 기준에 따라 평가했음을 확인합니다.
+                </span>
+              </label>
+            </div>
+            {/* 버튼 */}
+            <div className="flex gap-3 pb-8">
+              <button onClick={onBack} className="flex-1 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">← 평가 화면으로 돌아가기</button>
+              <button onClick={onSubmit} disabled={!canSubmit}
+                className={`flex-1 py-3 text-sm font-medium rounded-md transition-colors ${canSubmit?'bg-gray-900 text-white hover:bg-gray-700':'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
+                최종 제출하기
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ─── ResultSummary ───────────────────────────────────── */
     function ResultSummary({ data, onDownloadJSON, onDownloadCSV }) {
       const { summary, logos } = data;
       const ranked = logos.filter(l => l.completed).sort((a,b) => b.total_score - a.total_score);
@@ -616,10 +758,14 @@
           <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
             <div className="bg-gray-800 h-1.5 rounded-full transition-all duration-300" style={{width:`${count/total*100}%`}} />
           </div>
-          <button onClick={onSubmit} disabled={!allDone}
-            className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap transition-colors ${allDone?'bg-gray-900 text-white hover:bg-gray-700':'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
-            최종 제출
-          </button>
+          <div className="flex flex-col items-end gap-0.5">
+            <button onClick={onSubmit} disabled={!allDone}
+              title={!allDone?'아직 평가가 완료되지 않은 로고가 있습니다. 미완료 로고를 확인한 뒤 제출해 주세요.':undefined}
+              className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap transition-colors ${allDone?'bg-gray-900 text-white hover:bg-gray-700':'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
+              제출 전 검토
+            </button>
+            {!allDone && <span className="text-gray-400 whitespace-nowrap" style={{fontSize:'10px'}}>미완료 {total-count}개 남음</span>}
+          </div>
         </div>
       );
     }
@@ -690,10 +836,12 @@
 
       const handleHover = useCallback((logo, rect) => setHoverPreview({ logo, pos: calcPreviewPos(rect) }), []);
       const handleHoverEnd = useCallback(() => setHoverPreview(null), []);
-      const handleSubmit = () => { const d = buildResponseData(pid, ratings, tsStart); setResultData(d); setScreen('result'); };
+      const handleSubmit = () => setScreen('review');
+      const handleFinalSubmit = () => { const d = buildResponseData(pid, ratings, tsStart); setResultData(d); setScreen('result'); };
 
-      if (screen === 'intro') return <IntroScreen onStart={() => setScreen('brief')} />;
-      if (screen === 'brief') return <BriefScreen onStart={() => setScreen('evaluate')} onBack={() => setScreen('intro')} />;
+      if (screen === 'intro')  return <IntroScreen onStart={() => setScreen('brief')} />;
+      if (screen === 'brief')  return <BriefScreen onStart={() => setScreen('evaluate')} onBack={() => setScreen('intro')} />;
+      if (screen === 'review') return <ReviewScreen ratings={ratings} timestampStart={tsStart} onBack={() => setScreen('evaluate')} onSubmit={handleFinalSubmit} />;
       if (screen === 'result') return <ResultSummary data={resultData} onDownloadJSON={() => downloadJSON(resultData)} onDownloadCSV={() => downloadCSV(resultData)} />;
 
       return (

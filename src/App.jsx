@@ -4,6 +4,7 @@ import BriefScreen from './components/BriefScreen';
 import CriteriaPanel from './components/CriteriaPanel';
 import LogoGrid from './components/LogoGrid';
 import ImagePreviewModal from './components/ImagePreviewModal';
+import ReviewScreen from './components/ReviewScreen';
 import ResultSummary from './components/ResultSummary';
 import { LOGOS } from './data/logos';
 import { buildResponseData, downloadJSON, downloadCSV } from './utils/exportData';
@@ -134,7 +135,13 @@ export default function App() {
     setHoverPreview(null);
   }, []);
 
+  // 검토 화면으로 이동
   const handleSubmit = () => {
+    setScreen('review');
+  };
+
+  // 검토 화면에서 최종 제출
+  const handleFinalSubmit = () => {
     const data = buildResponseData(participantId, ratings, timestampStart);
     setResultData(data);
     setScreen('result');
@@ -146,6 +153,17 @@ export default function App() {
 
   if (screen === 'brief') {
     return <BriefScreen onStart={() => setScreen('evaluate')} onBack={() => setScreen('intro')} />;
+  }
+
+  if (screen === 'review') {
+    return (
+      <ReviewScreen
+        ratings={ratings}
+        timestampStart={timestampStart}
+        onBack={() => setScreen('evaluate')}
+        onSubmit={handleFinalSubmit}
+      />
+    );
   }
 
   if (screen === 'result') {
@@ -267,17 +285,23 @@ function ProgressBar({ completedCount, total, allDone, onSubmit, onBack }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <button
-        onClick={onSubmit}
-        disabled={!allDone}
-        className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap transition-colors ${
-          allDone
-            ? 'bg-gray-900 text-white hover:bg-gray-700'
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-        }`}
-      >
-        최종 제출
-      </button>
+      <div className="flex flex-col items-end gap-0.5">
+        <button
+          onClick={onSubmit}
+          disabled={!allDone}
+          title={!allDone ? '아직 평가가 완료되지 않은 로고가 있습니다. 미완료 로고를 확인한 뒤 제출해 주세요.' : undefined}
+          className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap transition-colors ${
+            allDone
+              ? 'bg-gray-900 text-white hover:bg-gray-700'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          제출 전 검토
+        </button>
+        {!allDone && (
+          <span className="text-[10px] text-gray-400 whitespace-nowrap">미완료 {total - completedCount}개 남음</span>
+        )}
+      </div>
     </div>
   );
 }
