@@ -44,17 +44,15 @@
     const saveData = d => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} };
     const loadData = () => { try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
 
-    function buildResponseData(pid, ratings, tsStart) {
+    function buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds=[]) {
       const now = new Date();
       const nowISO = now.toISOString();
-      const logos = [];
-      for (let i = 1; i <= 50; i++) {
-        const id = `L-${String(i).padStart(2, '0')}`;
-        const r = ratings[id];
+      const logos = evaluationLogos.map(logo => {
+        const r = ratings[logo.id];
         const b = r?.brand_score ?? null, v = r?.visual_score ?? null;
         const done = b !== null && v !== null;
-        logos.push({ logo_id: id, brand_score: b, visual_score: v, total_score: done ? calcTotalScore(b, v) : null, completed: done, updated_at: r?.updated_at ?? null });
-      }
+        return { logo_id: logo.id, brand_score: b, visual_score: v, total_score: done ? calcTotalScore(b, v) : null, completed: done, updated_at: r?.updated_at ?? null };
+      });
       const done = logos.filter(l => l.completed);
       const avg = k => done.length ? Math.round(done.reduce((s, l) => s + l[k], 0) / done.length * 100) / 100 : null;
       const top27 = [...done].sort((a, b) => b.total_score - a.total_score).slice(0, 27).map(l => l.logo_id);
@@ -62,17 +60,18 @@
       const distOf = key => { const d={1:0,2:0,3:0,4:0,5:0}; done.forEach(l=>{ if(l[key]!==null) d[l[key]]++; }); return d; };
       const bDist = distOf('brand_score'), vDist = distOf('visual_score');
       const bMax = Math.max(...Object.values(bDist)), vMax = Math.max(...Object.values(vDist));
+      const evalTotal = evaluationLogos.length;
       const quality_check = {
         duration_seconds: durationSeconds,
         completed_count: done.length,
         incomplete_logo_ids: logos.filter(l=>!l.completed).map(l=>l.logo_id),
         brand_score_distribution: bDist,
         visual_score_distribution: vDist,
-        brand_same_score_warning:  done.length >= 40 && bMax >= 40,
-        visual_same_score_warning: done.length >= 40 && vMax >= 40,
+        brand_same_score_warning:  done.length >= evalTotal*0.8 && bMax >= evalTotal*0.8,
+        visual_same_score_warning: done.length >= evalTotal*0.8 && vMax >= evalTotal*0.8,
         fast_completion_warning:   durationSeconds < 300,
       };
-      return { participant_id: pid, timestamp_start: tsStart, timestamp_submit: nowISO, logos, summary: { completed_count: done.length, brand_average: avg('brand_score'), visual_average: avg('visual_score'), total_average: avg('total_score'), top_27_logo_ids: top27 }, quality_check };
+      return { participant_id: pid, timestamp_start: tsStart, timestamp_submit: nowISO, eliminated_logo_ids: eliminatedIds, logos, summary: { completed_count: done.length, evaluation_total: evalTotal, brand_average: avg('brand_score'), visual_average: avg('visual_score'), total_average: avg('total_score'), top_logos: top27 }, quality_check };
     }
 
     function triggerDownload(blob, filename) {
@@ -170,6 +169,134 @@
     const VALUE_TAGS = ['일상성', '균형감', '취향성'];
     const MEDIA_TAGS = ['제품 라벨', '패키지 스티커', '쇼핑백', '명함', '웹사이트', 'SNS 프로필', '온라인 배너', '제품 태그', '팝업 부스 사인'];
 
+    /* ─── EliminationScreen ──────────────────────────────── */
+    const ELIM_LIMIT = 23;
+    function EliminationScreen({ eliminatedIds, onEliminate, onNext, onBack }) {
+      const count = eliminatedIds.length;
+      const isComplete = count === ELIM_LIMIT;
+      const canAdd = count < ELIM_LIMIT;
+      const toggle = (id) => {
+        if (eliminatedIds.includes(id)) onEliminate(eliminatedIds.filter(x=>x!==id));
+        else if (canAdd) onEliminate([...eliminatedIds, id]);
+      };
+      return (
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          {/* 상단 바 */}
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
+            <button onClick={onBack} className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">← 이전</button>
+            <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              탈락 선택: <span className={`font-bold ${isComplete?'text-red-600':'text-gray-900'}`}>{count}</span><span className="text-gray-400"> / {ELIM_LIMIT}</span>
+            </div>
+            <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
+              <div className={`h-1.5 rounded-full transition-all duration-300 ${isComplete?'bg-red-500':'bg-red-300'}`} style={{width:`${(count/ELIM_LIMIT)*100}%`}} />
+            </div>
+            {isComplete && <span className="text-xs font-semibold text-red-600 whitespace-nowrap shrink-0">✓ 23개 선택 완료</span>}
+            <button onClick={onNext} disabled={!isComplete}
+              title={!isComplete?`${ELIM_LIMIT-count}개 더 선택해 주세요`:undefined}
+              className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap shrink-0 transition-colors ${isComplete?'bg-gray-900 text-white hover:bg-gray-700':'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
+              선별 확인 →
+            </button>
+          </div>
+          {/* 안내 */}
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+            <p className="text-sm text-amber-800 leading-relaxed">
+              본실험에서 제외할 로고 시안 <strong>23개</strong>를 선택해 주세요. 정확히 23개를 선택해야 다음 단계로 진행됩니다.
+              {!isComplete && count>0 && <span className="ml-2 font-medium">— {ELIM_LIMIT-count}개 더 선택 필요</span>}
+            </p>
+          </div>
+          {/* 그리드 */}
+          <div className="flex-1 p-4">
+            <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))'}}>
+              {LOGOS.map(logo => {
+                const isElim = eliminatedIds.includes(logo.id);
+                return (
+                  <div key={logo.id} className={`bg-white rounded-lg flex flex-col select-none transition-all ${isElim?'border-2 border-red-400':'border-2 border-gray-200 hover:border-gray-300'}`}>
+                    <div className="aspect-square bg-gray-50 rounded-t-lg overflow-hidden relative cursor-pointer" onClick={()=>toggle(logo.id)}>
+                      <img src={logo.imagePath} alt={logo.id} className={`w-full h-full object-contain p-2 transition-opacity ${isElim?'opacity-35':''}`} />
+                      {isElim && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow">
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-1.5">
+                      <p className="font-mono text-gray-400 text-center mb-1" style={{fontSize:'10px'}}>{logo.id}</p>
+                      <button onClick={()=>toggle(logo.id)} disabled={!isElim&&!canAdd}
+                        className={`w-full py-1 text-xs font-medium rounded transition-colors ${isElim?'bg-red-500 text-white hover:bg-red-600':canAdd?'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500 border border-gray-200':'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100'}`}>
+                        {isElim?'취소':'탈락'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ─── EliminationReviewScreen ────────────────────────── */
+    function EliminationReviewScreen({ eliminatedIds, onBack, onNext }) {
+      const eliminated = LOGOS.filter(l=>eliminatedIds.includes(l.id));
+      const passing    = LOGOS.filter(l=>!eliminatedIds.includes(l.id));
+      function MiniCard({logo, elim}) {
+        return (
+          <div className={`rounded-lg border bg-white overflow-hidden ${elim?'border-red-200':'border-green-200'}`}>
+            <div className="aspect-square bg-gray-50 overflow-hidden relative">
+              <img src={logo.imagePath} alt={logo.id} className={`w-full h-full object-contain p-1.5 ${elim?'opacity-40':''}`} />
+              <div className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center ${elim?'bg-red-500':'bg-green-500'}`}>
+                {elim
+                  ? <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                  : <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+                }
+              </div>
+            </div>
+            <p className="font-mono text-center text-gray-400 py-0.5" style={{fontSize:'9px'}}>{logo.id}</p>
+          </div>
+        );
+      }
+      return (
+        <div className="min-h-screen bg-gray-50 py-8 px-4">
+          <div className="max-w-4xl mx-auto space-y-5">
+            <div>
+              <p className="text-gray-400 uppercase tracking-widest mb-1" style={{fontSize:'10px',fontWeight:600}}>시안 선별 확인</p>
+              <h1 className="text-xl font-semibold text-gray-900">선별 결과를 확인해 주세요</h1>
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">탈락 시안 23개와 평가 대상 시안 27개를 확인하고, 이상이 없으면 평가를 시작해 주세요.</p>
+            </div>
+            <div className="bg-white border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
+                <h2 className="text-sm font-semibold text-red-700">탈락 시안 — {eliminated.length}개</h2>
+                <span className="text-xs text-red-300 ml-auto">본실험에서 제외</span>
+              </div>
+              <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))'}}>
+                {eliminated.map(logo=><MiniCard key={logo.id} logo={logo} elim={true} />)}
+              </div>
+            </div>
+            <div className="bg-white border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 bg-green-500 rounded-full shrink-0" />
+                <h2 className="text-sm font-semibold text-green-700">평가 대상 시안 — {passing.length}개</h2>
+                <span className="text-xs text-green-400 ml-auto">이 시안들을 평가합니다</span>
+              </div>
+              <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))'}}>
+                {passing.map(logo=><MiniCard key={logo.id} logo={logo} elim={false} />)}
+              </div>
+            </div>
+            <div className="flex gap-3 pb-8">
+              <button onClick={onBack} className="flex-1 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">← 수정하기</button>
+              <button onClick={onNext} className="flex-1 py-3 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors">평가 시작하기 →</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ─── BriefScreen ─────────────────────────────────────── */
     function BriefScreen({ onStart, onBack }) {
       return (
         <div className="min-h-screen bg-gray-50 py-10 px-4">
@@ -548,9 +675,9 @@
     }
 
     /* ─── ReviewScreen ───────────────────────────────────── */
-    function ReviewScreen({ ratings, timestampStart, onBack, onSubmit }) {
+    function ReviewScreen({ logos: logoProp, ratings, timestampStart, onBack, onSubmit }) {
       const [confirmed, setConfirmed] = useState(false);
-      const logoIds = Array.from({length:50},(_,i)=>`L-${String(i+1).padStart(2,'0')}`);
+      const logoIds = logoProp.map(l => l.id);
       const completedIds  = logoIds.filter(id => isCompleted(ratings[id]));
       const incompleteIds = logoIds.filter(id => !isCompleted(ratings[id]));
       const allDone = incompleteIds.length === 0;
@@ -826,12 +953,14 @@
       const [pid] = useState(generateId);
       const [tsStart] = useState(() => new Date().toISOString());
 
-      useEffect(() => { const s = loadData(); if (s?.ratings) setRatings(s.ratings); }, []);
-      useEffect(() => { if (Object.keys(ratings).length > 0) saveData({ pid, tsStart, ratings }); }, [ratings]);
+      const [eliminatedIds, setEliminatedIds] = useState([]);
 
-      // LOGOS 배열의 ID만 카운트 (stale localStorage 항목 제외)
-      const count = LOGOS.filter(l => isCompleted(ratings[l.id])).length;
-      const allDone = count === LOGOS.length;
+      useEffect(() => { const s = loadData(); if (s?.ratings) setRatings(s.ratings); if (s?.eliminatedIds) setEliminatedIds(s.eliminatedIds); }, []);
+      useEffect(() => { if (Object.keys(ratings).length > 0 || eliminatedIds.length > 0) saveData({ pid, tsStart, ratings, eliminatedIds }); }, [ratings, eliminatedIds]);
+
+      const evaluationLogos = LOGOS.filter(l => !eliminatedIds.includes(l.id));
+      const count = evaluationLogos.filter(l => isCompleted(ratings[l.id])).length;
+      const allDone = count === evaluationLogos.length;
 
       const handleRate = useCallback((id, field, score) => {
         setRatings(prev => ({ ...prev, [id]: { ...prev[id], [field]: score, updated_at: new Date().toISOString() } }));
@@ -840,11 +969,16 @@
       const handleHover = useCallback((logo, rect) => setHoverPreview({ logo, pos: calcPreviewPos(rect) }), []);
       const handleHoverEnd = useCallback(() => setHoverPreview(null), []);
       const handleSubmit = () => setScreen('review');
-      const handleFinalSubmit = () => { const d = buildResponseData(pid, ratings, tsStart); setResultData(d); setScreen('result'); };
+      const handleFinalSubmit = () => {
+        const d = buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds);
+        setResultData(d); setScreen('result');
+      };
 
       if (screen === 'intro')  return <IntroScreen onStart={() => setScreen('brief')} />;
-      if (screen === 'brief')  return <BriefScreen onStart={() => setScreen('evaluate')} onBack={() => setScreen('intro')} />;
-      if (screen === 'review') return <ReviewScreen ratings={ratings} timestampStart={tsStart} onBack={() => setScreen('evaluate')} onSubmit={handleFinalSubmit} />;
+      if (screen === 'brief')  return <BriefScreen onStart={() => setScreen('eliminate')} onBack={() => setScreen('intro')} />;
+      if (screen === 'eliminate') return <EliminationScreen eliminatedIds={eliminatedIds} onEliminate={setEliminatedIds} onNext={() => setScreen('eliminateReview')} onBack={() => setScreen('brief')} />;
+      if (screen === 'eliminateReview') return <EliminationReviewScreen eliminatedIds={eliminatedIds} onBack={() => setScreen('eliminate')} onNext={() => setScreen('evaluate')} />;
+      if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} onBack={() => setScreen('evaluate')} onSubmit={handleFinalSubmit} />;
       if (screen === 'result') return <ResultSummary data={resultData} onDownloadJSON={() => downloadJSON(resultData)} onDownloadCSV={() => downloadCSV(resultData)} />;
 
       return (
@@ -869,13 +1003,13 @@
             {/* 모바일 */}
             <div className="lg:hidden sticky top-0 z-20">
               <CriteriaPanel mobile />
-              <ProgressBar count={count} total={LOGOS.length} allDone={allDone} onSubmit={handleSubmit} sidebarOpen={false} onShowSidebar={null} onBack={() => setScreen('brief')} />
+              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} sidebarOpen={false} onShowSidebar={null} onBack={() => setScreen('brief')} />
             </div>
             {/* PC */}
             <div className="hidden lg:block sticky top-0 z-10">
-              <ProgressBar count={count} total={LOGOS.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} />
+              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} />
             </div>
-            <LogoGrid logos={LOGOS} ratings={ratings} filter={filter} sort={sort}
+            <LogoGrid logos={evaluationLogos} ratings={ratings} filter={filter} sort={sort}
               onFilter={setFilter} onSort={setSort} onRate={handleRate}
               onPreview={setPreviewLogo} onHover={handleHover} onHoverEnd={handleHoverEnd} />
           </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import IntroScreen from './components/IntroScreen';
 import BriefScreen from './components/BriefScreen';
+import EliminationScreen from './components/EliminationScreen';
+import EliminationReviewScreen from './components/EliminationReviewScreen';
 import CriteriaPanel from './components/CriteriaPanel';
 import LogoGrid from './components/LogoGrid';
 import ImagePreviewModal from './components/ImagePreviewModal';
@@ -56,6 +58,7 @@ function HoverPreview({ logo, pos }) {
 export default function App() {
   const [screen, setScreen] = useState('intro');
   const [ratings, setRatings] = useState({});
+  const [eliminatedIds, setEliminatedIds] = useState([]);
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('default');
   const [previewLogo, setPreviewLogo] = useState(null);
@@ -99,22 +102,24 @@ export default function App() {
   const [participantId] = useState(generateId);
   const [timestampStart] = useState(() => new Date().toISOString());
 
-  // Load saved ratings
+  // Load saved ratings + eliminatedIds
   useEffect(() => {
     const saved = load();
-    if (saved?.ratings) setRatings(saved.ratings);
+    if (saved?.ratings)      setRatings(saved.ratings);
+    if (saved?.eliminatedIds) setEliminatedIds(saved.eliminatedIds);
   }, []);
 
-  // Auto-save ratings
+  // Auto-save ratings + eliminatedIds
   useEffect(() => {
-    if (Object.keys(ratings).length > 0) {
-      save({ participantId, timestampStart, ratings });
+    if (Object.keys(ratings).length > 0 || eliminatedIds.length > 0) {
+      save({ participantId, timestampStart, ratings, eliminatedIds });
     }
-  }, [ratings, participantId, timestampStart]);
+  }, [ratings, eliminatedIds, participantId, timestampStart]);
 
-  // LOGOS 배열의 ID만 카운트 (stale localStorage 항목 제외)
-  const completedCount = LOGOS.filter(l => isCompleted(ratings[l.id])).length;
-  const allDone = completedCount === LOGOS.length;
+  // 27개 평가 대상 로고
+  const evaluationLogos = LOGOS.filter(l => !eliminatedIds.includes(l.id));
+  const completedCount  = evaluationLogos.filter(l => isCompleted(ratings[l.id])).length;
+  const allDone         = completedCount === evaluationLogos.length;
 
   const handleRate = useCallback((logoId, field, score) => {
     setRatings(prev => ({
@@ -136,29 +141,41 @@ export default function App() {
     setHoverPreview(null);
   }, []);
 
-  // 검토 화면으로 이동
-  const handleSubmit = () => {
-    setScreen('review');
-  };
-
-  // 검토 화면에서 최종 제출
+  const handleSubmit      = () => setScreen('review');
   const handleFinalSubmit = () => {
-    const data = buildResponseData(participantId, ratings, timestampStart);
+    const data = buildResponseData(participantId, ratings, timestampStart, evaluationLogos, eliminatedIds);
     setResultData(data);
     setScreen('result');
   };
 
-  if (screen === 'intro') {
-    return <IntroScreen onStart={() => setScreen('brief')} />;
+  if (screen === 'intro') return <IntroScreen onStart={() => setScreen('brief')} />;
+  if (screen === 'brief') return <BriefScreen onStart={() => setScreen('eliminate')} onBack={() => setScreen('intro')} />;
+
+  if (screen === 'eliminate') {
+    return (
+      <EliminationScreen
+        eliminatedIds={eliminatedIds}
+        onEliminate={setEliminatedIds}
+        onNext={() => setScreen('eliminateReview')}
+        onBack={() => setScreen('brief')}
+      />
+    );
   }
 
-  if (screen === 'brief') {
-    return <BriefScreen onStart={() => setScreen('evaluate')} onBack={() => setScreen('intro')} />;
+  if (screen === 'eliminateReview') {
+    return (
+      <EliminationReviewScreen
+        eliminatedIds={eliminatedIds}
+        onBack={() => setScreen('eliminate')}
+        onNext={() => setScreen('evaluate')}
+      />
+    );
   }
 
   if (screen === 'review') {
     return (
       <ReviewScreen
+        logos={evaluationLogos}
         ratings={ratings}
         timestampStart={timestampStart}
         onBack={() => setScreen('evaluate')}
@@ -209,7 +226,7 @@ export default function App() {
           <CriteriaPanel mobile />
           <ProgressBar
             completedCount={completedCount}
-            total={LOGOS.length}
+            total={evaluationLogos.length}
             allDone={allDone}
             onSubmit={handleSubmit}
             sidebarOpen={false}
@@ -222,7 +239,7 @@ export default function App() {
         <div className="hidden lg:block sticky top-0 z-10">
           <ProgressBar
             completedCount={completedCount}
-            total={LOGOS.length}
+            total={evaluationLogos.length}
             allDone={allDone}
             onSubmit={handleSubmit}
             onBack={() => setScreen('brief')}
@@ -230,7 +247,7 @@ export default function App() {
         </div>
 
         <LogoGrid
-          logos={LOGOS}
+          logos={evaluationLogos}
           ratings={ratings}
           filter={filter}
           sort={sort}

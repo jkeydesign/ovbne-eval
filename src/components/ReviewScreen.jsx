@@ -73,10 +73,11 @@ function WarnBox({ children }) {
 }
 
 /* ── main component ──────────────────────────────────── */
-export default function ReviewScreen({ ratings, timestampStart, onBack, onSubmit }) {
+export default function ReviewScreen({ logos: logoProp, ratings, timestampStart, onBack, onSubmit }) {
   const [confirmed, setConfirmed] = useState(false);
 
-  const logos = Array.from({ length: 50 }, (_, i) => `L-${String(i + 1).padStart(2, '0')}`);
+  // logos prop = 27개 평가 대상 로고 배열
+  const logos = logoProp.map(l => l.id);
   const completedIds = logos.filter(id => isCompleted(ratings[id]));
   const incompleteIds = logos.filter(id => !isCompleted(ratings[id]));
   const allDone = incompleteIds.length === 0;

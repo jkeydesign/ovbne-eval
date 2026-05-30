@@ -1,0 +1,129 @@
+import { LOGOS } from '../data/logos';
+
+const LIMIT = 23;
+
+export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, onBack }) {
+  const count = eliminatedIds.length;
+  const isComplete = count === LIMIT;
+  const canAdd = count < LIMIT;
+
+  const toggle = (id) => {
+    if (eliminatedIds.includes(id)) {
+      onEliminate(eliminatedIds.filter(x => x !== id));
+    } else if (canAdd) {
+      onEliminate([...eliminatedIds, id]);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+
+      {/* 상단 고정 바 */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0"
+        >
+          ← 이전
+        </button>
+
+        <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          탈락 선택:{' '}
+          <span className={`font-bold ${isComplete ? 'text-red-600' : 'text-gray-900'}`}>{count}</span>
+          <span className="text-gray-400"> / {LIMIT}</span>
+        </div>
+
+        <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
+          <div
+            className={`h-1.5 rounded-full transition-all duration-300 ${isComplete ? 'bg-red-500' : 'bg-red-300'}`}
+            style={{ width: `${(count / LIMIT) * 100}%` }}
+          />
+        </div>
+
+        {isComplete && (
+          <span className="text-xs font-semibold text-red-600 whitespace-nowrap shrink-0">✓ 23개 선택 완료</span>
+        )}
+
+        <button
+          onClick={onNext}
+          disabled={!isComplete}
+          className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap shrink-0 transition-colors ${
+            isComplete
+              ? 'bg-gray-900 text-white hover:bg-gray-700'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
+          title={!isComplete ? `${LIMIT - count}개 더 선택해 주세요` : undefined}
+        >
+          선별 확인 →
+        </button>
+      </div>
+
+      {/* 안내 배너 */}
+      <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+        <p className="text-sm text-amber-800 leading-relaxed">
+          본실험에서 제외할 로고 시안 <strong>23개</strong>를 선택해 주세요.
+          정확히 23개를 선택해야 다음 단계로 진행됩니다.
+          {!isComplete && count > 0 && (
+            <span className="ml-2 font-medium">— {LIMIT - count}개 더 선택 필요</span>
+          )}
+        </p>
+      </div>
+
+      {/* 그리드 */}
+      <div className="flex-1 p-4">
+        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+          {LOGOS.map(logo => {
+            const isElim = eliminatedIds.includes(logo.id);
+            return (
+              <div
+                key={logo.id}
+                className={`bg-white rounded-lg flex flex-col select-none transition-all ${
+                  isElim ? 'border-2 border-red-400' : 'border-2 border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {/* 이미지 */}
+                <div
+                  className="aspect-square bg-gray-50 rounded-t-lg overflow-hidden relative cursor-pointer"
+                  onClick={() => toggle(logo.id)}
+                >
+                  <img
+                    src={logo.imagePath}
+                    alt={logo.id}
+                    className={`w-full h-full object-contain p-2 transition-opacity ${isElim ? 'opacity-35' : ''}`}
+                  />
+                  {isElim && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 하단 */}
+                <div className="p-1.5">
+                  <p className="text-[10px] font-mono text-gray-400 text-center mb-1">{logo.id}</p>
+                  <button
+                    onClick={() => toggle(logo.id)}
+                    disabled={!isElim && !canAdd}
+                    className={`w-full py-1 text-xs font-medium rounded transition-colors ${
+                      isElim
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : canAdd
+                          ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500 border border-gray-200'
+                          : 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100'
+                    }`}
+                  >
+                    {isElim ? '취소' : '탈락'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

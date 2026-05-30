@@ -1,19 +1,18 @@
 import { calcTotalScore } from './scoring';
 
-export function buildResponseData(participantId, ratings, timestampStart) {
+export function buildResponseData(participantId, ratings, timestampStart, evaluationLogos, eliminatedIds = []) {
   const now = new Date();
   const nowISO = now.toISOString();
   const logos = [];
 
-  for (let i = 1; i <= 50; i++) {
-    const logoId = `L-${String(i).padStart(2, '0')}`;
-    const r = ratings[logoId];
+  for (const logo of evaluationLogos) {
+    const r = ratings[logo.id];
     const brandScore  = r?.brand_score  ?? null;
     const visualScore = r?.visual_score ?? null;
     const completed   = brandScore !== null && visualScore !== null;
 
     logos.push({
-      logo_id: logoId,
+      logo_id: logo.id,
       brand_score: brandScore,
       visual_score: visualScore,
       total_score: completed ? calcTotalScore(brandScore, visualScore) : null,
@@ -47,6 +46,7 @@ export function buildResponseData(participantId, ratings, timestampStart) {
   const visualDist = distOf('visual_score');
   const brandMax   = Math.max(...Object.values(brandDist));
   const visualMax  = Math.max(...Object.values(visualDist));
+  const evalTotal  = evaluationLogos.length;
 
   const quality_check = {
     duration_seconds: durationSeconds,
@@ -54,22 +54,24 @@ export function buildResponseData(participantId, ratings, timestampStart) {
     incomplete_logo_ids: logos.filter(l => !l.completed).map(l => l.logo_id),
     brand_score_distribution:  brandDist,
     visual_score_distribution: visualDist,
-    brand_same_score_warning:  done.length >= 40 && brandMax  >= 40,
-    visual_same_score_warning: done.length >= 40 && visualMax >= 40,
+    brand_same_score_warning:  done.length >= evalTotal * 0.8 && brandMax >= evalTotal * 0.8,
+    visual_same_score_warning: done.length >= evalTotal * 0.8 && visualMax >= evalTotal * 0.8,
     fast_completion_warning:   durationSeconds < 300,
   };
 
   return {
-    participant_id:   participantId,
-    timestamp_start:  timestampStart,
-    timestamp_submit: nowISO,
+    participant_id:      participantId,
+    timestamp_start:     timestampStart,
+    timestamp_submit:    nowISO,
+    eliminated_logo_ids: eliminatedIds,
     logos,
     summary: {
-      completed_count: done.length,
-      brand_average:   avg('brand_score'),
-      visual_average:  avg('visual_score'),
-      total_average:   avg('total_score'),
-      top_27_logo_ids: top27,
+      completed_count:  done.length,
+      evaluation_total: evaluationLogos.length,
+      brand_average:    avg('brand_score'),
+      visual_average:   avg('visual_score'),
+      total_average:    avg('total_score'),
+      top_logos:        top27,
     },
     quality_check,
   };
@@ -90,6 +92,7 @@ export function downloadCSV(data) {
     'completed',
     'updated_at',
     'timestamp_submit',
+    'eliminated_logo_ids',
     'duration_seconds',
     'brand_same_score_warning',
     'visual_same_score_warning',
@@ -97,6 +100,7 @@ export function downloadCSV(data) {
   ];
 
   const qc = data.quality_check || {};
+  const eliminatedStr = (data.eliminated_logo_ids || []).join('|');
 
   const rows = data.logos.map(l => [
     data.participant_id,
@@ -107,6 +111,7 @@ export function downloadCSV(data) {
     l.completed,
     l.updated_at   ?? '',
     data.timestamp_submit,
+    eliminatedStr,
     qc.duration_seconds ?? '',
     qc.brand_same_score_warning  ?? '',
     qc.visual_same_score_warning ?? '',
