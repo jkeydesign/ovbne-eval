@@ -16,7 +16,7 @@ export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="flex flex-col flex-1 min-w-0">
 
       {/* 상단 고정 바 */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
@@ -81,7 +81,6 @@ export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, 
                   isElim ? 'border-2 border-red-400' : 'border-2 border-gray-200 hover:border-gray-300'
                 }`}
               >
-                {/* 이미지 */}
                 <div
                   className="aspect-square bg-gray-50 rounded-t-lg overflow-hidden relative cursor-pointer"
                   onClick={() => toggle(logo.id)}
@@ -101,8 +100,6 @@ export default function EliminationScreen({ eliminatedIds, onEliminate, onNext, 
                     </div>
                   )}
                 </div>
-
-                {/* 하단 */}
                 <div className="p-1.5">
                   <p className="text-[10px] font-mono text-gray-400 text-center mb-1">{logo.id}</p>
                   <button

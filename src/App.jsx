@@ -153,12 +153,41 @@ export default function App() {
 
   if (screen === 'eliminate') {
     return (
-      <EliminationScreen
-        eliminatedIds={eliminatedIds}
-        onEliminate={setEliminatedIds}
-        onNext={() => setScreen('eliminateReview')}
-        onBack={() => setScreen('brief')}
-      />
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* PC Sidebar — 평가 화면과 동일 */}
+        {sidebarOpen && (
+          <>
+            <aside
+              className="hidden lg:flex flex-col shrink-0 bg-white border-r border-gray-200"
+              style={{ width: sidebarWidth }}
+            >
+              <div className="sticky top-0 h-screen overflow-y-auto flex flex-col">
+                <div className="flex-1 overflow-y-auto">
+                  <CriteriaPanel />
+                </div>
+              </div>
+            </aside>
+            <div
+              className="hidden lg:block w-1 shrink-0 bg-gray-200 hover:bg-gray-400 transition-colors duration-150"
+              style={{ cursor: 'col-resize' }}
+              onMouseDown={startResize}
+              title="드래그하여 패널 너비 조절"
+            />
+          </>
+        )}
+        {/* Mobile 상단 */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="lg:hidden sticky top-0 z-20">
+            <CriteriaPanel mobile />
+          </div>
+          <EliminationScreen
+            eliminatedIds={eliminatedIds}
+            onEliminate={setEliminatedIds}
+            onNext={() => setScreen('eliminateReview')}
+            onBack={() => setScreen('brief')}
+          />
+        </div>
+      </div>
     );
   }
 
