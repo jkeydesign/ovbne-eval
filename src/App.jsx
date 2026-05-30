@@ -186,9 +186,6 @@ export default function App() {
             style={{ width: sidebarWidth }}
           >
             <div className="sticky top-0 h-screen overflow-y-auto flex flex-col">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <span className="text-xs font-semibold text-gray-500 tracking-widest uppercase">평가 참고 기준</span>
-              </div>
               <div className="flex-1 overflow-y-auto">
                 <CriteriaPanel />
               </div>
@@ -268,10 +265,10 @@ function ProgressBar({ completedCount, total, allDone, onSubmit, onBack }) {
       {onBack && (
         <button
           onClick={onBack}
-          className="text-xs text-gray-400 hover:text-gray-700 whitespace-nowrap flex items-center gap-1 shrink-0"
+          className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0"
           title="브랜드 브리프로 돌아가기"
         >
-          ← 브리프
+          ← 이전
         </button>
       )}
       <div className="text-sm font-medium text-gray-700 whitespace-nowrap">

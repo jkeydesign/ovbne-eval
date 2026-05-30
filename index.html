@@ -752,7 +752,7 @@
       return (
         <div className="bg-white border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
           {onBack && (
-            <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-700 whitespace-nowrap shrink-0" title="브랜드 브리프로 돌아가기">← 브리프</button>
+            <button onClick={onBack} className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0" title="브랜드 브리프로 돌아가기">← 이전</button>
           )}
           <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
             평가 완료: <span className="font-bold text-gray-900">{count}</span><span className="text-gray-400"> / {total}</span>
@@ -853,9 +853,6 @@
             <>
               <aside className="hidden lg:flex flex-col shrink-0 bg-white border-r border-gray-200" style={{width: sidebarWidth + 'px'}}>
                 <div className="sticky top-0 flex flex-col" style={{height:'100vh'}}>
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <span className="text-xs font-semibold text-gray-500 tracking-widest uppercase">평가 참고 기준</span>
-                  </div>
                   <div className="flex-1 overflow-y-auto"><CriteriaPanel /></div>
                 </div>
               </aside>
