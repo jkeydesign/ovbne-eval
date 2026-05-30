@@ -31,29 +31,6 @@ function calcPreviewPos(rect) {
   return { top, left };
 }
 
-function HoverPreview({ logo, pos }) {
-  const [imgError, setImgError] = useState(false);
-  return (
-    <div
-      className="fixed z-50 bg-white border border-gray-200 shadow-xl rounded-lg p-3 pointer-events-none"
-      style={{ top: pos.top, left: pos.left, width: 260 }}
-    >
-      <div className="w-full aspect-square bg-gray-50 rounded flex items-center justify-center overflow-hidden mb-2">
-        {!imgError ? (
-          <img
-            src={logo.imagePath}
-            alt={logo.id}
-            onError={() => setImgError(true)}
-            className="w-full h-full object-contain p-3"
-          />
-        ) : (
-          <span className="text-gray-300 text-sm">{logo.id}</span>
-        )}
-      </div>
-      <p className="text-center text-xs font-mono text-gray-500">{logo.id}</p>
-    </div>
-  );
-}
 
 export default function App() {
   const [screen, setScreen] = useState('intro');
@@ -62,7 +39,6 @@ export default function App() {
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('default');
   const [previewLogo, setPreviewLogo] = useState(null);
-  const [hoverPreview, setHoverPreview] = useState(null);
   const [resultData, setResultData] = useState(null);
   const sidebarOpen = true;
   const [sidebarWidth, setSidebarWidth] = useState(256);
@@ -132,14 +108,6 @@ export default function App() {
     }));
   }, []);
 
-  const handleHover = useCallback((logo, rect) => {
-    const pos = calcPreviewPos(rect);
-    setHoverPreview({ logo, pos });
-  }, []);
-
-  const handleHoverEnd = useCallback(() => {
-    setHoverPreview(null);
-  }, []);
 
   const handleSubmit      = () => setScreen('review');
   const handleFinalSubmit = () => {
@@ -284,15 +252,8 @@ export default function App() {
           onSort={setSort}
           onRate={handleRate}
           onPreview={setPreviewLogo}
-          onHover={handleHover}
-          onHoverEnd={handleHoverEnd}
         />
       </div>
-
-      {/* PC hover preview */}
-      {hoverPreview && (
-        <HoverPreview logo={hoverPreview.logo} pos={hoverPreview.pos} />
-      )}
 
       {/* Mobile modal */}
       {previewLogo && (

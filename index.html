@@ -488,22 +488,19 @@
     }
 
     /* ─── LogoCard ────────────────────────────────────────── */
-    function LogoCard({ logo, rating, onRate, onPreview, onHover, onHoverEnd }) {
+    function LogoCard({ logo, rating, onRate, onPreview }) {
       const [imgError, setImgError] = useState(false);
-      const cardRef = useRef(null);
       const B = rating?.brand_score ?? null;
       const V = rating?.visual_score ?? null;
       const done = B !== null && V !== null;
 
       return (
-        <div ref={cardRef} className="bg-white flex flex-col select-none transition-shadow hover:shadow-md"
+        <div className="bg-white flex flex-col select-none transition-shadow hover:shadow-md"
           style={{borderRadius:'8px', border: done ? '2px solid #6b7280' : '2px solid #e5e7eb'}}>
-          {/* Image — scales with card width */}
+          {/* Image */}
           <div
-            className="aspect-square bg-gray-50 cursor-pointer overflow-hidden relative"
+            className="aspect-square bg-gray-50 cursor-pointer overflow-hidden relative group"
             style={{borderRadius:'6px 6px 0 0'}}
-            onMouseEnter={() => { if (cardRef.current) onHover(logo, cardRef.current.getBoundingClientRect()); }}
-            onMouseLeave={onHoverEnd}
             onClick={() => onPreview(logo)}
           >
             {!imgError
@@ -518,12 +515,18 @@
                 </div>
             }
             {done && (
-              <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-gray-700 rounded-full flex items-center justify-center" title="평가 완료">
+              <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-gray-700 rounded-full flex items-center justify-center">
                 <svg fill="none" stroke="white" viewBox="0 0 24 24" style={{width:'9px', height:'9px'}}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             )}
+            {/* 호버 툴팁 */}
+            <div className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+              <span style={{background:'rgba(0,0,0,0.6)', color:'white', fontSize:'10px', fontWeight:500, padding:'3px 10px', borderRadius:'9999px', whiteSpace:'nowrap'}}>
+                클릭 시 이미지 확대
+              </span>
+            </div>
           </div>
           {/* Score panel — fixed size */}
           <div className="p-2">
@@ -605,7 +608,7 @@
       {value:'incomplete_first',label:'미완료 우선'},
     ];
 
-    function LogoGrid({ logos, ratings, filter, sort, onFilter, onSort, onRate, onPreview, onHover, onHoverEnd }) {
+    function LogoGrid({ logos, ratings, filter, sort, onFilter, onSort, onRate, onPreview }) {
       const [cardSize, setCardSize] = useState(180);
       const filtered = useMemo(() => {
         let items = [...logos];
@@ -656,7 +659,7 @@
             : <div className="grid" style={{gridTemplateColumns:`repeat(auto-fill, minmax(${cardSize}px, 1fr))`, gap: cardSize<150?'6px':'10px'}}>
                 {filtered.map(logo => (
                   <LogoCard key={logo.id} logo={logo} rating={ratings[logo.id]}
-                    onRate={onRate} onPreview={onPreview} onHover={onHover} onHoverEnd={onHoverEnd} />
+                    onRate={onRate} onPreview={onPreview} />
                 ))}
               </div>
           }
@@ -913,7 +916,6 @@
       const [filter, setFilter] = useState('all');
       const [sort, setSort] = useState('default');
       const [previewLogo, setPreviewLogo] = useState(null);
-      const [hoverPreview, setHoverPreview] = useState(null);
       const [resultData, setResultData] = useState(null);
       const sidebarOpen = true;
       const [sidebarWidth, setSidebarWidth] = useState(256);
@@ -966,8 +968,6 @@
         setRatings(prev => ({ ...prev, [id]: { ...prev[id], [field]: score, updated_at: new Date().toISOString() } }));
       }, []);
 
-      const handleHover = useCallback((logo, rect) => setHoverPreview({ logo, pos: calcPreviewPos(rect) }), []);
-      const handleHoverEnd = useCallback(() => setHoverPreview(null), []);
       const handleSubmit = () => setScreen('review');
       const handleFinalSubmit = () => {
         const d = buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds);
@@ -1026,9 +1026,8 @@
             </div>
             <LogoGrid logos={evaluationLogos} ratings={ratings} filter={filter} sort={sort}
               onFilter={setFilter} onSort={setSort} onRate={handleRate}
-              onPreview={setPreviewLogo} onHover={handleHover} onHoverEnd={handleHoverEnd} />
+              onPreview={setPreviewLogo} />
           </div>
-          {hoverPreview && <HoverPreview logo={hoverPreview.logo} pos={hoverPreview.pos} />}
           {previewLogo && <ImagePreviewModal logo={previewLogo} onClose={() => setPreviewLogo(null)} />}
         </div>
       );

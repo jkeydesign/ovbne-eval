@@ -25,8 +25,6 @@ export default function LogoGrid({
   onSort,
   onRate,
   onPreview,
-  onHover,
-  onHoverEnd,
 }) {
   const [cardSize, setCardSize] = useState(180);
 
@@ -146,8 +144,6 @@ export default function LogoGrid({
               rating={ratings[logo.id]}
               onRate={onRate}
               onPreview={onPreview}
-              onHover={onHover}
-              onHoverEnd={onHoverEnd}
             />
           ))}
         </div>
