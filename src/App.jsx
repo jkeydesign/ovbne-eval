@@ -175,6 +175,7 @@ export default function App() {
     return (
       <EliminationReviewScreen
         eliminatedIds={eliminatedIds}
+        onEliminate={setEliminatedIds}
         onBack={() => setScreen('eliminate')}
         onNext={goToEvaluate}
       />

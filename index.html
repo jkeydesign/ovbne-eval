@@ -257,14 +257,34 @@
     }
 
     /* ─── EliminationReviewScreen ────────────────────────── */
-    function EliminationReviewScreen({ eliminatedIds, onBack, onNext }) {
+    function EliminationReviewScreen({ eliminatedIds, onEliminate, onBack, onNext }) {
+      const [dragId, setDragId]     = useState(null);
+      const [dragOver, setDragOver] = useState(null);
       const eliminated = LOGOS.filter(l=>eliminatedIds.includes(l.id));
       const passing    = LOGOS.filter(l=>!eliminatedIds.includes(l.id));
+      const isExact    = eliminatedIds.length === ELIM_LIMIT;
+
+      const handleDrop = (zone) => {
+        if (!dragId) return;
+        const inElim = eliminatedIds.includes(dragId);
+        if (zone==='elim' && !inElim) onEliminate([...eliminatedIds, dragId]);
+        else if (zone==='pass' && inElim) onEliminate(eliminatedIds.filter(id=>id!==dragId));
+        setDragId(null); setDragOver(null);
+      };
+
       function MiniCard({logo, elim}) {
+        const dragging = dragId === logo.id;
         return (
-          <div className={`rounded-lg border bg-white overflow-hidden ${elim?'border-red-200':'border-green-200'}`}>
+          <div
+            draggable
+            onDragStart={()=>setDragId(logo.id)}
+            onDragEnd={()=>{setDragId(null);setDragOver(null);}}
+            className={`rounded-lg border bg-white overflow-hidden select-none transition-opacity ${elim?'border-red-200':'border-green-200'} ${dragging?'opacity-40':'hover:shadow-md'}`}
+            style={{cursor:'grab'}}
+            title="드래그하여 이동"
+          >
             <div className="aspect-square bg-gray-50 overflow-hidden relative">
-              <img src={logo.imagePath} alt={logo.id} className={`w-full h-full object-contain p-1.5 ${elim?'opacity-40':''}`} />
+              <img src={logo.imagePath} alt={logo.id} className={`w-full h-full object-contain p-1.5 ${elim?'opacity-50':''}`} />
               <div className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center ${elim?'bg-red-500':'bg-green-500'}`}>
                 {elim
                   ? <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -276,37 +296,77 @@
           </div>
         );
       }
+
+      const zoneStyle = (zone) => ({
+        borderRadius:'8px', padding:'16px', minHeight:'120px', transition:'all 0.15s',
+        border: dragOver===zone
+          ? zone==='elim' ? '2px solid #f87171' : '2px solid #4ade80'
+          : zone==='elim' ? '2px solid #fecaca' : '2px solid #bbf7d0',
+        background: dragOver===zone
+          ? zone==='elim' ? '#fef2f2' : '#f0fdf4'
+          : '#ffffff',
+      });
+
       return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
           <div className="max-w-4xl mx-auto space-y-5">
             <div>
               <p className="text-gray-400 uppercase tracking-widest mb-1" style={{fontSize:'10px',fontWeight:600}}>시안 선별 확인</p>
               <h1 className="text-xl font-semibold text-gray-900">선별 결과를 확인해 주세요</h1>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">탈락 시안 23개와 평가 대상 시안 27개를 확인하고, 이상이 없으면 평가를 시작해 주세요.</p>
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">카드를 드래그하여 탈락/평가 박스 사이에서 직접 옮길 수 있습니다. 탈락 시안이 정확히 <strong>23개</strong>일 때 평가를 시작할 수 있습니다.</p>
             </div>
-            <div className="bg-white border border-red-200 rounded-lg p-4">
+
+            {!isExact && (
+              <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-2.5 text-sm text-amber-700 flex items-center gap-2">
+                <span>⚠</span>
+                <span>현재 탈락 시안 <strong>{eliminatedIds.length}개</strong> — 정확히 23개여야 합니다{eliminatedIds.length<ELIM_LIMIT?` (${ELIM_LIMIT-eliminatedIds.length}개 더 탈락으로 이동 필요)`:`  (${eliminatedIds.length-ELIM_LIMIT}개 평가로 이동 필요)`}</span>
+              </div>
+            )}
+
+            {/* 탈락 드롭존 */}
+            <div style={zoneStyle('elim')}
+              onDragOver={e=>{e.preventDefault();setDragOver('elim');}}
+              onDragLeave={()=>setDragOver(null)}
+              onDrop={()=>handleDrop('elim')}
+            >
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
-                <h2 className="text-sm font-semibold text-red-700">탈락 시안 — {eliminated.length}개</h2>
-                <span className="text-xs text-red-300 ml-auto">본실험에서 제외</span>
+                <h2 className="text-sm font-semibold text-red-700">탈락 시안 — {eliminated.length}개{eliminated.length!==ELIM_LIMIT&&<span className="ml-2 text-xs font-normal text-red-400">(23개 필요)</span>}</h2>
+                <span className="text-xs text-red-300 ml-auto">본실험에서 제외 · 여기로 드래그</span>
               </div>
-              <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))'}}>
-                {eliminated.map(logo=><MiniCard key={logo.id} logo={logo} elim={true} />)}
-              </div>
+              {eliminated.length===0
+                ? <div className="flex items-center justify-center h-20 text-sm text-red-200" style={{border:'2px dashed #fecaca',borderRadius:'8px'}}>카드를 이곳으로 드래그하세요</div>
+                : <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))'}}>
+                    {eliminated.map(logo=><MiniCard key={logo.id} logo={logo} elim={true} />)}
+                  </div>
+              }
             </div>
-            <div className="bg-white border border-green-200 rounded-lg p-4">
+
+            {/* 평가 드롭존 */}
+            <div style={zoneStyle('pass')}
+              onDragOver={e=>{e.preventDefault();setDragOver('pass');}}
+              onDragLeave={()=>setDragOver(null)}
+              onDrop={()=>handleDrop('pass')}
+            >
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 bg-green-500 rounded-full shrink-0" />
                 <h2 className="text-sm font-semibold text-green-700">평가 대상 시안 — {passing.length}개</h2>
-                <span className="text-xs text-green-400 ml-auto">이 시안들을 평가합니다</span>
+                <span className="text-xs text-green-400 ml-auto">이 시안들을 평가합니다 · 여기로 드래그</span>
               </div>
-              <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))'}}>
-                {passing.map(logo=><MiniCard key={logo.id} logo={logo} elim={false} />)}
-              </div>
+              {passing.length===0
+                ? <div className="flex items-center justify-center h-20 text-sm text-green-200" style={{border:'2px dashed #bbf7d0',borderRadius:'8px'}}>카드를 이곳으로 드래그하세요</div>
+                : <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))'}}>
+                    {passing.map(logo=><MiniCard key={logo.id} logo={logo} elim={false} />)}
+                  </div>
+              }
             </div>
+
             <div className="flex gap-3 pb-8">
               <button onClick={onBack} className="flex-1 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">← 수정하기</button>
-              <button onClick={onNext} className="flex-1 py-3 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors">평가 시작하기 →</button>
+              <button onClick={onNext} disabled={!isExact}
+                className={`flex-1 py-3 text-sm font-medium rounded-md transition-colors ${isExact?'bg-gray-900 text-white hover:bg-gray-700':'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
+                {isExact ? '평가 시작하기 →' : `탈락 ${eliminatedIds.length} / 23 — 조건 미충족`}
+              </button>
             </div>
           </div>
         </div>
@@ -1040,7 +1100,7 @@
           </div>
         </div>
       );
-      if (screen === 'eliminateReview') return <EliminationReviewScreen eliminatedIds={eliminatedIds} onBack={() => setScreen('eliminate')} onNext={goToEvaluate} />;
+      if (screen === 'eliminateReview') return <EliminationReviewScreen eliminatedIds={eliminatedIds} onEliminate={setEliminatedIds} onBack={() => setScreen('eliminate')} onNext={goToEvaluate} />;
       if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => setScreen('evaluate')} onSubmit={handleFinalSubmit} />;
       if (screen === 'result') return <ResultSummary data={resultData} onDownloadJSON={() => downloadJSON(resultData)} onDownloadCSV={() => downloadCSV(resultData)} />;
 
