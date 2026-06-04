@@ -165,6 +165,8 @@ export default function App() {
             onNext={() => setScreen('eliminateReview')}
             onBack={() => setScreen('brief')}
             timestampElimStart={timestampElimStart}
+            cardSize={cardSize}
+            onCardSize={setCardSize}
           />
         </div>
       </div>
