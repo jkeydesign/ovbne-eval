@@ -1,6 +1,14 @@
 import { calcTotalScore } from './scoring';
 
-export function buildResponseData(participantId, ratings, timestampStart, evaluationLogos, eliminatedIds = []) {
+export function buildResponseData(
+  participantId,
+  ratings,
+  timestampStart,
+  evaluationLogos,
+  eliminatedIds = [],
+  timestampElimStart = null,
+  timestampEvalStart = null
+) {
   const now = new Date();
   const nowISO = now.toISOString();
   const logos = [];
@@ -33,8 +41,18 @@ export function buildResponseData(participantId, ratings, timestampStart, evalua
     .slice(0, 27)
     .map(l => l.logo_id);
 
-  // ── quality_check ────────────────────────────────────
-  const durationSeconds = Math.round((now - new Date(timestampStart)) / 1000);
+  const secondsSince = (timestamp) =>
+    timestamp ? Math.max(0, Math.round((now - new Date(timestamp)) / 1000)) : null;
+
+  const elapsedFromElimStart = secondsSince(timestampElimStart);
+  const elapsedFromEvalStart = secondsSince(timestampEvalStart);
+  const durationSeconds = elapsedFromElimStart ?? secondsSince(timestampStart) ?? 0;
+  const eliminationDurationSeconds = elapsedFromElimStart === null
+    ? null
+    : elapsedFromEvalStart === null
+      ? elapsedFromElimStart
+      : Math.max(0, elapsedFromElimStart - elapsedFromEvalStart);
+  const evaluationDurationSeconds = elapsedFromEvalStart;
 
   const distOf = (key) => {
     const d = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -56,12 +74,18 @@ export function buildResponseData(participantId, ratings, timestampStart, evalua
     visual_score_distribution: visualDist,
     brand_same_score_warning:  done.length >= evalTotal * 0.8 && brandMax >= evalTotal * 0.8,
     visual_same_score_warning: done.length >= evalTotal * 0.8 && visualMax >= evalTotal * 0.8,
-    fast_completion_warning:   durationSeconds < 300,
+    elimination_duration_seconds: eliminationDurationSeconds,
+    evaluation_duration_seconds:  evaluationDurationSeconds,
+    fast_completion_warning:      durationSeconds < 600,
+    elimination_fast_warning:     eliminationDurationSeconds !== null && eliminationDurationSeconds < 300,
+    evaluation_fast_warning:      evaluationDurationSeconds !== null && evaluationDurationSeconds < 300,
   };
 
   return {
     participant_id:      participantId,
     timestamp_start:     timestampStart,
+    timestamp_elimination_start: timestampElimStart,
+    timestamp_evaluation_start:  timestampEvalStart,
     timestamp_submit:    nowISO,
     eliminated_logo_ids: eliminatedIds,
     logos,
@@ -94,9 +118,13 @@ export function downloadCSV(data) {
     'timestamp_submit',
     'eliminated_logo_ids',
     'duration_seconds',
+    'elimination_duration_seconds',
+    'evaluation_duration_seconds',
     'brand_same_score_warning',
     'visual_same_score_warning',
     'fast_completion_warning',
+    'elimination_fast_warning',
+    'evaluation_fast_warning',
   ];
 
   const qc = data.quality_check || {};
@@ -113,9 +141,13 @@ export function downloadCSV(data) {
     data.timestamp_submit,
     eliminatedStr,
     qc.duration_seconds ?? '',
+    qc.elimination_duration_seconds ?? '',
+    qc.evaluation_duration_seconds ?? '',
     qc.brand_same_score_warning  ?? '',
     qc.visual_same_score_warning ?? '',
     qc.fast_completion_warning   ?? '',
+    qc.elimination_fast_warning  ?? '',
+    qc.evaluation_fast_warning   ?? '',
   ]);
 
   const csv = [cols, ...rows]

@@ -27,7 +27,7 @@
 
     const LOGOS = Array.from({ length: 50 }, (_, i) => {
       const num = String(i + 1).padStart(2, '0');
-      return { id: `L-${num}`, imagePath: `logos/L-${num}.png` };
+      return { id: `L-${num}`, imagePath: `logos/L-${num}.jpg` };
     });
 
 
@@ -44,7 +44,7 @@
     const saveData = d => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} };
     const loadData = () => { try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
 
-    function buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds=[]) {
+    function buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds=[], tsElimStart=null, tsEvalStart=null) {
       const now = new Date();
       const nowISO = now.toISOString();
       const logos = evaluationLogos.map(logo => {
@@ -56,7 +56,12 @@
       const done = logos.filter(l => l.completed);
       const avg = k => done.length ? Math.round(done.reduce((s, l) => s + l[k], 0) / done.length * 100) / 100 : null;
       const top27 = [...done].sort((a, b) => b.total_score - a.total_score).slice(0, 27).map(l => l.logo_id);
-      const durationSeconds = Math.round((now - new Date(tsStart)) / 1000);
+      const secondsSince = ts => ts ? Math.max(0, Math.round((now - new Date(ts)) / 1000)) : null;
+      const elapsedFromElimStart = secondsSince(tsElimStart);
+      const elapsedFromEvalStart = secondsSince(tsEvalStart);
+      const durationSeconds = elapsedFromElimStart ?? secondsSince(tsStart) ?? 0;
+      const eliminationDurationSeconds = elapsedFromElimStart === null ? null : (elapsedFromEvalStart === null ? elapsedFromElimStart : Math.max(0, elapsedFromElimStart - elapsedFromEvalStart));
+      const evaluationDurationSeconds = elapsedFromEvalStart;
       const distOf = key => { const d={1:0,2:0,3:0,4:0,5:0}; done.forEach(l=>{ if(l[key]!==null) d[l[key]]++; }); return d; };
       const bDist = distOf('brand_score'), vDist = distOf('visual_score');
       const bMax = Math.max(...Object.values(bDist)), vMax = Math.max(...Object.values(vDist));
@@ -69,9 +74,13 @@
         visual_score_distribution: vDist,
         brand_same_score_warning:  done.length >= evalTotal*0.8 && bMax >= evalTotal*0.8,
         visual_same_score_warning: done.length >= evalTotal*0.8 && vMax >= evalTotal*0.8,
-        fast_completion_warning:   durationSeconds < 300,
+        elimination_duration_seconds: eliminationDurationSeconds,
+        evaluation_duration_seconds:  evaluationDurationSeconds,
+        fast_completion_warning:      durationSeconds < 600,
+        elimination_fast_warning:     eliminationDurationSeconds !== null && eliminationDurationSeconds < 300,
+        evaluation_fast_warning:      evaluationDurationSeconds !== null && evaluationDurationSeconds < 300,
       };
-      return { participant_id: pid, timestamp_start: tsStart, timestamp_submit: nowISO, eliminated_logo_ids: eliminatedIds, logos, summary: { completed_count: done.length, evaluation_total: evalTotal, brand_average: avg('brand_score'), visual_average: avg('visual_score'), total_average: avg('total_score'), top_logos: top27 }, quality_check };
+      return { participant_id: pid, timestamp_start: tsStart, timestamp_elimination_start: tsElimStart, timestamp_evaluation_start: tsEvalStart, timestamp_submit: nowISO, eliminated_logo_ids: eliminatedIds, logos, summary: { completed_count: done.length, evaluation_total: evalTotal, brand_average: avg('brand_score'), visual_average: avg('visual_score'), total_average: avg('total_score'), top_logos: top27 }, quality_check };
     }
 
     function triggerDownload(blob, filename) {
@@ -82,8 +91,9 @@
     const downloadJSON = data => triggerDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `ovbne_eval_${data.participant_id}.json`);
     const downloadCSV = data => {
       const qc = data.quality_check || {};
-      const cols = ['participant_id','logo_id','brand_score','visual_score','total_score','completed','updated_at','timestamp_submit','duration_seconds','brand_same_score_warning','visual_same_score_warning','fast_completion_warning'];
-      const rows = data.logos.map(l => [data.participant_id, l.logo_id, l.brand_score??'', l.visual_score??'', l.total_score??'', l.completed, l.updated_at??'', data.timestamp_submit, qc.duration_seconds??'', qc.brand_same_score_warning??'', qc.visual_same_score_warning??'', qc.fast_completion_warning??'']);
+      const eliminatedStr = (data.eliminated_logo_ids || []).join('|');
+      const cols = ['participant_id','logo_id','brand_score','visual_score','total_score','completed','updated_at','timestamp_submit','eliminated_logo_ids','duration_seconds','elimination_duration_seconds','evaluation_duration_seconds','brand_same_score_warning','visual_same_score_warning','fast_completion_warning','elimination_fast_warning','evaluation_fast_warning'];
+      const rows = data.logos.map(l => [data.participant_id, l.logo_id, l.brand_score??'', l.visual_score??'', l.total_score??'', l.completed, l.updated_at??'', data.timestamp_submit, eliminatedStr, qc.duration_seconds??'', qc.elimination_duration_seconds??'', qc.evaluation_duration_seconds??'', qc.brand_same_score_warning??'', qc.visual_same_score_warning??'', qc.fast_completion_warning??'', qc.elimination_fast_warning??'', qc.evaluation_fast_warning??'']);
       const csv = [cols, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
       triggerDownload(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }), `ovbne_eval_${data.participant_id}.csv`);
     };
