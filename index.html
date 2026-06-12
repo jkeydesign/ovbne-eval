@@ -140,7 +140,7 @@
         </ul>
       );
       const InfoSection = ({ title, children }) => (
-        <section className="rounded-lg border border-slate-200 bg-white p-5">
+        <section className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-5">
           <h2 className="text-base font-semibold text-slate-950">{title}</h2>
           <div className="mt-3">{children}</div>
         </section>
@@ -184,7 +184,7 @@
                   <InfoSection title="평가 방법"><BulletList items={methodItems} /></InfoSection>
                   <InfoSection title="평가 기준"><BulletList items={standardItems} /></InfoSection>
                 </div>
-                <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
+                <section className="grid gap-5 xl:grid-cols-3 xl:items-stretch">
                   <InfoSection title="평가 항목">
                     <div className="space-y-4">
                       <div><p className="text-sm font-semibold text-slate-900">1. 브랜드 종합 적합도</p><p className="mt-1 text-sm leading-6 text-slate-600">OVBNE의 브랜드 의미, 타깃, 차별성, 적용성, 정체성에 비추어 적합한가?</p></div>
@@ -192,7 +192,7 @@
                     </div>
                   </InfoSection>
                   <InfoSection title="자료 신뢰성 확인"><BulletList items={reliabilityItems} /></InfoSection>
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+                  <div className="flex h-full flex-col rounded-lg border border-amber-200 bg-amber-50 p-5">
                     <h2 className="text-base font-semibold text-amber-950">최소 소요 시간 안내</h2>
                     <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-900">
                       <li>탈락 시안 선별 단계: <strong>최소 5분</strong></li>

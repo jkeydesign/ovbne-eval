@@ -65,7 +65,7 @@ function BulletList({ items, tone = 'slate' }) {
 
 function InfoSection({ title, children }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5">
+    <section className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-5">
       <h2 className="text-base font-semibold text-slate-950">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
@@ -129,7 +129,7 @@ export default function IntroScreen({ onStart }) {
               </InfoSection>
             </div>
 
-            <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
+            <section className="grid gap-5 xl:grid-cols-3 xl:items-stretch">
               <InfoSection title="평가 항목">
                 <div className="space-y-4">
                   <div>
@@ -151,7 +151,7 @@ export default function IntroScreen({ onStart }) {
                 <BulletList items={RELIABILITY_ITEMS} />
               </InfoSection>
 
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+              <div className="flex h-full flex-col rounded-lg border border-amber-200 bg-amber-50 p-5">
                 <h2 className="text-base font-semibold text-amber-950">최소 소요 시간 안내</h2>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-900">
                   <li>
