@@ -6,24 +6,6 @@ const CHECKS = [
   '평가 결과는 27개 본실험 시안과 세트 구성을 위한 기준 자료로 활용됨을 확인했습니다.',
 ];
 
-const SUMMARY_CARDS = [
-  {
-    title: '예비 후보',
-    value: '50개',
-    description: '공통 조건으로 생성된 OVBNE AI 로고 후보 시안',
-  },
-  {
-    title: '최종 목표',
-    value: '27개',
-    description: '본실험 자극으로 사용할 후보 시안',
-  },
-  {
-    title: '최소 시간',
-    value: '10분 이상',
-    description: '탈락 선별 5분, 잔여 시안 평가 5분 이상',
-  },
-];
-
 const PURPOSE_ITEMS = [
   'AI 로고 생성 기술의 성능을 평가하는 것이 아닙니다.',
   '로고 시안의 최종 우열이나 실제 브랜드 적용 가능성을 판정하는 절차가 아닙니다.',
@@ -99,7 +81,7 @@ export default function IntroScreen({ onStart }) {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900 sm:px-10 lg:px-14">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-8">
-        <header className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
+        <header>
           <div>
             <h1 className="max-w-5xl text-4xl font-bold leading-tight text-slate-950">
               OVBNE AI 로고 후보 시안 예비평가
@@ -107,18 +89,6 @@ export default function IntroScreen({ onStart }) {
             <p className="mt-5 max-w-5xl text-base leading-7 text-slate-600">
               박사학위논문 본실험에 사용할 OVBNE 브랜드 AI 로고 후보 시안을 선별하기 위한 사전 평가입니다. 본 평가는 최종 로고를 선정하거나 AI 로고 생성 기술의 성능을 평가하기 위한 절차가 아니라, 본실험에 투입할 수 있는 로고 시안 자극을 구성하기 위한 절차입니다.
             </p>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-            <p className="text-sm font-bold text-slate-950">진행 요약</p>
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              {SUMMARY_CARDS.map((card) => (
-                <div key={card.title} className="rounded-lg bg-slate-50 p-3" title={card.description}>
-                  <p className="text-[11px] font-semibold text-slate-500">{card.title}</p>
-                  <p className="mt-1 whitespace-nowrap text-lg font-bold text-slate-950">{card.value}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </header>
 
