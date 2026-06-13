@@ -1,96 +1,133 @@
-const GRID_ITEMS = [
-  { label: '업종',     text: '리빙 오브제·홈데코 큐레이션 매장 및 온라인 쇼핑몰' },
-  { label: '가격대',   text: '일반 생활용품 브랜드보다 높지만 고가 디자인 편집숍보다는 접근 가능한 미들 프리미엄 가격대. 소형 오브제·문구류는 약 1만~3만 원대, 홈데코 제품은 약 3만~8만 원대 중심으로 구성한다.' },
-  { label: '타깃',     text: '25~35세 도시 거주자. 자기 취향과 감도 있는 소비를 중시하며, 과시적 고가 브랜드보다 일상 안에서 세련된 선택을 선호하는 소비자' },
-  { label: '톤앤매너', text: '세련되지만 차갑지 않고, 정돈되었지만 지나치게 고급스럽거나 권위적이지 않은 분위기' },
-  { label: '개발 방향', text: '브랜드의 취향성과 접근성을 함께 전달하고, 다양한 매체에서 식별 가능하게 사용할 수 있어야 함' },
-  { label: '브랜드 개요', text: '일상에서 사용하는 오브제, 문구, 홈데코 제품을 감도 있게 제안하는 신규 라이프스타일 브랜드' },
-  { label: '포지셔닝', text: '대중적 소품샵보다 감도 있고, 고가 편집숍보다 접근 가능한 미들 프리미엄 라이프스타일 브랜드. 취향을 가진 도시 생활자의 일상 공간에 자연스럽게 스며드는 오브제 브랜드로 위치시킨다.' },
-  { label: '경쟁 맥락', text: '대형 라이프스타일 브랜드, 독립 오브제 브랜드, 온라인 감성 셀렉트숍과 경쟁' },
+const BRIEF_BLOCKS = [
+  {
+    title: '브랜드명',
+    value: '오브네 OVBNE',
+    description:
+      'OVBNE는 Objet, Value, Balance, New, Everyday의 의미를 결합한 조어로, 일상 오브제가 지닌 가치와 균형 잡힌 생활 감각, 새롭게 감각화된 일상을 의미합니다.',
+  },
+  {
+    title: '업종',
+    value: '리빙 오브제 · 홈데코 큐레이션 매장 및 온라인 쇼핑몰',
+    description: '일상에서 사용하는 오브제, 문구, 홈데코 제품을 감도 있게 제안하는 신규 라이프스타일 브랜드입니다.',
+  },
+  {
+    title: '타깃',
+    value: '25~35세 도시 거주자',
+    description:
+      '자기 취향과 감도 있는 소비를 중시하며, 과시적 고가 브랜드보다 일상 안에서 세련된 선택을 선호하는 소비자입니다.',
+  },
+  {
+    title: '포지셔닝',
+    value: '미들 프리미엄 라이프스타일 브랜드',
+    description:
+      '대중적 소품샵보다 감도 있고, 고가 편집숍보다 접근 가능한 브랜드로, 취향을 가진 도시 생활자의 일상 공간에 자연스럽게 스며드는 오브제 브랜드를 지향합니다.',
+  },
 ];
 
-const VALUE_TAGS   = ['일상성', '균형감', '취향성'];
-const MEDIA_TAGS   = ['제품 라벨', '패키지 스티커', '쇼핑백', '명함', '웹사이트', 'SNS 프로필', '온라인 배너', '제품 태그', '팝업 부스 사인'];
+const VALUE_TAGS = ['일상성', '균형감', '취향성'];
 
-function InfoCard({ label, text }) {
+const MEDIA_TAGS = [
+  '제품 라벨',
+  '패키지 스티커',
+  '쇼핑몰',
+  '명함',
+  '웹사이트',
+  'SNS 프로필',
+  '온라인 배너',
+  '제품 태그',
+  '팝업 부스 사인',
+];
+
+function BriefCard({ title, value, description }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">{label}</p>
-      <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+    <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <h2 className="text-sm font-bold text-slate-950">{title}</h2>
+      <p className="mt-3 text-lg font-bold leading-7 text-slate-900">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+    </section>
+  );
+}
+
+function TagList({ items, variant = 'default' }) {
+  const className =
+    variant === 'value'
+      ? 'border-blue-100 bg-blue-50 text-slate-800'
+      : 'border-slate-200 bg-slate-50 text-slate-600';
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((item) => (
+        <span key={item} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${className}`}>
+          {item}
+        </span>
+      ))}
     </div>
   );
 }
 
 export default function BriefScreen({ onStart, onBack }) {
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-3xl mx-auto">
-
-        {/* 헤더 */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">브랜드 브리프</h1>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            로고 시안을 보기 전, 브랜드의 맥락과 판단 기준이 되는 핵심 정보를 먼저 확인해 주세요.
+    <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900 sm:px-10 lg:px-14">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-8">
+        <header className="max-w-5xl">
+          <h1 className="text-4xl font-bold leading-tight text-slate-950">OVBNE 브랜드 브리프</h1>
+          <p className="mt-5 text-base leading-7 text-slate-600">
+            아래 정보는 50개 후보 시안이 OVBNE 브랜드 맥락에서 본실험 자극으로 사용 가능한지 판단하기 위한 참고 기준입니다. 평가자는 최종 로고의 우열을 판단하기보다, 각 시안이 브랜드 맥락과 최소한의 관련성을 갖는지 확인해 주세요.
           </p>
-        </div>
+        </header>
 
-        {/* 브랜드명 카드 */}
-        <div className="bg-white border border-gray-200 rounded-lg p-5 mb-3">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">브랜드명</p>
-          <p className="text-2xl font-bold text-gray-900 mb-2">오브네 OVBNE</p>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            OVBNE는 Objet, Value, Balance, New, Everyday의 의미를 결합한 조어로, 일상 오브제가 지닌 가치와 균형 잡힌 생활 감각, 새롭게 감각화된 일상을 의미한다.
-          </p>
-        </div>
+        <main className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {BRIEF_BLOCKS.map((item) => (
+              <BriefCard key={item.title} {...item} />
+            ))}
 
-        {/* 2열 그리드 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          {GRID_ITEMS.map(item => <InfoCard key={item.label} {...item} />)}
-        </div>
+            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <h2 className="text-sm font-bold text-slate-950">핵심 가치</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">후보 시안 검토 시 참고할 브랜드 가치 키워드입니다.</p>
+              <div className="mt-4">
+                <TagList items={VALUE_TAGS} variant="value" />
+              </div>
+            </section>
 
-        {/* 핵심 가치 + 적용 매체 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">핵심 가치</p>
-            <div className="flex gap-2 flex-wrap">
-              {VALUE_TAGS.map(k => (
-                <span key={k} className="px-3 py-1 border border-gray-900 text-gray-900 rounded-full text-sm font-medium">{k}</span>
-              ))}
+            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <h2 className="text-sm font-bold text-slate-950">적용 매체</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">후보 시안이 기본적으로 활용될 수 있는 매체 범위입니다.</p>
+              <div className="mt-4">
+                <TagList items={MEDIA_TAGS} />
+              </div>
+            </section>
+          </div>
+
+          <section className="rounded-lg border border-slate-200 bg-slate-100/70 p-5">
+            <h2 className="text-sm font-bold text-slate-950">경쟁 맥락 참고</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              OVBNE는 대형 라이프스타일 브랜드, 독립 오브제 브랜드, 온라인 감성 셀렉트숍과 경쟁하는 신규 브랜드로 설정됩니다. 본 예비평가에서는 특정 경쟁 브랜드와의 직접 비교가 아니라, 각 시안이 OVBNE 브랜드 맥락에서 과도하게 다른 업종으로 오독되지 않는지를 확인합니다.
+            </p>
+          </section>
+
+          <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-slate-600">
+              브랜드 브리프는 이후 모든 후보 시안을 검토할 때 동일하게 적용되는 참고 기준입니다.
+            </p>
+            <div className="flex gap-3 sm:shrink-0">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                >
+                  이전
+                </button>
+              )}
+              <button
+                onClick={onStart}
+                className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-800"
+              >
+                브리프 확인 후 후보 시안 검토로 이동
+              </button>
             </div>
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">적용 매체</p>
-            <div className="flex gap-1.5 flex-wrap">
-              {MEDIA_TAGS.map(m => (
-                <span key={m} className="px-2.5 py-1 border border-gray-300 text-gray-600 rounded-full text-xs">{m}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 안내 메시지 */}
-        <div className="border border-gray-200 bg-white rounded-lg p-4 mb-5 text-sm text-gray-600 leading-relaxed">
-          위 내용을 충분히 읽으신 후 평가를 시작해 주세요. 평가 중에도 좌측 패널에서 브리프를 다시 확인할 수 있습니다.
-        </div>
-
-        {/* 버튼 */}
-        <div className="flex gap-3">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="px-6 py-3.5 border border-gray-300 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
-            >
-              ← 이전
-            </button>
-          )}
-          <button
-            onClick={onStart}
-            className="flex-1 py-3.5 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
-          >
-            평가 시작하기
-          </button>
-        </div>
-
+        </main>
       </div>
     </div>
   );
