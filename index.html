@@ -37,10 +37,60 @@
     const BRAND_WEIGHT = 0.6;
     const VISUAL_WEIGHT = 0.4;
 
-    const LOGOS = Array.from({ length: 50 }, (_, i) => {
-      const num = String(i + 1).padStart(2, '0');
-      return { id: `L-${num}`, imagePath: `logos/L-${num}.jpg` };
-    });
+    const TYPE_RULES = {
+      A: { code: 'A', title: 'A 구상 암시형', typeName: '구상 암시형', total: 14, exclude: 5, keep: 9 },
+      B: { code: 'B', title: 'B 기하학적 추상형', typeName: '기하학적 추상형', total: 14, exclude: 5, keep: 9 },
+      C: { code: 'C', title: 'C 유기적 추상형', typeName: '유기적 추상형', total: 12, exclude: 6, keep: 6 },
+      D: { code: 'D', title: 'D 문자 기반 심볼형', typeName: '문자 기반 심볼형', total: 10, exclude: 7, keep: 3 },
+    };
+    const TYPE_ORDER = ['A', 'B', 'C', 'D'];
+
+    function getPublicBasePath() {
+      const path = window.location.pathname;
+      return path.endsWith('/') ? path : path.replace(/[^/]*$/, '');
+    }
+    function publicAssetPath(path) {
+      return `${getPublicBasePath()}${path.replace(/^\//, '')}`;
+    }
+    function parseCsv(text) {
+      const rows = text.trim().split(/\r?\n/).map(line => line.split(',').map(cell => cell.replace(/^\uFEFF/, '').trim()));
+      const header = rows.shift();
+      return rows.map(row => Object.fromEntries(header.map((key, index) => [key, row[index] ?? ''])));
+    }
+    async function loadCandidateManifest() {
+      const manifestPath = publicAssetPath('/logos/pretest/logo_candidates_manifest.csv');
+      const response = await fetch(manifestPath, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Manifest load failed: ${response.status}`);
+      const records = parseCsv(await response.text()).map(row => ({
+        id: row.candidateId,
+        candidateId: row.candidateId,
+        typeCode: row.typeCode,
+        typeName: row.typeName,
+        promptCode: row.promptCode,
+        folder: row.folder,
+        filename: row.filename,
+        sortOrder: Number(row.sortOrder),
+        imagePath: publicAssetPath(`/logos/pretest/${row.folder}/${row.filename}`),
+      })).sort((a, b) => a.sortOrder - b.sortOrder);
+      const counts = records.reduce((acc, logo) => {
+        acc[logo.typeCode] = (acc[logo.typeCode] || 0) + 1;
+        return acc;
+      }, {});
+      const isValid = records.length === 50
+        && counts.A === 14
+        && counts.B === 14
+        && counts.C === 12
+        && counts.D === 10;
+      if (!isValid) throw new Error(`Manifest count mismatch: ${JSON.stringify(counts)} total ${records.length}`);
+      return records;
+    }
+
+    function groupByType(logos) {
+      return TYPE_ORDER.reduce((acc, code) => {
+        acc[code] = logos.filter(logo => logo.typeCode === code).sort((a, b) => a.sortOrder - b.sortOrder);
+        return acc;
+      }, {});
+    }
 
 
     /* ─── 유틸 함수 ───────────────────────────────────────── */
@@ -252,7 +302,7 @@
 
     /* ─── EliminationScreen ──────────────────────────────── */
     const ELIM_LIMIT = 23;
-    function EliminationScreen({ eliminatedIds, onEliminate, onNext, onBack, timestampElimStart, cardSize=180, onCardSize }) {
+    function LegacyEliminationScreen({ eliminatedIds, onEliminate, onNext, onBack, timestampElimStart, cardSize=180, onCardSize }) {
       const count = eliminatedIds.length;
       const isComplete = count === ELIM_LIMIT;
       const canAdd = count < ELIM_LIMIT;
@@ -340,7 +390,7 @@
     }
 
     /* ─── EliminationReviewScreen ────────────────────────── */
-    function EliminationReviewScreen({ eliminatedIds, onEliminate, onBack, onNext }) {
+    function LegacyEliminationReviewScreen({ eliminatedIds, onEliminate, onBack, onNext }) {
       const [dragId, setDragId]     = useState(null);
       const [dragOver, setDragOver] = useState(null);
       const eliminated = LOGOS.filter(l=>eliminatedIds.includes(l.id));
@@ -457,6 +507,207 @@
     }
 
     /* ─── BriefScreen ─────────────────────────────────────── */
+    function CandidateCard({ logo, selected, disabled, onToggle, readonly=false }) {
+      return (
+        <article className={`rounded-lg border bg-white p-3 transition ${selected ? 'border-slate-900 shadow-sm' : 'border-slate-200'}`}>
+          <div className="aspect-square rounded-md bg-slate-50 p-3">
+            <img src={logo.imagePath} alt={logo.candidateId} className="h-full w-full object-contain" />
+          </div>
+          <div className="mt-3 min-w-0">
+            <p className="font-mono text-sm font-bold text-slate-950">{logo.candidateId}</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">{logo.typeName}</p>
+          </div>
+          {!readonly && (
+            <button
+              onClick={() => onToggle(logo)}
+              disabled={disabled}
+              className={`mt-3 w-full rounded-md border px-3 py-2 text-sm font-bold transition ${
+                selected
+                  ? 'border-slate-950 bg-slate-950 text-white hover:bg-slate-800'
+                  : disabled
+                    ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+              }`}
+            >
+              {selected ? '제외 선택됨' : '실험후보 제외'}
+            </button>
+          )}
+        </article>
+      );
+    }
+
+    function EliminationScreen({ logos, excludedIds, onExcludeChange, onNext, onBack }) {
+      const grouped = groupByType(logos);
+      const counts = TYPE_ORDER.reduce((acc, code) => {
+        acc[code] = grouped[code].filter(logo => excludedIds.includes(logo.id)).length;
+        return acc;
+      }, {});
+      const totalExcluded = excludedIds.length;
+      const totalCandidates = logos.length - totalExcluded;
+      const isComplete = TYPE_ORDER.every(code => counts[code] === TYPE_RULES[code].exclude)
+        && totalExcluded === ELIM_LIMIT
+        && totalCandidates === 27;
+
+      const toggle = (logo) => {
+        const selected = excludedIds.includes(logo.id);
+        if (selected) {
+          onExcludeChange(excludedIds.filter(id => id !== logo.id));
+          return;
+        }
+        if (counts[logo.typeCode] >= TYPE_RULES[logo.typeCode].exclude) return;
+        onExcludeChange([...excludedIds, logo.id]);
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
+          <div className="mx-auto max-w-[1680px] space-y-6">
+            <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-5xl">
+                  <button onClick={onBack} className="mb-4 rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">이전</button>
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">1차 실험후보 제외</h1>
+                  <p className="mt-4 text-base leading-7 text-slate-600">
+                    본 단계에서는 50개 예비 후보 시안 중 본실험 자극으로 사용하지 않을 후보를 유형별 고정 배정 기준에 따라 제외합니다. 각 유형 박스 안에서 지정된 수만큼 ‘실험후보 제외’를 체크하면, 남은 27개 시안이 본실험 후보 세트 구성 단계로 이동합니다.
+                  </p>
+                </div>
+                <div className="grid min-w-[320px] grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">실험후보 제외</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-950">{totalExcluded} / {ELIM_LIMIT}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">본실험 후보</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-950">{totalCandidates} / 27</p>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <main className="space-y-6">
+              {TYPE_ORDER.map(code => {
+                const rule = TYPE_RULES[code];
+                const items = grouped[code];
+                const current = counts[code];
+                return (
+                  <section key={code} className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                    <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-4 lg:flex-row lg:items-center lg:justify-between">
+                      <h2 className="text-lg font-bold text-slate-950">
+                        {rule.title} <span className="font-semibold text-slate-400">| 예비 후보 {rule.total}개 · 실험후보 제외 {rule.exclude}개 고정 · 본실험 후보 {rule.keep}개</span>
+                      </h2>
+                      <div className={`rounded-full px-4 py-2 text-sm font-bold ${current === rule.exclude ? 'bg-slate-950 text-white' : 'bg-blue-50 text-blue-800'}`}>
+                        현재 제외 {current} / {rule.exclude}
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
+                      {items.map(logo => {
+                        const selected = excludedIds.includes(logo.id);
+                        const disabled = !selected && current >= rule.exclude;
+                        return <CandidateCard key={logo.id} logo={logo} selected={selected} disabled={disabled} onToggle={toggle} />;
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
+            </main>
+
+            <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
+              <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-slate-500">
+                  활성화 조건: A 5개 · B 5개 · C 6개 · D 7개, 전체 제외 23개, 본실험 후보 27개
+                </p>
+                <button
+                  onClick={onNext}
+                  disabled={!isComplete}
+                  className={`rounded-lg px-6 py-3 text-sm font-bold transition ${isComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                >
+                  본실험 후보 확인으로 이동
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function EliminationReviewScreen({ logos, excludedIds, onBack, onNext }) {
+      const candidates = logos.filter(logo => !excludedIds.includes(logo.id));
+      const grouped = groupByType(candidates);
+      const candidateSets = TYPE_ORDER.reduce((acc, code) => {
+        acc[code] = grouped[code].map(logo => logo.candidateId);
+        return acc;
+      }, {});
+
+      return (
+        <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
+          <div className="mx-auto max-w-[1680px] space-y-6">
+            <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-5xl">
+                  <button onClick={onBack} className="mb-4 rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">이전</button>
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">본실험 후보 확인</h1>
+                  <p className="mt-4 text-base leading-7 text-slate-600">
+                    유형별 고정 배정 기준에 따라 실험후보 제외가 완료되었습니다. 아래 27개 시안은 본실험 후보 세트 구성을 위한 시안입니다. 이 화면에서는 점수나 순위를 입력하지 않고, 세트 구성 전 후보 구성을 확인합니다.
+                  </p>
+                </div>
+                <div className="grid min-w-[360px] grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">본실험 후보</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-950">{candidates.length}개</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">세트 구성 기준</p>
+                    <p className="mt-1 text-lg font-bold text-slate-950">S1·S2·S3 각 9개</p>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <main className="space-y-6">
+              {TYPE_ORDER.map(code => {
+                const rule = TYPE_RULES[code];
+                const items = grouped[code];
+                return (
+                  <section key={code} className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                    <div className="mb-4 border-b border-slate-100 pb-4">
+                      <h2 className="text-lg font-bold text-slate-950">{rule.title} <span className="font-semibold text-slate-400">| 본실험 후보 {items.length}개</span></h2>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
+                      {items.map(logo => <CandidateCard key={logo.id} logo={logo} readonly />)}
+                    </div>
+                  </section>
+                );
+              })}
+            </main>
+
+            <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
+              <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-slate-500">다음 단계 데이터: A {candidateSets.A.length}개 · B {candidateSets.B.length}개 · C {candidateSets.C.length}개 · D {candidateSets.D.length}개</p>
+                <button onClick={() => onNext(candidateSets)} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
+                  본실험 후보 세트 구성으로 이동
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function SetCompositionReadyScreen({ candidateSets, onBack }) {
+      const counts = candidateSets || { A: [], B: [], C: [], D: [] };
+      return (
+        <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+          <div className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-8 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+            <h1 className="text-3xl font-bold text-slate-950">본실험 후보 세트 구성</h1>
+            <p className="mt-4 text-base leading-7 text-slate-600">본실험 후보 확인이 완료되었습니다. 전달 데이터는 유형별 고정 배정 기준에 맞게 구성되었습니다.</p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-4">
+              {TYPE_ORDER.map(code => <div key={code} className="rounded-lg bg-slate-50 p-4 text-center"><p className="text-sm font-bold text-slate-500">{code}</p><p className="mt-1 text-2xl font-bold text-slate-950">{counts[code].length}개</p></div>)}
+            </div>
+            <button onClick={onBack} className="mt-8 rounded-lg border border-slate-300 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">본실험 후보 확인으로 돌아가기</button>
+          </div>
+        </div>
+      );
+    }
+
     function BriefCard({ title, value, description }) {
       return (
         <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -1109,6 +1360,9 @@
       const [cardSize, setCardSize] = useState(180);
       const [previewLogo, setPreviewLogo] = useState(null);
       const [resultData, setResultData] = useState(null);
+      const [logos, setLogos] = useState([]);
+      const [manifestStatus, setManifestStatus] = useState({ loading: true, error: null });
+      const [candidateSets, setCandidateSets] = useState(null);
       const sidebarOpen = true;
       const [sidebarWidth, setSidebarWidth] = useState(256);
       const isResizing = useRef(false);
@@ -1151,10 +1405,24 @@
       const [tsElimStart, setTsElimStart] = useState(null);
       const [tsEvalStart, setTsEvalStart] = useState(null);
 
-      useEffect(() => { const s = loadData(); if (s?.ratings) setRatings(s.ratings); if (s?.eliminatedIds) setEliminatedIds(s.eliminatedIds); }, []);
-      useEffect(() => { if (Object.keys(ratings).length > 0 || eliminatedIds.length > 0) saveData({ pid, tsStart, ratings, eliminatedIds }); }, [ratings, eliminatedIds]);
+      useEffect(() => {
+        let active = true;
+        loadCandidateManifest()
+          .then(records => {
+            if (!active) return;
+            setLogos(records);
+            setManifestStatus({ loading: false, error: null });
+          })
+          .catch(error => {
+            if (!active) return;
+            setManifestStatus({ loading: false, error: error.message });
+          });
+        return () => { active = false; };
+      }, []);
+      useEffect(() => { const s = loadData(); if (s?.excludedIds || s?.eliminatedIds) setEliminatedIds(s.excludedIds || s.eliminatedIds); }, []);
+      useEffect(() => { if (eliminatedIds.length > 0) saveData({ pid, tsStart, excludedIds: eliminatedIds }); }, [eliminatedIds]);
 
-      const evaluationLogos = LOGOS.filter(l => !eliminatedIds.includes(l.id));
+      const evaluationLogos = logos.filter(l => !eliminatedIds.includes(l.id));
       const count = evaluationLogos.filter(l => isCompleted(ratings[l.id])).length;
       const allDone = count === evaluationLogos.length;
 
@@ -1163,7 +1431,7 @@
       }, []);
 
       const goToEliminate = () => { if (!tsElimStart) setTsElimStart(new Date().toISOString()); setScreen('eliminate'); };
-      const goToEvaluate  = () => { if (!tsEvalStart)  setTsEvalStart(new Date().toISOString());  setScreen('evaluate'); };
+      const goToSetComposition = (sets) => { setCandidateSets(sets); setScreen('setComposition'); };
       const handleSubmit = () => setScreen('review');
       const handleFinalSubmit = () => {
         const d = buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds, tsElimStart, tsEvalStart);
@@ -1172,24 +1440,28 @@
 
       if (screen === 'intro')  return <IntroScreen onStart={() => setScreen('brief')} />;
       if (screen === 'brief')  return <BriefScreen onStart={goToEliminate} onBack={() => setScreen('intro')} />;
-      if (screen === 'eliminate') return (
-        <div className="min-h-screen bg-gray-50 flex">
-          {sidebarOpen && (<>
-            <aside className="hidden lg:flex flex-col shrink-0 bg-white border-r border-gray-200" style={{width: sidebarWidth + 'px'}}>
-              <div className="sticky top-0 flex flex-col" style={{height:'100vh'}}>
-                <div className="flex-1 overflow-y-auto"><CriteriaPanel /></div>
-              </div>
-            </aside>
-            <div className="hidden lg:block shrink-0 bg-gray-200 hover:bg-gray-400 transition-colors duration-150" style={{width:'4px', cursor:'col-resize'}} onMouseDown={startResize} title="드래그하여 패널 너비 조절" />
-          </>)}
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="lg:hidden sticky top-0 z-20"><CriteriaPanel mobile /></div>
-            <EliminationScreen eliminatedIds={eliminatedIds} onEliminate={setEliminatedIds} onNext={() => setScreen('eliminateReview')} onBack={() => setScreen('brief')} timestampElimStart={tsElimStart} cardSize={cardSize} onCardSize={setCardSize} />
+      if (manifestStatus.loading) return (
+        <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+          <div className="mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <p className="text-lg font-bold text-slate-950">후보 시안 데이터를 불러오는 중입니다.</p>
+            <p className="mt-2 text-sm text-slate-500">manifest와 이미지 경로를 확인하고 있습니다.</p>
           </div>
         </div>
       );
-      if (screen === 'eliminateReview') return <EliminationReviewScreen eliminatedIds={eliminatedIds} onEliminate={setEliminatedIds} onBack={() => setScreen('eliminate')} onNext={goToEvaluate} />;
-      if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => setScreen('evaluate')} onSubmit={handleFinalSubmit} />;
+      if (manifestStatus.error) return (
+        <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+          <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-white p-8 shadow-sm">
+            <h1 className="text-xl font-bold text-red-700">후보 시안 데이터를 불러오지 못했습니다.</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{manifestStatus.error}</p>
+          </div>
+        </div>
+      );
+      if (screen === 'eliminate') return (
+        <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => setScreen('eliminateReview')} onBack={() => setScreen('brief')} />
+      );
+      if (screen === 'eliminateReview') return <EliminationReviewScreen logos={logos} excludedIds={eliminatedIds} onBack={() => setScreen('eliminate')} onNext={goToSetComposition} />;
+      if (screen === 'setComposition') return <SetCompositionReadyScreen candidateSets={candidateSets} onBack={() => setScreen('eliminateReview')} />;
+      if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => setScreen('eliminateReview')} onSubmit={handleFinalSubmit} />;
       if (screen === 'result') return <ResultSummary data={resultData} onDownloadJSON={() => downloadJSON(resultData)} onDownloadCSV={() => downloadCSV(resultData)} />;
 
       return (
