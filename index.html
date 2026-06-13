@@ -225,7 +225,7 @@
         </ol>
       );
       const InfoSection = ({ title, children, featured }) => (
-        <section className={`rounded-lg border p-6 ${featured ? 'border-blue-200 bg-blue-50/80' : 'border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]'}`}>
+        <section className={`p-7 ${featured ? 'bg-blue-50/70' : 'bg-white'}`}>
           <h2 className="text-xl font-bold text-slate-950">{title}</h2>
           <div className="mt-4">{children}</div>
         </section>
@@ -234,14 +234,17 @@
       return (
         <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900 sm:px-10 lg:px-14">
           <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-7">
-            <header className="space-y-5">
+            <header>
               <div>
                 <h1 className="text-4xl font-bold leading-tight text-slate-950">OVBNE AI 로고 예비시안 구성 평가</h1>
                 <p className="mt-5 text-base leading-7 text-slate-600">
                   본 평가는 박사학위논문 본실험에 사용할 OVBNE 브랜드 AI 로고 예비시안을 검토하고, 본실험 후보 시안 및 SET 구성을 준비하기 위한 예비평가입니다.
                 </p>
               </div>
-              <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            </header>
+
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.05)] divide-y divide-slate-200">
+              <section className="p-7">
                 <h2 className="text-xl font-bold text-slate-950">연구 기본 정보</h2>
                 <dl className="mt-4 grid gap-3 text-base leading-7 text-slate-700 md:grid-cols-[120px_minmax(0,1fr)]">
                   <dt className="font-bold text-slate-950">연구명</dt>
@@ -254,25 +257,27 @@
                   <dd>허민재 교수</dd>
                 </dl>
               </section>
-            </header>
 
-            <InfoSection title="예비평가 안내" featured>
-              <div className="space-y-4 text-base leading-7 text-slate-700">
-                <p>
-                  본 연구에 귀한 시간을 내어 참여해 주셔서 감사합니다. 본 예비평가는 완성 로고를 선정하거나 AI 로고 생성 기술의 성능을 평가하기 위한 절차가 아닙니다. 본실험에서 세 가지 AI 정보 제시 조건을 비교하기 위해, 50개의 AI 로고 예비시안 중 본실험 자극으로 사용하지 않을 시안을 제외하고, 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 구성하는 절차입니다.
-                </p>
-                <p>
-                  각 SET은 본실험에서 서로 다른 정보 제시 조건에 대응되어 비교됩니다. 따라서 특정 SET에 유사한 조형 구조, 복잡한 시안, 상대적으로 완성도가 높거나 낮아 보이는 시안이 집중되지 않도록 구성하는 것이 중요합니다. 본 평가는 조건 간 비교 가능성을 확보하기 위한 자극 구성 절차로 활용됩니다.
-                </p>
-              </div>
-            </InfoSection>
+              <section className="bg-blue-50/70 p-7">
+                <div className="space-y-5 text-lg font-medium leading-8 text-slate-800">
+                  <p>
+                    본 연구에 귀한 시간을 내어 참여해 주셔서 감사합니다.
+                  </p>
+                  <p>
+                    본 예비평가는 완성 로고를 선정하거나 AI 로고 생성 기술의 성능을 평가하기 위한 절차가 아닙니다. 본실험에서 세 가지 AI 정보 제시 조건을 비교하기 위해, 50개의 AI 로고 예비시안 중 본실험 자극으로 사용하지 않을 시안을 제외하고, 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 구성하는 절차입니다.
+                  </p>
+                  <p>
+                    각 SET은 본실험에서 서로 다른 정보 제시 조건에 대응되어 비교됩니다. 따라서 특정 SET에 유사한 조형 구조, 복잡한 시안, 상대적으로 완성도가 높거나 낮아 보이는 시안이 집중되지 않도록 구성하는 것이 중요합니다. 본 평가는 조건 간 비교 가능성을 확보하기 위한 자극 구성 절차로 활용됩니다.
+                  </p>
+                </div>
+              </section>
 
             <InfoSection title="예비평가 목적"><BulletList items={purposeItems} blue /></InfoSection>
             <InfoSection title="진행 절차"><ProcessList items={processItems} /></InfoSection>
             <InfoSection title="구성 기준"><BulletList items={standardItems} /></InfoSection>
             <InfoSection title="SET 구성 유의사항"><BulletList items={setNotes} /></InfoSection>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+            <section className="bg-white p-7">
               <div className="border-b border-slate-200 pb-5">
                 <h2 className="text-xl font-bold text-slate-950">시작 전 확인</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
@@ -290,6 +295,7 @@
                 예비평가 시작
               </button>
             </section>
+            </div>
           </div>
         </main>
       );
