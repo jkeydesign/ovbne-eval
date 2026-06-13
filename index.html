@@ -170,111 +170,132 @@
 
     /* ─── IntroScreen ─────────────────────────────────────── */
     const INTRO_CHECKS = [
-      '본 예비평가는 최종 로고 선정이 아니라 본실험 자극 선별 절차임을 확인했습니다.',
-      '50개 후보 시안은 OVBNE 브랜드 브리프와 시각 형식 기준에 따라 검토해야 함을 확인했습니다.',
-      '평가 결과는 27개 본실험 시안과 세트 구성을 위한 기준 자료로 활용됨을 확인했습니다.',
+      '본 예비평가는 완성 로고 선정이 아니라 본실험 자극 구성을 위한 절차임을 확인했습니다.',
+      '50개 시안은 예비시안이며, 본실험 후보 27개 구성을 위해 검토해야 함을 확인했습니다.',
+      'SET 1, SET 2, SET 3은 본실험 조건 간 비교 가능성을 확보할 수 있도록 구성해야 함을 확인했습니다.',
+      '특정 SET에 유사한 시안이나 시각적 편중이 집중되지 않도록 확인하며 진행하겠습니다.',
     ];
+
     function IntroScreen({ onStart }) {
-      const [checked, setChecked] = useState([false, false, false]);
+      const [checked, setChecked] = useState([false, false, false, false]);
       const allChecked = checked.every(Boolean);
       const toggle = (i) => setChecked(prev => prev.map((v, idx) => idx === i ? !v : v));
-      const purposeItems = ['AI 로고 생성 기술의 성능을 평가하는 것이 아닙니다.', '로고 시안의 최종 우열이나 실제 브랜드 적용 가능성을 판정하는 절차가 아닙니다.', '본실험에 사용할 27개 로고 시안 자극을 선별하고, 조건 간 비교가 가능한 시안 세트를 구성하기 위한 절차입니다.'];
-      const flowItems = ['1단계. OVBNE 브랜드 브리프 확인', '2단계. 50개 후보 시안 검토', '3단계. 본실험 자극으로 사용하기 어려운 시안 탈락 표시', '4단계. 잔여 시안의 브랜드 맥락 적정성과 시각 형식 적정성 평가', '5단계. 최종 27개 시안 및 세트 구성을 위한 결과 제출'];
-      const standardItems = ['AI 추천, AI 순위, AI 평가 설명은 제공되지 않습니다.', '평가는 OVBNE 브랜드 브리프와 로고 시안의 시각 형식을 기준으로 진행합니다.', '본실험 자극으로 사용하기 어려운 명백한 부적합 시안을 우선 확인합니다.', '이후 잔여 시안은 브랜드 맥락 적정성과 시각 형식 적정성을 기준으로 점수화합니다.'];
+
+      const purposeItems = [
+        '본 평가는 OVBNE 브랜드 AI 로고 예비시안 50개를 검토하여 본실험 후보 시안 27개를 구성하기 위한 절차입니다.',
+        '본 평가는 완성 로고를 선정하거나 로고의 우열을 판단하기 위한 절차가 아닙니다.',
+        '본실험 조건 간 비교 가능성을 확보하기 위해 시안 제외와 SET 구성을 진행합니다.',
+      ];
+      const processItems = [
+        ['1단계', 'OVBNE 브랜드 브리프 확인'],
+        ['2단계', '50개 예비시안 검토'],
+        ['3단계', '유형별 기준에 따라 본실험에 사용하기 어려운 시안 제외'],
+        ['4단계', '남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 배정'],
+        ['5단계', 'SET별 고정 배정 기준 확인 후 세트 구성 확정'],
+      ];
+      const standardItems = [
+        '본 예비평가는 정량 입력이나 서열화 방식이 아닙니다.',
+        '50개 예비시안 중 본실험에 사용하기 어렵다고 판단되는 시안을 유형별로 제외합니다.',
+        '남은 27개 본실험 후보 시안은 SET 1, SET 2, SET 3으로 배정합니다.',
+        '각 SET은 A 3개, B 3개, C 2개, D 1개의 유형별 고정 배정 기준을 충족해야 합니다.',
+      ];
+      const setNotes = [
+        'SET 구성 시 유사한 조형 구조, 복잡하거나 장식적인 시안, 상대적으로 완성도가 높거나 낮아 보이는 시안이 특정 SET에 집중되지 않도록 확인해 주세요.',
+        'SET 1, SET 2, SET 3은 서로 비교 가능한 구성으로 배정되어야 합니다.',
+      ];
+
       const BulletList = ({ items, blue }) => (
         <ul className="space-y-2.5">
           {items.map(item => (
-            <li key={item} className="flex gap-2.5 text-sm leading-6 text-slate-700">
-              <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${blue ? 'bg-blue-500' : 'bg-slate-500'}`} />
+            <li key={item} className="flex gap-2.5 text-base leading-7 text-slate-700">
+              <span className={`mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full ${blue ? 'bg-blue-500' : 'bg-slate-500'}`} />
               <span>{item}</span>
             </li>
           ))}
         </ul>
       );
       const ProcessList = ({ items }) => (
-        <ol className="space-y-2.5">
-          {items.map(item => {
-            const [step, text] = item.split('. ');
-            return (
-              <li key={item} className="grid grid-cols-[56px_minmax(0,1fr)] gap-3 text-sm leading-6 text-slate-700">
-                <span className="font-semibold text-slate-950">{step}</span>
-                <span>{text}</span>
-              </li>
-            );
-          })}
+        <ol className="space-y-3">
+          {items.map(([step, text]) => (
+            <li key={step} className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 text-base leading-7 text-slate-700">
+              <span className="font-bold text-slate-950">{step}</span>
+              <span>{text}</span>
+            </li>
+          ))}
         </ol>
       );
       const InfoSection = ({ title, children, featured }) => (
         <section className={`rounded-lg border p-6 ${featured ? 'border-blue-200 bg-blue-50/80' : 'border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]'}`}>
-          <h2 className="text-lg font-bold text-slate-950">{title}</h2>
+          <h2 className="text-xl font-bold text-slate-950">{title}</h2>
           <div className="mt-4">{children}</div>
         </section>
       );
 
       return (
         <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900 sm:px-10 lg:px-14">
-          <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-8">
-            <header>
+          <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-7">
+            <header className="space-y-5">
               <div>
-                <h1 className="max-w-5xl text-4xl font-bold leading-tight text-slate-950">OVBNE AI 로고 후보 시안 예비평가</h1>
-                <p className="mt-5 max-w-5xl text-base leading-7 text-slate-600">
-                  박사학위논문 본실험에 사용할 OVBNE 브랜드 AI 로고 후보 시안을 선별하기 위한 사전 평가입니다. 본 평가는 최종 로고를 선정하거나 AI 로고 생성 기술의 성능을 평가하기 위한 절차가 아니라, 본실험에 투입할 수 있는 로고 시안 자극을 구성하기 위한 절차입니다.
+                <h1 className="text-4xl font-bold leading-tight text-slate-950">OVBNE AI 로고 예비시안 구성 평가</h1>
+                <p className="mt-5 text-base leading-7 text-slate-600">
+                  본 평가는 박사학위논문 본실험에 사용할 OVBNE 브랜드 AI 로고 예비시안을 검토하고, 본실험 후보 시안 및 SET 구성을 준비하기 위한 예비평가입니다.
                 </p>
               </div>
+              <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <h2 className="text-xl font-bold text-slate-950">연구 기본 정보</h2>
+                <dl className="mt-4 grid gap-3 text-base leading-7 text-slate-700 md:grid-cols-[120px_minmax(0,1fr)]">
+                  <dt className="font-bold text-slate-950">연구명</dt>
+                  <dd>생성형 AI 기반 브랜드 로고 시안에서 AI 정보 제시 유형이 전문 디자이너의 전략적 판단에 미치는 영향</dd>
+                  <dt className="font-bold text-slate-950">연구자</dt>
+                  <dd>강은영</dd>
+                  <dt className="font-bold text-slate-950">소속</dt>
+                  <dd>홍익대학교 대학원 시각디자인과</dd>
+                  <dt className="font-bold text-slate-950">지도교수</dt>
+                  <dd>허민재 교수</dd>
+                </dl>
+              </section>
             </header>
 
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-stretch">
-              <div className="space-y-6">
-                <InfoSection title="예비평가 안내" featured>
-                  <p className="max-w-5xl text-base leading-7 text-slate-700">
-                    제시되는 50개 후보 시안은 동일한 OVBNE 브랜드 브리프와 공통 생성 조건을 바탕으로 생성된 예비 후보입니다. 평가 결과는 50개 후보 중 본실험에 사용할 27개 시안을 선별하고, 이후 세 개의 시안 세트를 구성하는 기준 자료로 활용됩니다.
-                  </p>
-                </InfoSection>
-                <div className="grid gap-6 xl:grid-cols-3">
-                  <InfoSection title="예비평가 목적"><BulletList items={purposeItems} blue /></InfoSection>
-                  <InfoSection title="진행 구조"><ProcessList items={flowItems} /></InfoSection>
-                  <InfoSection title="평가 기준"><BulletList items={standardItems} /></InfoSection>
-                </div>
-                <section className="rounded-lg border border-slate-200 bg-slate-100/70 p-5">
-                  <h2 className="text-base font-bold text-slate-950">평가 항목</h2>
-                  <div className="mt-3 grid gap-4 md:grid-cols-2">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">B. 브랜드 맥락 적정성</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">이 시안은 OVBNE 브랜드 브리프와 관련성이 있는가?</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">V. 시각 형식 적정성</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">이 시안은 로고 후보 자극으로 판단 가능한 시각 형식을 갖추고 있는가?</p>
-                    </div>
-                  </div>
-                </section>
+            <InfoSection title="예비평가 안내" featured>
+              <div className="space-y-4 text-base leading-7 text-slate-700">
+                <p>
+                  본 연구에 귀한 시간을 내어 참여해 주셔서 감사합니다. 본 예비평가는 완성 로고를 선정하거나 AI 로고 생성 기술의 성능을 평가하기 위한 절차가 아닙니다. 본실험에서 세 가지 AI 정보 제시 조건을 비교하기 위해, 50개의 AI 로고 예비시안 중 본실험 자극으로 사용하지 않을 시안을 제외하고, 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 구성하는 절차입니다.
+                </p>
+                <p>
+                  각 SET은 본실험에서 서로 다른 정보 제시 조건에 대응되어 비교됩니다. 따라서 특정 SET에 유사한 조형 구조, 복잡한 시안, 상대적으로 완성도가 높거나 낮아 보이는 시안이 집중되지 않도록 구성하는 것이 중요합니다. 본 평가는 조건 간 비교 가능성을 확보하기 위한 자극 구성 절차로 활용됩니다.
+                </p>
               </div>
+            </InfoSection>
 
-              <aside className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.08)] lg:sticky lg:top-10">
-                <div className="border-b border-slate-200 pb-5">
-                  <h2 className="text-xl font-bold text-slate-950">확인 후 시작</h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">아래 내용을 확인한 뒤 예비평가를 시작할 수 있습니다.</p>
-                </div>
-                <div className="my-6 space-y-3">
-                  {INTRO_CHECKS.map((label, i) => (
-                    <label key={i} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${checked[i] ? 'border-slate-300 bg-slate-50 text-slate-950' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
-                      <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} className="mt-1 h-4 w-4 shrink-0 cursor-pointer" style={{accentColor:'#020617'}} />
-                      <span className="text-sm leading-6">{label}</span>
-                    </label>
-                  ))}
-                </div>
-                <button onClick={onStart} disabled={!allChecked}
-                  className={`w-full rounded-lg py-3.5 text-sm font-bold transition-colors ${allChecked ? 'bg-slate-950 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}>
-                  {allChecked ? '예비평가 시작' : '확인 항목을 모두 체크해 주세요'}
-                </button>
-              </aside>
-            </div>
+            <InfoSection title="예비평가 목적"><BulletList items={purposeItems} blue /></InfoSection>
+            <InfoSection title="진행 절차"><ProcessList items={processItems} /></InfoSection>
+            <InfoSection title="구성 기준"><BulletList items={standardItems} /></InfoSection>
+            <InfoSection title="SET 구성 유의사항"><BulletList items={setNotes} /></InfoSection>
+
+            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+              <div className="border-b border-slate-200 pb-5">
+                <h2 className="text-xl font-bold text-slate-950">시작 전 확인</h2>
+                <p className="mt-3 text-base leading-7 text-slate-600">아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
+              </div>
+              <div className="my-6 grid gap-3">
+                {INTRO_CHECKS.map((label, i) => (
+                  <label key={i} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${checked[i] ? 'border-slate-300 bg-slate-50 text-slate-950' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
+                    <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} className="mt-1 h-4 w-4 shrink-0 cursor-pointer" style={{accentColor:'#020617'}} />
+                    <span className="text-base leading-7">{label}</span>
+                  </label>
+                ))}
+              </div>
+              <button onClick={onStart} disabled={!allChecked}
+                className={`w-full rounded-lg py-3.5 text-base font-bold transition-colors ${allChecked ? 'bg-slate-950 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}>
+                예비평가 시작
+              </button>
+            </section>
           </div>
         </main>
       );
     }
 
-    /* ─── BriefScreen ───────────────────────────────────────── */
+    /* ─── BriefScreen ─────────────────────────────────────── */
     const BRIEF_BLOCKS = [
       {
         title: '브랜드명',
