@@ -695,14 +695,40 @@
 
     function SetCompositionReadyScreen({ candidateSets, onBack }) {
       const counts = candidateSets || { A: [], B: [], C: [], D: [] };
+      const setRows = ['S1', 'S2', 'S3'].map((setName, index) => ({
+        setName,
+        A: counts.A.slice(index * 3, index * 3 + 3),
+        B: counts.B.slice(index * 3, index * 3 + 3),
+        C: counts.C.slice(index * 2, index * 2 + 2),
+        D: counts.D.slice(index, index + 1),
+      }));
       return (
         <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-          <div className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-8 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+          <div className="mx-auto max-w-6xl rounded-xl border border-slate-200 bg-white p-8 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
             <h1 className="text-3xl font-bold text-slate-950">본실험 후보 세트 구성</h1>
             <p className="mt-4 text-base leading-7 text-slate-600">본실험 후보 확인이 완료되었습니다. 전달 데이터는 유형별 고정 배정 기준에 맞게 구성되었습니다.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-4">
               {TYPE_ORDER.map(code => <div key={code} className="rounded-lg bg-slate-50 p-4 text-center"><p className="text-sm font-bold text-slate-500">{code}</p><p className="mt-1 text-2xl font-bold text-slate-950">{counts[code].length}개</p></div>)}
             </div>
+            <section className="mt-8 rounded-lg border border-slate-200">
+              <div className="grid grid-cols-[80px_repeat(4,1fr)] border-b border-slate-200 bg-slate-50 text-sm font-bold text-slate-600">
+                <div className="p-3">SET</div>
+                <div className="p-3">A 3개</div>
+                <div className="p-3">B 3개</div>
+                <div className="p-3">C 2개</div>
+                <div className="p-3">D 1개</div>
+              </div>
+              {setRows.map(row => (
+                <div key={row.setName} className="grid grid-cols-[80px_repeat(4,1fr)] border-b border-slate-100 last:border-b-0 text-sm">
+                  <div className="p-3 font-bold text-slate-950">{row.setName}</div>
+                  {TYPE_ORDER.map(code => (
+                    <div key={code} className="flex flex-wrap gap-2 p-3">
+                      {row[code].map(id => <span key={id} className="rounded-md bg-slate-100 px-2 py-1 font-mono font-bold text-slate-700">{id}</span>)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </section>
             <button onClick={onBack} className="mt-8 rounded-lg border border-slate-300 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">본실험 후보 확인으로 돌아가기</button>
           </div>
         </div>
@@ -1421,6 +1447,12 @@
         return () => { active = false; };
       }, []);
       useEffect(() => { const s = loadData(); if (s?.excludedIds || s?.eliminatedIds) setEliminatedIds(s.excludedIds || s.eliminatedIds); }, []);
+      useEffect(() => {
+        if (!logos.length || !eliminatedIds.length) return;
+        const validIds = new Set(logos.map(logo => logo.id));
+        const cleaned = eliminatedIds.filter(id => validIds.has(id));
+        if (cleaned.length !== eliminatedIds.length) setEliminatedIds(cleaned);
+      }, [logos, eliminatedIds]);
       useEffect(() => { if (eliminatedIds.length > 0) saveData({ pid, tsStart, excludedIds: eliminatedIds }); }, [eliminatedIds]);
 
       const evaluationLogos = logos.filter(l => !eliminatedIds.includes(l.id));
