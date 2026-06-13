@@ -230,15 +230,23 @@
               </GuideSection>
 
               <GuideSection title="연구 기본 정보">
-                <dl className="grid gap-1.5">
-                  <dt className="font-bold text-[#111111]">연구명</dt>
-                  <dd>생성형 AI 기반 브랜드 로고 시안에서 AI 정보 제시 유형이 전문 디자이너의 전략적 판단에 미치는 영향</dd>
-                  <dt className="font-bold text-[#111111]">연구자</dt>
-                  <dd>강은영</dd>
-                  <dt className="font-bold text-[#111111]">소속</dt>
-                  <dd>홍익대학교 대학원 시각디자인과</dd>
-                  <dt className="font-bold text-[#111111]">지도교수</dt>
-                  <dd>허민재 교수</dd>
+                <dl className="grid gap-2">
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">연구명</dt>
+                    <dd>생성형 AI 기반 브랜드 로고 시안에서 AI 정보 제시 유형이 전문 디자이너의 전략적 판단에 미치는 영향</dd>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">연구자</dt>
+                    <dd>강은영</dd>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">소속</dt>
+                    <dd>홍익대학교 대학원 시각디자인과</dd>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">지도교수</dt>
+                    <dd>허민재 교수</dd>
+                  </div>
                 </dl>
               </GuideSection>
 
@@ -767,8 +775,8 @@
               </p>
             </header>
 
-            <main className="mx-auto grid max-w-[820px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
-              <div className="grid gap-[34px]">
+            <main className="mx-auto grid max-w-[980px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
+              <div className="grid gap-x-10 gap-y-[34px] lg:grid-cols-2">
                 {BRIEF_BLOCKS.map(item => <BriefInfoBlock key={item.title} {...item} />)}
 
                 <BriefInfoBlock
@@ -796,7 +804,7 @@
                 </BriefInfoBlock>
               </div>
 
-              <div>
+              <div className="max-w-[820px]">
                 <p>브랜드 브리프는 이후 모든 후보 시안을 검토할 때 동일하게 적용되는 참고 기준입니다.</p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {onBack && (
@@ -1436,6 +1444,7 @@
       const [eliminatedIds, setEliminatedIds] = useState([]);
       const [tsElimStart, setTsElimStart] = useState(null);
       const [tsEvalStart, setTsEvalStart] = useState(null);
+      const historyReady = useRef(false);
 
       useEffect(() => {
         let active = true;
@@ -1459,6 +1468,22 @@
         if (cleaned.length !== eliminatedIds.length) setEliminatedIds(cleaned);
       }, [logos, eliminatedIds]);
       useEffect(() => { if (eliminatedIds.length > 0) saveData({ pid, tsStart, excludedIds: eliminatedIds }); }, [eliminatedIds]);
+      useEffect(() => {
+        window.history.replaceState({ screen: 'intro' }, '', window.location.href);
+        historyReady.current = true;
+        const onPopState = (event) => {
+          const nextScreen = event.state?.screen || 'intro';
+          setScreen(nextScreen);
+        };
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+      }, []);
+      const goScreen = useCallback((nextScreen) => {
+        if (historyReady.current) {
+          window.history.pushState({ screen: nextScreen }, '', window.location.href);
+        }
+        setScreen(nextScreen);
+      }, []);
 
       const evaluationLogos = logos.filter(l => !eliminatedIds.includes(l.id));
       const count = evaluationLogos.filter(l => isCompleted(ratings[l.id])).length;
@@ -1468,16 +1493,16 @@
         setRatings(prev => ({ ...prev, [id]: { ...prev[id], [field]: score, updated_at: new Date().toISOString() } }));
       }, []);
 
-      const goToEliminate = () => { if (!tsElimStart) setTsElimStart(new Date().toISOString()); setScreen('eliminate'); };
-      const goToSetComposition = (sets) => { setCandidateSets(sets); setScreen('setComposition'); };
-      const handleSubmit = () => setScreen('review');
+      const goToEliminate = () => { if (!tsElimStart) setTsElimStart(new Date().toISOString()); goScreen('eliminate'); };
+      const goToSetComposition = (sets) => { setCandidateSets(sets); goScreen('setComposition'); };
+      const handleSubmit = () => goScreen('review');
       const handleFinalSubmit = () => {
         const d = buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds, tsElimStart, tsEvalStart);
-        setResultData(d); setScreen('result');
+        setResultData(d); goScreen('result');
       };
 
-      if (screen === 'intro')  return <IntroScreen onStart={() => setScreen('brief')} />;
-      if (screen === 'brief')  return <BriefScreen onStart={goToEliminate} onBack={() => setScreen('intro')} />;
+      if (screen === 'intro')  return <IntroScreen onStart={() => goScreen('brief')} />;
+      if (screen === 'brief')  return <BriefScreen onStart={goToEliminate} onBack={() => window.history.back()} />;
       if (manifestStatus.loading) return (
         <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
           <div className="mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -1495,11 +1520,11 @@
         </div>
       );
       if (screen === 'eliminate') return (
-        <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => setScreen('eliminateReview')} onBack={() => setScreen('brief')} />
+        <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('eliminateReview')} onBack={() => window.history.back()} />
       );
-      if (screen === 'eliminateReview') return <EliminationReviewScreen logos={logos} excludedIds={eliminatedIds} onBack={() => setScreen('eliminate')} onNext={goToSetComposition} />;
-      if (screen === 'setComposition') return <SetCompositionReadyScreen candidateSets={candidateSets} onBack={() => setScreen('eliminateReview')} />;
-      if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => setScreen('eliminateReview')} onSubmit={handleFinalSubmit} />;
+      if (screen === 'eliminateReview') return <EliminationReviewScreen logos={logos} excludedIds={eliminatedIds} onBack={() => window.history.back()} onNext={goToSetComposition} />;
+      if (screen === 'setComposition') return <SetCompositionReadyScreen candidateSets={candidateSets} onBack={() => window.history.back()} />;
+      if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => window.history.back()} onSubmit={handleFinalSubmit} />;
       if (screen === 'result') return <ResultSummary data={resultData} onDownloadJSON={() => downloadJSON(resultData)} onDownloadCSV={() => downloadCSV(resultData)} />;
 
       return (
