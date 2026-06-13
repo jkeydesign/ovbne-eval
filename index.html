@@ -41,8 +41,16 @@
     }
 
     const STORAGE_KEY = 'ovbne_pilot_eval_v1';
-    const saveData = d => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} };
-    const loadData = () => { try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
+    const saveData = d => { try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} };
+    const loadData = () => {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        const r = sessionStorage.getItem(STORAGE_KEY);
+        return r ? JSON.parse(r) : null;
+      } catch {
+        return null;
+      }
+    };
 
     function buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds=[], tsElimStart=null, tsEvalStart=null) {
       const now = new Date();
