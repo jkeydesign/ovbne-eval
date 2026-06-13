@@ -105,7 +105,7 @@ export default function IntroScreen({ onStart }) {
           </div>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-stretch">
           <div className="space-y-5">
             <section className="rounded-lg border border-blue-200 bg-blue-50 p-5">
               <p className="text-sm leading-6 text-slate-700">
@@ -171,7 +171,7 @@ export default function IntroScreen({ onStart }) {
             </section>
           </div>
 
-          <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-8">
+          <aside className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-8">
             <div className="border-b border-slate-200 pb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Before Start</p>
               <h2 className="mt-2 text-xl font-bold text-slate-950">확인 후 시작</h2>
@@ -213,7 +213,7 @@ export default function IntroScreen({ onStart }) {
               {allChecked ? '평가 시작하기' : '확인 항목을 모두 체크해 주세요'}
             </button>
 
-            <p className="mt-4 text-xs leading-5 text-slate-500">
+            <p className="mt-auto pt-4 text-xs leading-5 text-slate-500">
               평가 중에는 화면 상단의 진행률과 경과 시간을 확인할 수 있습니다.
             </p>
           </aside>
