@@ -10,9 +10,21 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; }
+    html {
+      font-size: 17px;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Apple SD Gothic Neo', 'Segoe UI', Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
+    }
+    .text-\[10px\],
+    [style*="font-size:10px"],
+    [style*="font-size: 10px"] {
+      font-size: 11.5px !important;
+    }
+    [style*="font-size:9px"],
+    [style*="font-size: 9px"] {
+      font-size: 10.5px !important;
     }
   </style>
 </head>
