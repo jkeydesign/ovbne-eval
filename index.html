@@ -1128,7 +1128,7 @@
           <div style={{flex:1, maxWidth:'1560px', width:'100%', margin:'0 auto', padding:'16px', display:'flex', gap:'16px', alignItems:'stretch', minHeight:'calc(100vh - 220px)'}}>
 
             {/* 후보 풀 */}
-            <div style={{width:'320px', flexShrink:0, display:'flex', flexDirection:'column'}}>
+            <div style={{width:'420px', flexShrink:0, display:'flex', flexDirection:'column'}}>
               <div style={{background:'white', borderRadius:'12px', border:'1px solid #e5e7eb', display:'flex', flexDirection:'column', overflow:'hidden', flex:1}}>
                 <div
                   style={{padding:'12px', borderBottom:'1px solid #f3f4f6', flexShrink:0, background: dragTarget==='pool' ? '#f9fafb' : 'white'}}
@@ -1159,7 +1159,7 @@
                       모든 시안이 배정되었습니다
                     </div>
                   ) : (
-                    <div style={{display:'grid', gridTemplateColumns:`repeat(3, ${CARD_W}px)`, gap:'8px'}}>
+                    <div style={{display:'grid', gridTemplateColumns:`repeat(4, ${CARD_W}px)`, gap:'8px'}}>
                       {poolCandidates.map(c => (
                         <SetCard key={c.id} candidate={c} zone="pool" draggingId={dragging?.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} />
                       ))}
