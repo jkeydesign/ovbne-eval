@@ -881,6 +881,7 @@
     }
 
     /* ─── SetAssignmentScreen ────────────────────────────── */
+    const CARD_W = 90; /* 풀·SET 슬롯 공통 카드 너비(px) */
     const SET_QUOTA = { A: 3, B: 3, C: 2, D: 1 };
     const SET_TOTAL = 9;
     const SKEYS = ['SET_1', 'SET_2', 'SET_3'];
@@ -942,31 +943,31 @@
       const isTarget = dragTarget === zoneKey;
       const isFull = filled.length >= quota;
       return (
-        <div style={{display:'flex', alignItems:'center', gap:'6px', flex:1,
+        <div style={{display:'flex', alignItems:'center', gap:'6px',
           background: isTarget ? TYPE_DROP[type] : 'transparent',
-          borderRadius:'8px', padding:'4px', transition:'background 0.12s'}}
+          borderRadius:'8px', padding:'4px', transition:'background 0.12s', flexShrink:0}}
           onDragOver={e => { e.preventDefault(); if (isCompatible && !isFull) onDragOver(zoneKey); }}
           onDragLeave={onDragLeave}
           onDrop={() => { if (isCompatible && !isFull) onDrop(setKey); }}
         >
           {/* 타입 레이블 */}
-          <div style={{width:38, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', gap:'2px'}}>
+          <div style={{width:40, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', gap:'2px'}}>
             <span style={{fontSize:'12px', fontWeight:800, color:TYPE_TEXT[type], background:TYPE_BG[type],
               padding:'2px 7px', borderRadius:'5px', lineHeight:1.3, display:'block', textAlign:'center'}}>{type}</span>
             <span style={{fontSize:'14px', fontWeight:700, color: isFull ? '#16a34a' : '#6b7280', lineHeight:1}}>
-              {filled.length}<span style={{fontSize:'10px', color:'#d1d5db', fontWeight:400}}>/{quota}</span>
+              {filled.length}<span style={{fontSize:'11px', color:'#9ca3af', fontWeight:500}}>/{quota}</span>
             </span>
           </div>
-          {/* 슬롯들 */}
-          <div style={{display:'flex', gap:'6px', flex:1}}>
+          {/* 슬롯들 — 모두 CARD_W 고정 */}
+          <div style={{display:'flex', gap:'6px'}}>
             {filled.map(c => (
-              <div key={c.id} style={{flex:1, minWidth:68}}>
+              <div key={c.id} style={{width:CARD_W, flexShrink:0}}>
                 <SetCard candidate={c} zone={setKey} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               </div>
             ))}
             {Array.from({length: quota - filled.length}).map((_, i) => (
               <div key={i} style={{
-                flex:1, minWidth:68, aspectRatio:'1/1', borderRadius:'7px',
+                width:CARD_W, flexShrink:0, aspectRatio:'1/1', borderRadius:'7px',
                 border:`2px dashed ${isTarget ? TYPE_DASH[type] : '#e5e7eb'}`,
                 background: isTarget ? TYPE_BG[type]+'44' : '#f9fafb',
                 display:'flex', alignItems:'center', justifyContent:'center',
@@ -1158,7 +1159,7 @@
                       모든 시안이 배정되었습니다
                     </div>
                   ) : (
-                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'8px'}}>
+                    <div style={{display:'grid', gridTemplateColumns:`repeat(3, ${CARD_W}px)`, gap:'8px'}}>
                       {poolCandidates.map(c => (
                         <SetCard key={c.id} candidate={c} zone="pool" draggingId={dragging?.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} />
                       ))}
