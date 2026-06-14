@@ -935,45 +935,44 @@
     const TYPE_DROP = { A:'#eff6ff', B:'#f0fdf4', C:'#fefce8', D:'#fdf2f8' };
     const TYPE_DASH = { A:'#93c5fd', B:'#86efac', C:'#fde047', D:'#f9a8d4' };
 
-    function TypeRow({ setKey, type, quota, filled, draggingType, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, draggingId }) {
+    /* TypeSlots: 단일 타입의 슬롯 그룹 (드롭 타겟 포함) */
+    function TypeSlots({ setKey, type, quota, filled, draggingType, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, draggingId }) {
       const zoneKey = `${setKey}_${type}`;
       const isCompatible = draggingType === type;
       const isTarget = dragTarget === zoneKey;
       const isFull = filled.length >= quota;
       return (
-        <div
-          style={{
-            display:'flex', alignItems:'flex-start', gap:'12px',
-            padding:'10px 16px', borderTop:'1px solid #f3f4f6',
-            background: isTarget ? TYPE_DROP[type] : 'transparent',
-            transition:'background 0.12s',
-          }}
+        <div style={{display:'flex', alignItems:'center', gap:'6px', flex:1,
+          background: isTarget ? TYPE_DROP[type] : 'transparent',
+          borderRadius:'8px', padding:'4px', transition:'background 0.12s'}}
           onDragOver={e => { e.preventDefault(); if (isCompatible && !isFull) onDragOver(zoneKey); }}
           onDragLeave={onDragLeave}
           onDrop={() => { if (isCompatible && !isFull) onDrop(setKey); }}
         >
           {/* 타입 레이블 */}
-          <div style={{width:44, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:'6px', gap:'3px'}}>
-            <span style={{fontSize:'13px', fontWeight:800, color:TYPE_TEXT[type], background:TYPE_BG[type], padding:'2px 9px', borderRadius:'6px', lineHeight:1.4}}>{type}</span>
-            <span style={{fontSize:'10px', color: isFull ? '#16a34a' : '#9ca3af', fontWeight: isFull ? 700 : 400}}>{filled.length}/{quota}</span>
+          <div style={{width:38, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', gap:'2px'}}>
+            <span style={{fontSize:'12px', fontWeight:800, color:TYPE_TEXT[type], background:TYPE_BG[type],
+              padding:'2px 7px', borderRadius:'5px', lineHeight:1.3, display:'block', textAlign:'center'}}>{type}</span>
+            <span style={{fontSize:'14px', fontWeight:700, color: isFull ? '#16a34a' : '#6b7280', lineHeight:1}}>
+              {filled.length}<span style={{fontSize:'10px', color:'#d1d5db', fontWeight:400}}>/{quota}</span>
+            </span>
           </div>
-          {/* 슬롯 */}
-          <div style={{display:'flex', gap:'8px', flex:1}}>
+          {/* 슬롯들 */}
+          <div style={{display:'flex', gap:'6px', flex:1}}>
             {filled.map(c => (
-              <div key={c.id} style={{flex:1, minWidth:80, maxWidth:160}}>
+              <div key={c.id} style={{flex:1, minWidth:68, maxWidth:110}}>
                 <SetCard candidate={c} zone={setKey} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               </div>
             ))}
             {Array.from({length: quota - filled.length}).map((_, i) => (
-              <div key={`emp_${i}`} style={{
-                flex:1, minWidth:80, maxWidth:160, aspectRatio:'1/1.15', borderRadius:'8px',
+              <div key={i} style={{
+                flex:1, minWidth:68, maxWidth:110, aspectRatio:'1/1.15', borderRadius:'7px',
                 border:`2px dashed ${isTarget ? TYPE_DASH[type] : '#e5e7eb'}`,
-                background: isTarget ? TYPE_BG[type] + '55' : '#fafafa',
+                background: isTarget ? TYPE_BG[type]+'44' : '#f9fafb',
                 display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:'24px', color: isTarget ? TYPE_DASH[type] : '#e5e7eb',
-                transition:'all 0.12s',
+                fontSize:'22px', color: isTarget ? TYPE_DASH[type] : '#e5e7eb', transition:'all 0.12s',
               }}>
-                {isTarget && i === 0 ? '+' : ''}
+                {isTarget && i===0 ? '+' : ''}
               </div>
             ))}
           </div>
@@ -982,33 +981,39 @@
     }
 
     function TypedSetZone({ setKey, setLabel, allCandidates, assignment, dragging, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, flex }) {
-      const getByType = (type) => allCandidates.filter(c => assignment[c.id] === setKey && c.id[0] === type);
-      const ids = allCandidates.filter(c => assignment[c.id] === setKey).map(c => c.id);
+      const getByType = (t) => allCandidates.filter(c => assignment[c.id]===setKey && c.id[0]===t);
+      const ids = allCandidates.filter(c => assignment[c.id]===setKey).map(c => c.id);
       const valid = setIsValid(ids);
       const draggingType = dragging?.id?.[0];
+      const sharedProps = { draggingType, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, draggingId: dragging?.id };
       return (
         <div style={{
-          borderRadius:'12px',
-          border: valid ? '2px solid #86efac' : '2px solid #e5e7eb',
+          borderRadius:'12px', border: valid ? '2px solid #86efac' : '2px solid #e5e7eb',
           background: valid ? 'rgba(240,253,244,0.4)' : 'white',
           transition:'all 0.15s', flex: flex||undefined, display:'flex', flexDirection:'column',
         }}>
-          <div style={{padding:'12px 16px 10px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          {/* 헤더 */}
+          <div style={{padding:'10px 14px 8px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid #f3f4f6'}}>
             <h3 style={{fontSize:'15px', fontWeight:700, color:'#111827', margin:0}}>{setLabel}</h3>
             {valid
               ? <span style={{fontSize:'11px', color:'#15803d', fontWeight:600, background:'#dcfce7', padding:'3px 10px', borderRadius:'9999px'}}>기준 충족 ✓</span>
               : <span style={{fontSize:'11px', color:'#9ca3af'}}>A 3 · B 3 · C 2 · D 1</span>
             }
           </div>
-          {['A','B','C','D'].map(type => (
-            <TypeRow
-              key={type} setKey={setKey} type={type} quota={SET_QUOTA[type]}
-              filled={getByType(type)}
-              draggingType={draggingType} dragTarget={dragTarget}
-              onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
-              onDragStart={onDragStart} onDragEnd={onDragEnd} draggingId={dragging?.id}
-            />
-          ))}
+          {/* A행 */}
+          <div style={{padding:'8px 12px', borderBottom:'1px solid #f3f4f6'}}>
+            <TypeSlots setKey={setKey} type='A' quota={3} filled={getByType('A')} {...sharedProps} />
+          </div>
+          {/* B행 */}
+          <div style={{padding:'8px 12px', borderBottom:'1px solid #f3f4f6'}}>
+            <TypeSlots setKey={setKey} type='B' quota={3} filled={getByType('B')} {...sharedProps} />
+          </div>
+          {/* C+D 합행 */}
+          <div style={{padding:'8px 12px', display:'flex', gap:'8px', alignItems:'center'}}>
+            <TypeSlots setKey={setKey} type='C' quota={2} filled={getByType('C')} {...sharedProps} />
+            <div style={{width:'1px', background:'#e5e7eb', alignSelf:'stretch', flexShrink:0}} />
+            <TypeSlots setKey={setKey} type='D' quota={1} filled={getByType('D')} {...sharedProps} />
+          </div>
         </div>
       );
     }
@@ -1122,7 +1127,7 @@
           <div style={{flex:1, maxWidth:'1560px', width:'100%', margin:'0 auto', padding:'16px', display:'flex', gap:'16px', alignItems:'stretch', minHeight:'calc(100vh - 220px)'}}>
 
             {/* 후보 풀 */}
-            <div style={{width:'240px', flexShrink:0, display:'flex', flexDirection:'column'}}>
+            <div style={{width:'320px', flexShrink:0, display:'flex', flexDirection:'column'}}>
               <div style={{background:'white', borderRadius:'12px', border:'1px solid #e5e7eb', display:'flex', flexDirection:'column', overflow:'hidden', flex:1}}>
                 <div
                   style={{padding:'12px', borderBottom:'1px solid #f3f4f6', flexShrink:0, background: dragTarget==='pool' ? '#f9fafb' : 'white'}}
@@ -1153,7 +1158,7 @@
                       모든 시안이 배정되었습니다
                     </div>
                   ) : (
-                    <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'8px'}}>
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'8px'}}>
                       {poolCandidates.map(c => (
                         <SetCard key={c.id} candidate={c} zone="pool" draggingId={dragging?.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} />
                       ))}
