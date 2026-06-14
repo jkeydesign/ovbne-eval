@@ -870,8 +870,8 @@
                 <button onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
                   뒤로 가서 수정하기
                 </button>
-                <button onClick={() => onNext(candidateSets)} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
-                  본실험 후보 세트 구성으로 이동
+                <button onClick={() => onNext()} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
+                  2차 SET 구성안 작성으로 이동
                 </button>
               </div>
             </div>
@@ -880,47 +880,363 @@
       );
     }
 
-    function SetCompositionReadyScreen({ candidateSets, onBack, onNext }) {
-      const counts = candidateSets || { A: [], B: [], C: [], D: [] };
-      const setRows = ['S1', 'S2', 'S3'].map((setName, index) => ({
-        setName,
-        A: counts.A.slice(index * 3, index * 3 + 3),
-        B: counts.B.slice(index * 3, index * 3 + 3),
-        C: counts.C.slice(index * 2, index * 2 + 2),
-        D: counts.D.slice(index, index + 1),
-      }));
+    /* ─── SetAssignmentScreen ────────────────────────────── */
+    const SET_QUOTA = { A: 3, B: 3, C: 2, D: 1 };
+    const SET_TOTAL = 9;
+    const SKEYS = ['SET_1', 'SET_2', 'SET_3'];
+    const SLABELS = { SET_1: 'SET 1', SET_2: 'SET 2', SET_3: 'SET 3' };
+    const SET_CHECKLIST = [
+      { key: 'typeCompositionChecked', label: '각 SET은 A 3개, B 3개, C 2개, D 1개의 유형별 고정 배정 기준을 충족합니다.' },
+      { key: 'similarStructureChecked', label: '유사한 조형 구조의 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
+      { key: 'misreadingRiskChecked', label: '형태 오독 가능성이 큰 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
+      { key: 'complexityDistributionChecked', label: '복잡하거나 장식적인 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
+      { key: 'relativeCompletionChecked', label: '상대적으로 완성도가 높거나 낮아 보이는 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
+      { key: 'comparabilityChecked', label: 'SET 1, SET 2, SET 3이 비교 가능한 구성인지 확인했습니다.' },
+    ];
+    const INIT_CHECKLIST = Object.fromEntries(SET_CHECKLIST.map(i => [i.key, false]));
+
+    function setCountTypes(ids) {
+      return ids.reduce((acc, id) => { acc[id[0]]++; return acc; }, { A:0, B:0, C:0, D:0 });
+    }
+    function setIsValid(ids) {
+      if (ids.length !== SET_TOTAL) return false;
+      const c = setCountTypes(ids);
+      return c.A===3 && c.B===3 && c.C===2 && c.D===1;
+    }
+
+    function SetCard({ candidate, zone, draggingId, onDragStart, onDragEnd }) {
+      const isDragging = draggingId === candidate.id;
       return (
-        <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-          <div className="mx-auto max-w-6xl rounded-xl border border-slate-200 bg-white p-8 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h1 className="text-3xl font-bold text-slate-950">본실험 후보 세트 구성</h1>
-            <p className="mt-4 text-base leading-7 text-slate-600">본실험 후보 확인이 완료되었습니다. 전달 데이터는 유형별 고정 배정 기준에 맞게 구성되었습니다.</p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-4">
-              {TYPE_ORDER.map(code => <div key={code} className="rounded-lg bg-slate-50 p-4 text-center"><p className="text-sm font-bold text-slate-500">{code}</p><p className="mt-1 text-2xl font-bold text-slate-950">{counts[code].length}개</p></div>)}
+        <div
+          draggable
+          onDragStart={() => onDragStart(candidate.id, zone)}
+          onDragEnd={onDragEnd}
+          style={{
+            background:'white', borderRadius:'8px', border:'2px solid #e5e7eb',
+            cursor:'grab', userSelect:'none', transition:'border-color 0.1s, box-shadow 0.1s',
+            opacity: isDragging ? 0.3 : 1,
+          }}
+          onMouseEnter={e => { if (!isDragging) { e.currentTarget.style.borderColor='#9ca3af'; e.currentTarget.style.boxShadow='0 2px 6px rgba(0,0,0,0.1)'; }}}
+          onMouseLeave={e => { e.currentTarget.style.borderColor='#e5e7eb'; e.currentTarget.style.boxShadow='none'; }}
+        >
+          <div style={{aspectRatio:'1/1', background:'#f9fafb', borderRadius:'6px 6px 0 0', overflow:'hidden'}}>
+            <img src={candidate.imagePath} alt={candidate.candidateId} draggable={false}
+              style={{width:'100%', height:'100%', objectFit:'contain', padding:'4px'}} />
+          </div>
+          <p style={{fontSize:'10px', fontFamily:'monospace', fontWeight:600, color:'#4b5563', textAlign:'center', padding:'4px 0 3px', lineHeight:1, margin:0}}>
+            {candidate.candidateId}
+          </p>
+        </div>
+      );
+    }
+
+    function SetDropZone({ setKey, setLabel, candidates, dragTarget, draggingId, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd }) {
+      const ids = candidates.map(c => c.id);
+      const types = setCountTypes(ids);
+      const valid = setIsValid(ids);
+      const isTarget = dragTarget === setKey;
+      return (
+        <div
+          style={{
+            borderRadius:'12px',
+            border: isTarget ? '2px solid #60a5fa' : valid ? '2px solid #86efac' : '2px solid #e5e7eb',
+            background: isTarget ? '#eff6ff' : valid ? 'rgba(240,253,244,0.5)' : 'white',
+            transition:'all 0.15s',
+          }}
+          onDragOver={e => { e.preventDefault(); onDragOver(setKey); }}
+          onDragLeave={onDragLeave}
+          onDrop={() => onDrop(setKey)}
+        >
+          <div style={{padding:'12px 16px 8px', borderBottom:'1px solid #f3f4f6'}}>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'4px'}}>
+              <h3 style={{fontSize:'14px', fontWeight:700, color:'#111827', margin:0}}>{setLabel}</h3>
+              {valid && <span style={{fontSize:'10px', color:'#15803d', fontWeight:600, background:'#dcfce7', padding:'2px 8px', borderRadius:'9999px'}}>기준 충족 ✓</span>}
             </div>
-            <section className="mt-8 rounded-lg border border-slate-200">
-              <div className="grid grid-cols-[80px_repeat(4,1fr)] border-b border-slate-200 bg-slate-50 text-sm font-bold text-slate-600">
-                <div className="p-3">SET</div>
-                <div className="p-3">A 3개</div>
-                <div className="p-3">B 3개</div>
-                <div className="p-3">C 2개</div>
-                <div className="p-3">D 1개</div>
+            <p style={{fontSize:'11px', color:'#9ca3af', margin:'0 0 2px'}}>기준: A 3 · B 3 · C 2 · D 1</p>
+            <p style={{fontSize:'11px', color:'#374151', margin:0}}>
+              현재 구성:&nbsp;
+              {['A','B','C','D'].map((t, i) => (
+                <span key={t}>
+                  {i>0 && <span style={{color:'#d1d5db'}}> · </span>}
+                  <span style={types[t]===SET_QUOTA[t] ? {color:'#16a34a',fontWeight:700} : {}}>
+                    {t} {types[t]}/{SET_QUOTA[t]}
+                  </span>
+                </span>
+              ))}
+              <span style={{color:'#d1d5db'}}> · </span>
+              <span style={candidates.length===SET_TOTAL ? {color:'#16a34a',fontWeight:700} : {}}>
+                전체 {candidates.length}/{SET_TOTAL}
+              </span>
+            </p>
+          </div>
+          <div style={{padding:'12px', minHeight:'120px'}}>
+            {candidates.length === 0 ? (
+              <div style={{display:'flex', alignItems:'center', justifyContent:'center', height:'96px', borderRadius:'8px', border:'2px dashed', borderColor: isTarget ? '#93c5fd' : '#e5e7eb', color: isTarget ? '#60a5fa' : '#d1d5db', fontSize:'12px'}}>
+                이 SET에 배정할 시안을 드래그해 주세요.
               </div>
-              {setRows.map(row => (
-                <div key={row.setName} className="grid grid-cols-[80px_repeat(4,1fr)] border-b border-slate-100 last:border-b-0 text-sm">
-                  <div className="p-3 font-bold text-slate-950">{row.setName}</div>
-                  {TYPE_ORDER.map(code => (
-                    <div key={code} className="flex flex-wrap gap-2 p-3">
-                      {row[code].map(id => <span key={id} className="rounded-md bg-slate-100 px-2 py-1 font-mono font-bold text-slate-700">{id}</span>)}
+            ) : (
+              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(82px, 1fr))', gap:'8px'}}>
+                {candidates.map(c => (
+                  <SetCard key={c.id} candidate={c} zone={setKey} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+                ))}
+                {isTarget && draggingId && <div style={{aspectRatio:'1/1.15', background:'#dbeafe', borderRadius:'8px', border:'2px dashed #93c5fd'}} />}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function SetAssignmentScreen({ candidates, onBack, onNext }) {
+      const typeCounts = setCountTypes(candidates.map(c => c.id));
+      const isDataValid = candidates.length===27 && typeCounts.A===9 && typeCounts.B===9 && typeCounts.C===6 && typeCounts.D===3;
+
+      const [assignment, setAssignment] = useState(() => {
+        const a = {}; candidates.forEach(c => { a[c.id] = 'pool'; }); return a;
+      });
+      const [dragging, setDragging] = useState(null);
+      const [dragTarget, setDragTarget] = useState(null);
+      const [toast, setToast] = useState(null);
+      const [showModal, setShowModal] = useState(false);
+      const [checklist, setChecklist] = useState(INIT_CHECKLIST);
+
+      if (!isDataValid) {
+        return (
+          <div style={{minHeight:'100vh', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', padding:'32px'}}>
+            <div style={{background:'white', borderRadius:'12px', border:'1px solid #fecaca', padding:'40px', maxWidth:'480px', textAlign:'center'}}>
+              <div style={{fontSize:'48px', marginBottom:'16px'}}>⚠</div>
+              <p style={{color:'#374151', fontWeight:500, marginBottom:'12px', lineHeight:1.6}}>
+                본실험 후보 구성이 맞지 않습니다. 이전 단계에서 실험후보 제외 선택을 다시 확인해 주세요.
+              </p>
+              <p style={{fontSize:'13px', color:'#6b7280', background:'#f9fafb', borderRadius:'8px', padding:'12px 16px', marginBottom:'20px'}}>
+                현재: 전체 {candidates.length}개 (A {typeCounts.A} · B {typeCounts.B} · C {typeCounts.C} · D {typeCounts.D})<br/>
+                필요: 전체 27개 (A 9 · B 9 · C 6 · D 3)
+              </p>
+              <button onClick={onBack} style={{padding:'10px 24px', background:'#111827', color:'white', border:'none', borderRadius:'8px', fontSize:'14px', fontWeight:500, cursor:'pointer'}}>
+                ← 이전 단계로 수정하기
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+      const getCandidatesIn = (zone) => candidates.filter(c => assignment[c.id] === zone);
+
+      const moveTo = (id, to) => {
+        const from = assignment[id];
+        if (from === to) return;
+        if (to !== 'pool') {
+          const type = id[0];
+          const inTarget = candidates.filter(c => assignment[c.id] === to);
+          if (inTarget.filter(c => c.id[0] === type).length >= SET_QUOTA[type]) {
+            showToast('이 SET의 유형별 고정 배정 기준을 초과했습니다.'); return;
+          }
+          if (inTarget.length >= SET_TOTAL) {
+            showToast('이 SET의 유형별 고정 배정 기준을 초과했습니다.'); return;
+          }
+        }
+        setAssignment(prev => ({ ...prev, [id]: to }));
+      };
+
+      const handleDragStart = (id) => setDragging({ id });
+      const handleDragEnd = () => { setDragging(null); setDragTarget(null); };
+      const handleDragOver = (target) => setDragTarget(target);
+      const handleDragLeave = () => setDragTarget(null);
+      const handleDrop = (target) => { if (dragging) moveTo(dragging.id, target); setDragging(null); setDragTarget(null); };
+
+      const poolCandidates = getCandidatesIn('pool');
+      const canSubmit = poolCandidates.length === 0 && SKEYS.every(key => setIsValid(getCandidatesIn(key).map(c => c.id)));
+      const allChecked = Object.values(checklist).every(Boolean);
+
+      const handleModalSubmit = () => {
+        const sa = {}, sc = {};
+        SKEYS.forEach(key => {
+          const ids = getCandidatesIn(key).map(c => c.id);
+          sa[key] = ids;
+          const c = setCountTypes(ids);
+          sc[key] = { A:c.A, B:c.B, C:c.C, D:c.D, total:ids.length, isValid:setIsValid(ids) };
+        });
+        onNext({ individualSetAssignment: sa, individualSetComposition: sc, setAssignmentChecklist: checklist });
+      };
+
+      return (
+        <div style={{minHeight:'100vh', background:'#f9fafb', display:'flex', flexDirection:'column'}}>
+          {toast && (
+            <div style={{position:'fixed', top:'20px', left:'50%', transform:'translateX(-50%)', zIndex:100, background:'#dc2626', color:'white', fontSize:'13px', fontWeight:500, padding:'10px 20px', borderRadius:'8px', boxShadow:'0 8px 24px rgba(0,0,0,0.2)', whiteSpace:'nowrap'}}>
+              {toast}
+            </div>
+          )}
+
+          {/* 상단 헤더 */}
+          <div style={{background:'white', borderBottom:'1px solid #e5e7eb', padding:'16px 24px', flexShrink:0}}>
+            <div style={{maxWidth:'1560px', margin:'0 auto'}}>
+              <p style={{fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 2px'}}>예비평가 · 2단계</p>
+              <h1 style={{fontSize:'18px', fontWeight:700, color:'#111827', margin:'0 0 8px'}}>2차 본실험 후보 시안 SET 구성안 작성</h1>
+              <p style={{fontSize:'13px', color:'#374151', lineHeight:1.7, margin:'0 0 4px'}}>
+                1차 실험후보 제외 후 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 배정해 주세요.
+                각 SET은 총 9개 시안으로 구성하며, A 3개, B 3개, C 2개, D 1개의 유형별 고정 배정 기준을 충족해야 합니다.
+              </p>
+              <p style={{fontSize:'11px', color:'#6b7280', lineHeight:1.65, margin:0}}>
+                이 화면에서 작성한 SET은 연구자의 최종 SET 확정 전 참고자료로 활용됩니다.
+                특정 SET에 유사한 조형 구조, 오독 가능성이 큰 시안, 복잡하거나 장식적인 시안이 집중되지 않도록 배정해 주세요.
+              </p>
+              <div style={{display:'flex', flexWrap:'wrap', gap:'20px', marginTop:'12px', paddingTop:'12px', borderTop:'1px solid #f3f4f6'}}>
+                {[['본실험 후보 시안','27개'],['SET 수','3개'],['SET별 구성','각 9개'],['SET별 기준','A 3 · B 3 · C 2 · D 1']].map(([label, value]) => (
+                  <div key={label} style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                    <span style={{fontSize:'11px', color:'#9ca3af'}}>{label}</span>
+                    <span style={{fontSize:'11px', fontWeight:600, color:'#1f2937', background:'#f3f4f6', padding:'2px 8px', borderRadius:'4px'}}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 메인 */}
+          <div style={{flex:1, maxWidth:'1560px', width:'100%', margin:'0 auto', padding:'16px', display:'flex', gap:'16px', alignItems:'flex-start'}}>
+
+            {/* 후보 풀 */}
+            <div style={{width:'272px', flexShrink:0, position:'sticky', top:'16px', maxHeight:'calc(100vh - 5rem)', display:'flex', flexDirection:'column'}}>
+              <div style={{background:'white', borderRadius:'12px', border:'1px solid #e5e7eb', display:'flex', flexDirection:'column', overflow:'hidden', height:'100%'}}>
+                <div
+                  style={{padding:'12px', borderBottom:'1px solid #f3f4f6', flexShrink:0, background: dragTarget==='pool' ? '#f9fafb' : 'white'}}
+                  onDragOver={e => { e.preventDefault(); handleDragOver('pool'); }}
+                  onDragLeave={handleDragLeave}
+                  onDrop={() => handleDrop('pool')}
+                >
+                  <h2 style={{fontSize:'13px', fontWeight:700, color:'#111827', margin:'0 0 2px'}}>본실험 후보 시안</h2>
+                  <p style={{fontSize:'10px', color:'#9ca3af', margin:'0 0 6px', lineHeight:1.5}}>카드를 드래그하여 SET 1, SET 2, SET 3에 배정해 주세요.</p>
+                  <div style={{display:'flex', flexWrap:'wrap', gap:'4px', alignItems:'center'}}>
+                    <span style={{fontSize:'11px', fontWeight:600, padding:'2px 8px', borderRadius:'9999px', background: poolCandidates.length===0 ? '#dcfce7' : '#f3f4f6', color: poolCandidates.length===0 ? '#15803d' : '#374151'}}>
+                      {poolCandidates.length===0 ? '모두 배정됨' : `${poolCandidates.length}개 남음`}
+                    </span>
+                    {['A','B','C','D'].map(t => {
+                      const cnt = poolCandidates.filter(c => c.id[0]===t).length;
+                      return cnt>0 ? <span key={t} style={{fontSize:'10px', color:'#9ca3af'}}>{t} {cnt}</span> : null;
+                    })}
+                  </div>
+                </div>
+                <div
+                  style={{flex:1, overflowY:'auto', padding:'8px', background: dragTarget==='pool' ? '#f9fafb' : 'white'}}
+                  onDragOver={e => { e.preventDefault(); handleDragOver('pool'); }}
+                  onDragLeave={handleDragLeave}
+                  onDrop={() => handleDrop('pool')}
+                >
+                  {poolCandidates.length === 0 ? (
+                    <div style={{display:'flex', alignItems:'center', justifyContent:'center', height:'100px', borderRadius:'8px', border:'2px dashed #bbf7d0', color:'#4ade80', fontSize:'12px'}}>
+                      모든 시안이 배정되었습니다
+                    </div>
+                  ) : (
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'6px'}}>
+                      {poolCandidates.map(c => (
+                        <SetCard key={c.id} candidate={c} zone="pool" draggingId={dragging?.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* SET 영역 */}
+            <div style={{flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:'16px'}}>
+              {SKEYS.map(key => (
+                <SetDropZone
+                  key={key} setKey={key} setLabel={SLABELS[key]}
+                  candidates={getCandidatesIn(key)}
+                  dragTarget={dragTarget} draggingId={dragging?.id}
+                  onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                  onDragStart={handleDragStart} onDragEnd={handleDragEnd}
+                />
+              ))}
+            </div>
+
+            {/* 우측 기준 패널 */}
+            <div style={{width:'232px', flexShrink:0, position:'sticky', top:'16px', maxHeight:'calc(100vh - 5rem)', overflowY:'auto'}}>
+              <div style={{background:'white', borderRadius:'12px', border:'1px solid #e5e7eb', padding:'16px'}}>
+                <h3 style={{fontSize:'13px', fontWeight:700, color:'#111827', margin:'0 0 8px'}}>SET 구성 기준</h3>
+                <p style={{fontSize:'11px', color:'#4b5563', lineHeight:1.7, margin:'0 0 12px'}}>
+                  각 SET은 본실험에서 서로 다른 AI 정보 제시 조건과 교차 배정될 수 있도록 구성됩니다. 따라서 SET 1, SET 2, SET 3은 서로 비교 가능한 구성이 되도록 배정해야 합니다.
+                </p>
+                <div style={{borderTop:'1px solid #f3f4f6', paddingTop:'12px', marginBottom:'16px'}}>
+                  <p style={{fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.05em', margin:'0 0 8px'}}>확인 기준</p>
+                  {['각 SET은 A 3개, B 3개, C 2개, D 1개로 구성','유사한 조형 구조의 시안이 특정 SET에 집중되지 않도록 배정','형태 오독 가능성이 큰 시안이 특정 SET에 집중되지 않도록 배정','복잡하거나 장식적인 시안이 특정 SET에 집중되지 않도록 배정','상대적으로 완성도가 높거나 낮아 보이는 시안이 특정 SET에 집중되지 않도록 배정'].map((item, i) => (
+                    <div key={i} style={{display:'flex', gap:'6px', marginBottom:'6px'}}>
+                      <span style={{color:'#d1d5db', flexShrink:0, marginTop:'2px'}}>·</span>
+                      <span style={{fontSize:'11px', color:'#4b5563', lineHeight:1.6}}>{item}</span>
                     </div>
                   ))}
                 </div>
-              ))}
-            </section>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <button onClick={onBack} className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">본실험 후보 확인으로 돌아가기</button>
-              <button onClick={onNext} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">세트 구성 확정</button>
+                <div style={{borderTop:'1px solid #f3f4f6', paddingTop:'12px'}}>
+                  <p style={{fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.05em', margin:'0 0 8px'}}>현황</p>
+                  {SKEYS.map(key => {
+                    const ids = getCandidatesIn(key).map(c => c.id);
+                    const valid = setIsValid(ids);
+                    return (
+                      <div key={key} style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'6px'}}>
+                        <span style={{fontSize:'11px', color:'#4b5563'}}>{SLABELS[key]}</span>
+                        <span style={{fontSize:'11px', fontWeight: valid ? 600 : 400, color: valid ? '#16a34a' : '#9ca3af'}}>
+                          {valid ? '✓ 완료' : `${ids.length}/9`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:'6px', borderTop:'1px solid #f3f4f6', marginTop:'4px'}}>
+                    <span style={{fontSize:'11px', color:'#4b5563'}}>미배정</span>
+                    <span style={{fontSize:'11px', fontWeight: poolCandidates.length===0 ? 600 : 400, color: poolCandidates.length===0 ? '#16a34a' : '#374151'}}>{poolCandidates.length}개</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* 하단 버튼 바 */}
+          <div style={{position:'sticky', bottom:0, background:'white', borderTop:'1px solid #e5e7eb', padding:'12px 24px', flexShrink:0}}>
+            <div style={{maxWidth:'1560px', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'16px'}}>
+              <button onClick={onBack} style={{padding:'8px 16px', border:'1px solid #d1d5db', color:'#374151', fontSize:'13px', fontWeight:500, borderRadius:'8px', background:'white', cursor:'pointer', whiteSpace:'nowrap'}}>
+                ← 이전 단계로 수정하기
+              </button>
+              <div style={{display:'flex', alignItems:'center', gap:'16px'}}>
+                <p style={{fontSize:'11px', lineHeight:1.4, textAlign:'right', margin:0, color: canSubmit ? '#16a34a' : '#d97706', fontWeight: canSubmit ? 600 : 400}}>
+                  {canSubmit ? '모든 SET이 유형별 고정 배정 기준을 충족했습니다.' : '아직 모든 SET의 유형별 고정 배정 기준이 충족되지 않았습니다.'}
+                </p>
+                <button onClick={() => setShowModal(true)} disabled={!canSubmit}
+                  style={{padding:'8px 20px', background: canSubmit ? '#111827' : '#f3f4f6', color: canSubmit ? 'white' : '#9ca3af', fontSize:'13px', fontWeight:600, borderRadius:'8px', border:'none', cursor: canSubmit ? 'pointer' : 'not-allowed', whiteSpace:'nowrap'}}>
+                  SET 구성안 확인 →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 확인 모달 */}
+          {showModal && (
+            <div style={{position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.4)', padding:'16px'}}>
+              <div style={{background:'white', borderRadius:'16px', boxShadow:'0 20px 60px rgba(0,0,0,0.3)', maxWidth:'520px', width:'100%', padding:'24px'}}>
+                <h2 style={{fontSize:'15px', fontWeight:700, color:'#111827', margin:'0 0 8px'}}>SET 구성안 제출 전 확인</h2>
+                <p style={{fontSize:'13px', color:'#4b5563', lineHeight:1.7, margin:'0 0 16px'}}>
+                  아래 내용은 연구자가 최종 본실험 SET을 확정하기 전 참고자료로 활용됩니다. 제출 전 SET 간 구성 편중이 없는지 확인해 주세요.
+                </p>
+                <div style={{borderTop:'1px solid #f3f4f6', paddingTop:'12px', marginBottom:'16px'}}>
+                  {SET_CHECKLIST.map(({ key, label }) => (
+                    <label key={key} style={{display:'flex', gap:'10px', marginBottom:'10px', cursor:'pointer', alignItems:'flex-start'}}>
+                      <input type="checkbox" checked={checklist[key]} onChange={e => setChecklist(prev => ({...prev, [key]: e.target.checked}))}
+                        style={{marginTop:'2px', flexShrink:0, width:'15px', height:'15px', accentColor:'#111827'}} />
+                      <span style={{fontSize:'13px', lineHeight:1.6, color: checklist[key] ? '#111827' : '#6b7280'}}>{label}</span>
+                    </label>
+                  ))}
+                </div>
+                <div style={{display:'flex', gap:'10px', borderTop:'1px solid #f3f4f6', paddingTop:'16px'}}>
+                  <button onClick={() => { setShowModal(false); setChecklist(INIT_CHECKLIST); }}
+                    style={{flex:1, padding:'10px', border:'1px solid #d1d5db', color:'#374151', fontSize:'13px', fontWeight:500, borderRadius:'8px', background:'white', cursor:'pointer'}}>
+                    취소
+                  </button>
+                  <button onClick={handleModalSubmit} disabled={!allChecked}
+                    style={{flex:1, padding:'10px', background: allChecked ? '#111827' : '#f3f4f6', color: allChecked ? 'white' : '#9ca3af', fontSize:'13px', fontWeight:600, borderRadius:'8px', border:'none', cursor: allChecked ? 'pointer' : 'not-allowed'}}>
+                    SET 구성안 제출
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -1594,7 +1910,7 @@
       const [resultData, setResultData] = useState(null);
       const [logos, setLogos] = useState([]);
       const [manifestStatus, setManifestStatus] = useState({ loading: true, error: null });
-      const [candidateSets, setCandidateSets] = useState(null);
+      const [setAssignmentResult, setSetAssignmentResult] = useState(null);
       const [qualification, setQualification] = useState({});
       const [basicInfo, setBasicInfo] = useState({});
       const sidebarOpen = true;
@@ -1688,7 +2004,8 @@
       }, []);
 
       const goToEliminate = () => { if (!tsElimStart) setTsElimStart(new Date().toISOString()); goScreen('eliminate'); };
-      const goToSetComposition = (sets) => { setCandidateSets(sets); goScreen('setComposition'); };
+      const goToSetAssignment = () => { goScreen('setAssignment'); };
+      const handleSetAssignmentNext = (payload) => { setSetAssignmentResult(payload); goScreen('basicInfo'); };
       const handleSubmit = () => goScreen('review');
       const handleFinalSubmit = () => {
         const d = buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds, tsElimStart, tsEvalStart);
@@ -1706,7 +2023,7 @@
           qualification,
           basicInfo: data,
           excluded_candidate_ids: eliminatedIds,
-          candidateSets,
+          ...setAssignmentResult,
         };
         setBasicInfo(data);
         setResultData(submission);
@@ -1735,8 +2052,8 @@
       if (screen === 'eliminate') return (
         <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('eliminateReview')} onBack={() => window.history.back()} />
       );
-      if (screen === 'eliminateReview') return <EliminationReviewScreen logos={logos} excludedIds={eliminatedIds} onBack={() => window.history.back()} onNext={goToSetComposition} />;
-      if (screen === 'setComposition') return <SetCompositionReadyScreen candidateSets={candidateSets} onBack={() => window.history.back()} onNext={() => goScreen('basicInfo')} />;
+      if (screen === 'eliminateReview') return <EliminationReviewScreen logos={logos} excludedIds={eliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
+      if (screen === 'setAssignment') return <SetAssignmentScreen candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleSetAssignmentNext} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => window.history.back()} onSubmit={handleBasicInfoSubmit} />;
       if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => { window.location.href = 'about:blank'; }} />;
       if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => window.history.back()} onSubmit={handleFinalSubmit} />;
