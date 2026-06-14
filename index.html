@@ -930,7 +930,7 @@
       );
     }
 
-    function SetDropZone({ setKey, setLabel, candidates, dragTarget, draggingId, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd }) {
+    function SetDropZone({ setKey, setLabel, candidates, dragTarget, draggingId, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, flex }) {
       const ids = candidates.map(c => c.id);
       const types = setCountTypes(ids);
       const valid = setIsValid(ids);
@@ -942,6 +942,8 @@
             border: isTarget ? '2px solid #60a5fa' : valid ? '2px solid #86efac' : '2px solid #e5e7eb',
             background: isTarget ? '#eff6ff' : valid ? 'rgba(240,253,244,0.5)' : 'white',
             transition:'all 0.15s',
+            flex: flex || undefined,
+            display:'flex', flexDirection:'column',
           }}
           onDragOver={e => { e.preventDefault(); onDragOver(setKey); }}
           onDragLeave={onDragLeave}
@@ -969,9 +971,9 @@
               </span>
             </p>
           </div>
-          <div style={{padding:'12px', minHeight:'120px'}}>
+          <div style={{padding:'12px', flex:1, display:'flex', flexDirection:'column'}}>
             {candidates.length === 0 ? (
-              <div style={{display:'flex', alignItems:'center', justifyContent:'center', height:'96px', borderRadius:'8px', border:'2px dashed', borderColor: isTarget ? '#93c5fd' : '#e5e7eb', color: isTarget ? '#60a5fa' : '#d1d5db', fontSize:'12px'}}>
+              <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'8px', border:'2px dashed', borderColor: isTarget ? '#93c5fd' : '#e5e7eb', color: isTarget ? '#60a5fa' : '#d1d5db', fontSize:'12px'}}>
                 이 SET에 배정할 시안을 드래그해 주세요.
               </div>
             ) : (
@@ -1093,11 +1095,11 @@
           </div>
 
           {/* 메인 */}
-          <div style={{flex:1, maxWidth:'1560px', width:'100%', margin:'0 auto', padding:'16px', display:'flex', gap:'16px', alignItems:'flex-start'}}>
+          <div style={{flex:1, maxWidth:'1560px', width:'100%', margin:'0 auto', padding:'16px', display:'flex', gap:'16px', alignItems:'stretch', minHeight:'calc(100vh - 220px)'}}>
 
             {/* 후보 풀 */}
-            <div style={{width:'272px', flexShrink:0, position:'sticky', top:'16px', maxHeight:'calc(100vh - 5rem)', display:'flex', flexDirection:'column'}}>
-              <div style={{background:'white', borderRadius:'12px', border:'1px solid #e5e7eb', display:'flex', flexDirection:'column', overflow:'hidden', height:'100%'}}>
+            <div style={{width:'240px', flexShrink:0, display:'flex', flexDirection:'column'}}>
+              <div style={{background:'white', borderRadius:'12px', border:'1px solid #e5e7eb', display:'flex', flexDirection:'column', overflow:'hidden', flex:1}}>
                 <div
                   style={{padding:'12px', borderBottom:'1px solid #f3f4f6', flexShrink:0, background: dragTarget==='pool' ? '#f9fafb' : 'white'}}
                   onDragOver={e => { e.preventDefault(); handleDragOver('pool'); }}
@@ -1138,7 +1140,7 @@
             </div>
 
             {/* SET 영역 */}
-            <div style={{flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:'16px'}}>
+            <div style={{flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:'12px'}}>
               {SKEYS.map(key => (
                 <SetDropZone
                   key={key} setKey={key} setLabel={SLABELS[key]}
@@ -1146,6 +1148,7 @@
                   dragTarget={dragTarget} draggingId={dragging?.id}
                   onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
                   onDragStart={handleDragStart} onDragEnd={handleDragEnd}
+                  flex={1}
                 />
               ))}
             </div>
