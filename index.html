@@ -930,61 +930,85 @@
       );
     }
 
-    function SetDropZone({ setKey, setLabel, candidates, dragTarget, draggingId, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, flex }) {
-      const ids = candidates.map(c => c.id);
-      const types = setCountTypes(ids);
-      const valid = setIsValid(ids);
-      const isTarget = dragTarget === setKey;
+    const TYPE_BG   = { A:'#dbeafe', B:'#dcfce7', C:'#fef9c3', D:'#fce7f3' };
+    const TYPE_TEXT = { A:'#1d4ed8', B:'#15803d', C:'#92400e', D:'#be185d' };
+    const TYPE_DROP = { A:'#eff6ff', B:'#f0fdf4', C:'#fefce8', D:'#fdf2f8' };
+    const TYPE_DASH = { A:'#93c5fd', B:'#86efac', C:'#fde047', D:'#f9a8d4' };
+
+    function TypeRow({ setKey, type, quota, filled, draggingType, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, draggingId }) {
+      const zoneKey = `${setKey}_${type}`;
+      const isCompatible = draggingType === type;
+      const isTarget = dragTarget === zoneKey;
+      const isFull = filled.length >= quota;
       return (
         <div
           style={{
-            borderRadius:'12px',
-            border: isTarget ? '2px solid #60a5fa' : valid ? '2px solid #86efac' : '2px solid #e5e7eb',
-            background: isTarget ? '#eff6ff' : valid ? 'rgba(240,253,244,0.5)' : 'white',
-            transition:'all 0.15s',
-            flex: flex || undefined,
-            display:'flex', flexDirection:'column',
+            display:'flex', alignItems:'flex-start', gap:'12px',
+            padding:'10px 16px', borderTop:'1px solid #f3f4f6',
+            background: isTarget ? TYPE_DROP[type] : 'transparent',
+            transition:'background 0.12s',
           }}
-          onDragOver={e => { e.preventDefault(); onDragOver(setKey); }}
+          onDragOver={e => { e.preventDefault(); if (isCompatible && !isFull) onDragOver(zoneKey); }}
           onDragLeave={onDragLeave}
-          onDrop={() => onDrop(setKey)}
+          onDrop={() => { if (isCompatible && !isFull) onDrop(setKey); }}
         >
-          <div style={{padding:'12px 16px 8px', borderBottom:'1px solid #f3f4f6'}}>
-            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'4px'}}>
-              <h3 style={{fontSize:'14px', fontWeight:700, color:'#111827', margin:0}}>{setLabel}</h3>
-              {valid && <span style={{fontSize:'10px', color:'#15803d', fontWeight:600, background:'#dcfce7', padding:'2px 8px', borderRadius:'9999px'}}>기준 충족 ✓</span>}
-            </div>
-            <p style={{fontSize:'11px', color:'#9ca3af', margin:'0 0 2px'}}>기준: A 3 · B 3 · C 2 · D 1</p>
-            <p style={{fontSize:'11px', color:'#374151', margin:0}}>
-              현재 구성:&nbsp;
-              {['A','B','C','D'].map((t, i) => (
-                <span key={t}>
-                  {i>0 && <span style={{color:'#d1d5db'}}> · </span>}
-                  <span style={types[t]===SET_QUOTA[t] ? {color:'#16a34a',fontWeight:700} : {}}>
-                    {t} {types[t]}/{SET_QUOTA[t]}
-                  </span>
-                </span>
-              ))}
-              <span style={{color:'#d1d5db'}}> · </span>
-              <span style={candidates.length===SET_TOTAL ? {color:'#16a34a',fontWeight:700} : {}}>
-                전체 {candidates.length}/{SET_TOTAL}
-              </span>
-            </p>
+          {/* 타입 레이블 */}
+          <div style={{width:44, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:'6px', gap:'3px'}}>
+            <span style={{fontSize:'13px', fontWeight:800, color:TYPE_TEXT[type], background:TYPE_BG[type], padding:'2px 9px', borderRadius:'6px', lineHeight:1.4}}>{type}</span>
+            <span style={{fontSize:'10px', color: isFull ? '#16a34a' : '#9ca3af', fontWeight: isFull ? 700 : 400}}>{filled.length}/{quota}</span>
           </div>
-          <div style={{padding:'12px', flex:1, display:'flex', flexDirection:'column'}}>
-            {candidates.length === 0 ? (
-              <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'8px', border:'2px dashed', borderColor: isTarget ? '#93c5fd' : '#e5e7eb', color: isTarget ? '#60a5fa' : '#d1d5db', fontSize:'12px'}}>
-                이 SET에 배정할 시안을 드래그해 주세요.
+          {/* 슬롯 */}
+          <div style={{display:'flex', gap:'8px', flexWrap:'wrap', flex:1}}>
+            {filled.map(c => (
+              <div key={c.id} style={{width:80}}>
+                <SetCard candidate={c} zone={setKey} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               </div>
-            ) : (
-              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(82px, 1fr))', gap:'8px'}}>
-                {candidates.map(c => (
-                  <SetCard key={c.id} candidate={c} zone={setKey} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} />
-                ))}
-                {isTarget && draggingId && <div style={{aspectRatio:'1/1.15', background:'#dbeafe', borderRadius:'8px', border:'2px dashed #93c5fd'}} />}
+            ))}
+            {Array.from({length: quota - filled.length}).map((_, i) => (
+              <div key={`emp_${i}`} style={{
+                width:80, aspectRatio:'1/1.15', borderRadius:'8px',
+                border:`2px dashed ${isTarget ? TYPE_DASH[type] : '#e5e7eb'}`,
+                background: isTarget ? TYPE_BG[type] + '55' : '#fafafa',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:'20px', color: isTarget ? TYPE_DASH[type] : '#e5e7eb',
+                transition:'all 0.12s',
+              }}>
+                {isTarget && i === 0 ? '+' : ''}
               </div>
-            )}
+            ))}
           </div>
+        </div>
+      );
+    }
+
+    function TypedSetZone({ setKey, setLabel, allCandidates, assignment, dragging, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, flex }) {
+      const getByType = (type) => allCandidates.filter(c => assignment[c.id] === setKey && c.id[0] === type);
+      const ids = allCandidates.filter(c => assignment[c.id] === setKey).map(c => c.id);
+      const valid = setIsValid(ids);
+      const draggingType = dragging?.id?.[0];
+      return (
+        <div style={{
+          borderRadius:'12px',
+          border: valid ? '2px solid #86efac' : '2px solid #e5e7eb',
+          background: valid ? 'rgba(240,253,244,0.4)' : 'white',
+          transition:'all 0.15s', flex: flex||undefined, display:'flex', flexDirection:'column',
+        }}>
+          <div style={{padding:'12px 16px 10px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <h3 style={{fontSize:'15px', fontWeight:700, color:'#111827', margin:0}}>{setLabel}</h3>
+            {valid
+              ? <span style={{fontSize:'11px', color:'#15803d', fontWeight:600, background:'#dcfce7', padding:'3px 10px', borderRadius:'9999px'}}>기준 충족 ✓</span>
+              : <span style={{fontSize:'11px', color:'#9ca3af'}}>A 3 · B 3 · C 2 · D 1</span>
+            }
+          </div>
+          {['A','B','C','D'].map(type => (
+            <TypeRow
+              key={type} setKey={setKey} type={type} quota={SET_QUOTA[type]}
+              filled={getByType(type)}
+              draggingType={draggingType} dragTarget={dragTarget}
+              onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
+              onDragStart={onDragStart} onDragEnd={onDragEnd} draggingId={dragging?.id}
+            />
+          ))}
         </div>
       );
     }
@@ -1041,11 +1065,11 @@
         setAssignment(prev => ({ ...prev, [id]: to }));
       };
 
-      const handleDragStart = (id) => setDragging({ id });
+      const handleDragStart = (id) => setDragging({ id, type: id[0] });
       const handleDragEnd = () => { setDragging(null); setDragTarget(null); };
       const handleDragOver = (target) => setDragTarget(target);
       const handleDragLeave = () => setDragTarget(null);
-      const handleDrop = (target) => { if (dragging) moveTo(dragging.id, target); setDragging(null); setDragTarget(null); };
+      const handleDrop = (setKey) => { if (dragging) moveTo(dragging.id, setKey); setDragging(null); setDragTarget(null); };
 
       const poolCandidates = getCandidatesIn('pool');
       const canSubmit = poolCandidates.length === 0 && SKEYS.every(key => setIsValid(getCandidatesIn(key).map(c => c.id)));
@@ -1142,10 +1166,10 @@
             {/* SET 영역 */}
             <div style={{flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:'12px'}}>
               {SKEYS.map(key => (
-                <SetDropZone
+                <TypedSetZone
                   key={key} setKey={key} setLabel={SLABELS[key]}
-                  candidates={getCandidatesIn(key)}
-                  dragTarget={dragTarget} draggingId={dragging?.id}
+                  allCandidates={candidates} assignment={assignment} dragging={dragging}
+                  dragTarget={dragTarget}
                   onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
                   onDragStart={handleDragStart} onDragEnd={handleDragEnd}
                   flex={1}
