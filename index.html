@@ -960,13 +960,13 @@
           {/* 슬롯들 */}
           <div style={{display:'flex', gap:'6px', flex:1}}>
             {filled.map(c => (
-              <div key={c.id} style={{flex:1, minWidth:68, maxWidth:110}}>
+              <div key={c.id} style={{flex:1, minWidth:68}}>
                 <SetCard candidate={c} zone={setKey} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               </div>
             ))}
             {Array.from({length: quota - filled.length}).map((_, i) => (
               <div key={i} style={{
-                flex:1, minWidth:68, maxWidth:110, aspectRatio:'1/1.15', borderRadius:'7px',
+                flex:1, minWidth:68, aspectRatio:'1/1', borderRadius:'7px',
                 border:`2px dashed ${isTarget ? TYPE_DASH[type] : '#e5e7eb'}`,
                 background: isTarget ? TYPE_BG[type]+'44' : '#f9fafb',
                 display:'flex', alignItems:'center', justifyContent:'center',
