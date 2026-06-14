@@ -739,9 +739,10 @@
             <header className="sticky top-0 z-30 rounded-xl border border-slate-200 bg-white/95 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] backdrop-blur">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                 <div className="max-w-5xl">
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">1차 실험후보 제외</h1>
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">1층 성립 기준 확인</h1>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-400">본실험에 사용하기 어려운 예비시안 제외</p>
                   <p className="mt-3 text-base leading-7 text-slate-600">
-                    총 50개의 예비시안을 유형별로 확인합니다. 각 유형에서 안내된 개수만큼, 본실험에 사용하기 어렵다고 판단되는 시안을 제외해 주세요.
+                    총 50개의 AI 로고 예비시안을 유형별로 확인합니다. 브랜드 맥락에서 벗어나거나, 형태 오독 가능성·조형 붕괴·텍스트 오류·장면형 이미지 등 본실험 자극으로 사용하기 어려운 시안을 제외해 주세요.
                   </p>
                 </div>
                 <div className="grid min-w-[320px] grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -765,6 +766,9 @@
                 </dl>
                 <p className="mt-2 max-w-6xl text-sm leading-6 text-slate-600">
                   OVBNE는 Objet, Value, Balance, New, Everyday의 의미를 결합한 조어로, 일상 오브제가 지닌 가치와 균형 잡힌 생활 감각, 새롭게 감각화된 일상을 의미합니다.
+                </p>
+                <p className="mt-2 border-t border-slate-100 pt-2 text-xs leading-6 text-slate-400">
+                  성립 기준: 브랜드 맥락 이탈, 형태 오독 가능성, 조형 붕괴, 텍스트 오류, 장면형 이미지는 본실험 자극으로 사용하기 어려운 시안으로 판단합니다.
                 </p>
               </section>
             </header>
@@ -807,7 +811,7 @@
                   disabled={!isComplete}
                   className={`rounded-lg px-6 py-3 text-sm font-bold transition ${isComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
                 >
-                  본실험 후보 확인으로 이동
+                  본실험 후보 시안 확인으로 이동
                 </button>
               </div>
             </div>
@@ -871,8 +875,159 @@
                   뒤로 가서 수정하기
                 </button>
                 <button onClick={() => onNext()} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
-                  2차 SET 구성안 작성으로 이동
+                  2층 완성도 분포 평정으로 이동
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ─── DimensionRatingScreen ─────────────────────────── */
+    const DIM_DEFS = [
+      { key: 'naturalness', label: '자연성', desc: '형태가 지나치게 어색하거나 인위적으로 깨져 보이지 않고, 하나의 로고 시안으로 자연스럽게 인식되는 정도' },
+      { key: 'harmony',     label: '조화성', desc: '심볼 내부 요소와 문자 요소가 시각적으로 균형 있게 연결되어 보이는 정도' },
+      { key: 'refinement',  label: '정교성', desc: '외곽선, 비례, 세부 형태가 본실험 후보 시안으로 검토 가능한 수준으로 정돈되어 보이는 정도' },
+    ];
+    const DIM_SCALE = [
+      { value: 1, label: '낮음' },
+      { value: 2, label: '다소\n낮음' },
+      { value: 3, label: '보통' },
+      { value: 4, label: '다소\n높음' },
+      { value: 5, label: '높음' },
+    ];
+
+    function DimRatingCard({ logo, rating, onRate }) {
+      const allRated = DIM_DEFS.every(d => rating[d.key] !== null);
+      return (
+        <article className={`rounded-lg border bg-white p-3 transition ${allRated ? 'border-slate-300' : 'border-slate-200'}`}>
+          <div className="aspect-square rounded-md bg-slate-50 p-2">
+            <img src={logo.imagePath} alt={logo.candidateId} className="h-full w-full object-contain" draggable={false} />
+          </div>
+          <p className="mt-2 font-mono text-base font-bold text-slate-950">{logo.candidateId}</p>
+          {DIM_DEFS.map(dim => (
+            <div key={dim.key} className="mt-2">
+              <p className="text-xs font-bold text-slate-600">{dim.label}</p>
+              <div className="mt-1 flex gap-1">
+                {DIM_SCALE.map(s => (
+                  <button
+                    key={s.value}
+                    onClick={() => onRate(logo.id, dim.key, s.value)}
+                    title={s.label.replace('\n', ' ')}
+                    className={`flex-1 rounded py-1.5 text-xs font-bold leading-tight transition ${
+                      rating[dim.key] === s.value
+                        ? 'bg-slate-950 text-white'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    {s.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          {allRated && <p className="mt-2 text-center text-xs font-semibold text-emerald-600">평정 완료</p>}
+        </article>
+      );
+    }
+
+    function DimensionRatingScreen({ candidates, onBack, onNext }) {
+      const [ratings, setRatings] = useState(() => {
+        const r = {};
+        candidates.forEach(c => { r[c.id] = { naturalness: null, harmony: null, refinement: null }; });
+        return r;
+      });
+
+      const handleRate = (id, dim, value) => {
+        setRatings(prev => ({ ...prev, [id]: { ...prev[id], [dim]: value } }));
+      };
+
+      const ratedCount = candidates.filter(c => DIM_DEFS.every(d => ratings[c.id][d.key] !== null)).length;
+      const isComplete = ratedCount === candidates.length;
+
+      const handleNext = () => {
+        const result = candidates.map(c => ({
+          candidateId: c.candidateId,
+          typeCode: c.typeCode,
+          naturalness: ratings[c.id].naturalness,
+          harmony: ratings[c.id].harmony,
+          refinement: ratings[c.id].refinement,
+        }));
+        onNext(result);
+      };
+
+      const grouped = groupByType(candidates);
+
+      return (
+        <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
+          <div className="mx-auto max-w-[1680px] space-y-6">
+            <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">예비평가 · 2층</p>
+                  <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">2층 완성도 분포 평정</h1>
+                  <p className="mt-4 text-base leading-7 text-slate-600">
+                    아래 27개 시안은 1층 성립 기준 확인 후 남은 본실험 후보 시안입니다. 각 시안에 대해 자연성, 조화성, 정교성을 평정해 주세요. 이 평정은 최종 로고 선정이나 시안의 우열 판단을 위한 것이 아니라, 본실험 자극 안에서 세 차원의 분포 폭을 확보하기 위한 자료로 활용됩니다.
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    명백히 성립하기 어려운 시안은 이전 단계에서 제외되었으므로, 본 단계에서는 전문가가 후보로 검토할 수 있는 범위 안에서 상대적인 차이를 확인합니다.
+                  </p>
+                </div>
+                <div className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-4 xl:min-w-[260px]">
+                  <p className="text-xs font-bold text-slate-500">평정 진행</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-950">{ratedCount} <span className="text-base font-medium text-slate-400">/ {candidates.length}개</span></p>
+                  <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
+                    {DIM_DEFS.map(d => (
+                      <div key={d.key}>
+                        <p className="text-xs font-bold text-slate-700">{d.label}</p>
+                        <p className="text-xs leading-5 text-slate-500">{d.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-400">척도: 1 낮음 · 2 다소 낮음 · 3 보통 · 4 다소 높음 · 5 높음</p>
+                </div>
+              </div>
+            </header>
+
+            <main className="space-y-6">
+              {TYPE_ORDER.map(code => {
+                const rule = TYPE_RULES[code];
+                const items = grouped[code];
+                return (
+                  <section key={code} className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                    <div className="mb-4 border-b border-slate-100 pb-4">
+                      <h2 className="text-lg font-bold text-slate-950">{rule.title} <span className="font-semibold text-slate-400">| {items.length}개</span></h2>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                      {items.map(logo => (
+                        <DimRatingCard key={logo.id} logo={logo} rating={ratings[logo.id]} onRate={handleRate} />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </main>
+
+            <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
+              <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                  뒤로 가서 수정하기
+                </button>
+                <div className="flex items-center gap-4">
+                  {!isComplete && (
+                    <p className="text-sm font-semibold text-slate-400">
+                      {candidates.length - ratedCount}개 시안의 평정이 남아 있습니다.
+                    </p>
+                  )}
+                  <button
+                    onClick={handleNext}
+                    disabled={!isComplete}
+                    className={`rounded-lg px-6 py-3 text-sm font-bold transition ${isComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}
+                  >
+                    SET 구성안 작성으로 이동
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -891,6 +1046,7 @@
       { key: 'similarStructureChecked', label: '유사한 조형 구조의 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
       { key: 'misreadingRiskChecked', label: '형태 오독 가능성이 큰 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
       { key: 'complexityDistributionChecked', label: '복잡하거나 장식적인 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
+      { key: 'dimensionDistributionChecked', label: '자연성, 조화성, 정교성의 상대적 분포가 특정 SET에 과도하게 편중되지 않도록 배정했습니다.' },
       { key: 'relativeCompletionChecked', label: '상대적으로 완성도가 높거나 낮아 보이는 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
       { key: 'comparabilityChecked', label: 'SET 1, SET 2, SET 3이 비교 가능한 구성인지 확인했습니다.' },
     ];
@@ -1108,6 +1264,9 @@
               <p style={{fontSize:'13px', color:'#374151', lineHeight:1.7, margin:'0 0 4px'}}>
                 1차 실험후보 제외 후 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 배정해 주세요.
                 각 SET은 총 9개 시안으로 구성하며, A 3개, B 3개, C 2개, D 1개의 유형별 고정 배정 기준을 충족해야 합니다.
+              </p>
+              <p style={{fontSize:'13px', color:'#374151', lineHeight:1.7, margin:'4px 0 0'}}>
+                SET 구성 시 유형별 고정 배정 기준뿐 아니라 자연성, 조화성, 정교성의 상대적 분포가 특정 SET에 과도하게 편중되지 않도록 확인해 주세요.
               </p>
               <p style={{fontSize:'11px', color:'#6b7280', lineHeight:1.65, margin:0}}>
                 이 화면에서 작성한 SET은 연구자의 최종 SET 확정 전 참고자료로 활용됩니다.
@@ -1944,6 +2103,7 @@
       const [logos, setLogos] = useState([]);
       const [manifestStatus, setManifestStatus] = useState({ loading: true, error: null });
       const [setAssignmentResult, setSetAssignmentResult] = useState(null);
+      const [dimensionRatings, setDimensionRatings] = useState(null);
       const [qualification, setQualification] = useState({});
       const [basicInfo, setBasicInfo] = useState({});
       const sidebarOpen = true;
@@ -2037,7 +2197,8 @@
       }, []);
 
       const goToEliminate = () => { if (!tsElimStart) setTsElimStart(new Date().toISOString()); goScreen('eliminate'); };
-      const goToSetAssignment = () => { goScreen('setAssignment'); };
+      const goToSetAssignment = () => { goScreen('dimensionRating'); };
+      const handleDimensionRatingNext = (result) => { setDimensionRatings(result); goScreen('setAssignment'); };
       const handleSetAssignmentNext = (payload) => { setSetAssignmentResult(payload); goScreen('basicInfo'); };
       const handleSubmit = () => goScreen('review');
       const handleFinalSubmit = () => {
@@ -2049,6 +2210,14 @@
         goScreen('brief');
       };
       const handleBasicInfoSubmit = (data) => {
+        const formationGate = {
+          excludedCandidates: eliminatedIds,
+          confirmedCandidates: evaluationLogos.map(l => l.candidateId),
+          excludedCountByType: TYPE_ORDER.reduce((acc, code) => { acc[code] = eliminatedIds.filter(id => id[0] === code).length; return acc; }, {}),
+          confirmedCountByType: TYPE_ORDER.reduce((acc, code) => { acc[code] = evaluationLogos.filter(l => l.typeCode === code).length; return acc; }, {}),
+          totalExcluded: eliminatedIds.length,
+          totalConfirmed: evaluationLogos.length,
+        };
         const submission = {
           participant_id: pid,
           timestamp_start: tsStart,
@@ -2056,8 +2225,19 @@
           qualification,
           basicInfo: data,
           excluded_candidate_ids: eliminatedIds,
+          formationGate,
+          dimensionRatings: dimensionRatings || [],
           ...setAssignmentResult,
         };
+        // Export dimension ratings CSV
+        if (submission.dimensionRatings && submission.dimensionRatings.length > 0) {
+          const dimCols = ['evaluatorId', 'candidateId', 'typeCode', 'naturalness', 'harmony', 'refinement'];
+          const dimRows = submission.dimensionRatings.map(r => [pid, r.candidateId, r.typeCode, r.naturalness, r.harmony, r.refinement]);
+          const dimCsv = [dimCols, ...dimRows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+          triggerDownload(new Blob(['﻿' + dimCsv], { type: 'text/csv;charset=utf-8;' }), `pretest_dimension_ratings_${pid}.csv`);
+        }
+        // Export full submission JSON
+        triggerDownload(new Blob([JSON.stringify(submission, null, 2)], { type: 'application/json' }), `pretest_submission_${pid}.json`);
         setBasicInfo(data);
         setResultData(submission);
         goScreen('complete');
@@ -2086,6 +2266,7 @@
         <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('eliminateReview')} onBack={() => window.history.back()} />
       );
       if (screen === 'eliminateReview') return <EliminationReviewScreen key={eliminatedIds.slice().sort().join(',')} logos={logos} excludedIds={eliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
+      if (screen === 'dimensionRating') return <DimensionRatingScreen key={eliminatedIds.slice().sort().join(',')} candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleDimensionRatingNext} />;
       if (screen === 'setAssignment') return <SetAssignmentScreen candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleSetAssignmentNext} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => window.history.back()} onSubmit={handleBasicInfoSubmit} />;
       if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => { window.location.href = 'about:blank'; }} />;
