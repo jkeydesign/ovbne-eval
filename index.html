@@ -958,19 +958,19 @@
             <span style={{fontSize:'10px', color: isFull ? '#16a34a' : '#9ca3af', fontWeight: isFull ? 700 : 400}}>{filled.length}/{quota}</span>
           </div>
           {/* 슬롯 */}
-          <div style={{display:'flex', gap:'8px', flexWrap:'wrap', flex:1}}>
+          <div style={{display:'flex', gap:'8px', flex:1}}>
             {filled.map(c => (
-              <div key={c.id} style={{width:80}}>
+              <div key={c.id} style={{flex:1, minWidth:80, maxWidth:160}}>
                 <SetCard candidate={c} zone={setKey} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               </div>
             ))}
             {Array.from({length: quota - filled.length}).map((_, i) => (
               <div key={`emp_${i}`} style={{
-                width:80, aspectRatio:'1/1.15', borderRadius:'8px',
+                flex:1, minWidth:80, maxWidth:160, aspectRatio:'1/1.15', borderRadius:'8px',
                 border:`2px dashed ${isTarget ? TYPE_DASH[type] : '#e5e7eb'}`,
                 background: isTarget ? TYPE_BG[type] + '55' : '#fafafa',
                 display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:'20px', color: isTarget ? TYPE_DASH[type] : '#e5e7eb',
+                fontSize:'24px', color: isTarget ? TYPE_DASH[type] : '#e5e7eb',
                 transition:'all 0.12s',
               }}>
                 {isTarget && i === 0 ? '+' : ''}
@@ -1153,7 +1153,7 @@
                       모든 시안이 배정되었습니다
                     </div>
                   ) : (
-                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'6px'}}>
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'8px'}}>
                       {poolCandidates.map(c => (
                         <SetCard key={c.id} candidate={c} zone="pool" draggingId={dragging?.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} />
                       ))}
