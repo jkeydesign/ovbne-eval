@@ -2176,6 +2176,11 @@
         historyReady.current = true;
         const onPopState = (event) => {
           const nextScreen = event.state?.screen || 'intro';
+          if (nextScreen === 'intro') {
+            // 첫 페이지에서 뒤로가기 차단: 다시 앞으로 밀어넣기
+            window.history.pushState(event.state, '', window.location.href);
+            return;
+          }
           setScreen(nextScreen);
         };
         window.addEventListener('popstate', onPopState);
