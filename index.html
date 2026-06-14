@@ -689,8 +689,8 @@
             <img src={logo.imagePath} alt={logo.candidateId} className="h-full w-full object-contain" />
           </div>
           <div className="mt-3 min-w-0">
-            <p className="font-mono text-sm font-bold text-slate-950">{logo.candidateId}</p>
-            {showTypeName && <p className="mt-1 text-xs font-semibold text-slate-500">{logo.typeName}</p>}
+            <p className="font-mono text-base font-bold text-slate-950">{logo.candidateId}</p>
+            {showTypeName && <p className="mt-1 text-xs font-semibold text-slate-400">{logo.typeName}</p>}
           </div>
           {!readonly && (
             <button
@@ -858,7 +858,7 @@
                       <h2 className="text-lg font-bold text-slate-950">{rule.title} <span className="font-semibold text-slate-400">| 본실험 후보 {items.length}개</span></h2>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
-                      {items.map(logo => <CandidateCard key={logo.id} logo={logo} readonly />)}
+                      {items.map(logo => <CandidateCard key={logo.id} logo={logo} readonly showTypeName={false} />)}
                     </div>
                   </section>
                 );
@@ -2084,7 +2084,7 @@
       if (screen === 'eliminate') return (
         <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('eliminateReview')} onBack={() => window.history.back()} />
       );
-      if (screen === 'eliminateReview') return <EliminationReviewScreen logos={logos} excludedIds={eliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
+      if (screen === 'eliminateReview') return <EliminationReviewScreen key={eliminatedIds.slice().sort().join(',')} logos={logos} excludedIds={eliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
       if (screen === 'setAssignment') return <SetAssignmentScreen candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleSetAssignmentNext} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => window.history.back()} onSubmit={handleBasicInfoSubmit} />;
       if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => { window.location.href = 'about:blank'; }} />;
