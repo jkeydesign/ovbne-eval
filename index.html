@@ -26,13 +26,19 @@
     const BRAND_WEIGHT = 0.6;
     const VISUAL_WEIGHT = 0.4;
 
+    const PRE_EVAL_GROUPS = ['A', 'B', 'C'];
+    const PRE_EVAL_GROUP_SIZE = 16;
+    const PRE_EVAL_EXCLUDE_PER_GROUP = 7;
+    const PRE_EVAL_TOTAL_EXCLUDE = PRE_EVAL_GROUPS.length * PRE_EVAL_EXCLUDE_PER_GROUP;
+    const PRE_EVAL_TOTAL_KEEP = PRE_EVAL_GROUPS.length * (PRE_EVAL_GROUP_SIZE - PRE_EVAL_EXCLUDE_PER_GROUP);
+    const CONDITION_TYPES = ['시안 제시형', '추천 제시형', '평가 순위 제시형'];
+
     const TYPE_RULES = {
-      A: { code: 'A', title: 'A 구상 암시형', typeName: '구상 암시형', total: 14, exclude: 5, keep: 9 },
-      B: { code: 'B', title: 'B 기하학적 추상형', typeName: '기하학적 추상형', total: 14, exclude: 5, keep: 9 },
-      C: { code: 'C', title: 'C 유기적 추상형', typeName: '유기적 추상형', total: 12, exclude: 6, keep: 6 },
-      D: { code: 'D', title: 'D 문자 기반 심볼형', typeName: '문자 기반 심볼형', total: 10, exclude: 7, keep: 3 },
+      A: { code: 'A', title: 'A 구상 암시형', typeName: '구상 암시형', total: 16, exclude: 7, keep: 9 },
+      B: { code: 'B', title: 'B 기하학적 추상형', typeName: '기하학적 추상형', total: 16, exclude: 7, keep: 9 },
+      C: { code: 'C', title: 'C 유기적 추상형', typeName: '유기적 추상형', total: 16, exclude: 7, keep: 9 },
     };
-    const TYPE_ORDER = ['A', 'B', 'C', 'D'];
+    const TYPE_ORDER = ['A', 'B', 'C'];
 
     function getPublicBasePath() {
       const path = window.location.pathname;
@@ -47,30 +53,36 @@
       return rows.map(row => Object.fromEntries(header.map((key, index) => [key, row[index] ?? ''])));
     }
     async function loadCandidateManifest() {
-      const manifestPath = publicAssetPath('/logos/pretest/logo_candidates_manifest.csv');
-      const response = await fetch(manifestPath, { cache: 'no-store' });
-      if (!response.ok) throw new Error(`Manifest load failed: ${response.status}`);
-      const records = parseCsv(await response.text()).map(row => ({
-        id: row.candidateId,
-        candidateId: row.candidateId,
-        typeCode: row.typeCode,
-        typeName: row.typeName,
-        promptCode: row.promptCode,
-        folder: row.folder,
-        filename: row.filename,
-        sortOrder: Number(row.sortOrder),
-        imagePath: publicAssetPath(`/logos/pretest/${row.folder}/${row.filename}`),
-      })).sort((a, b) => a.sortOrder - b.sortOrder);
+      const records = PRE_EVAL_GROUPS.flatMap((preEvalGroup, groupIndex) =>
+        Array.from({ length: PRE_EVAL_GROUP_SIZE }, (_, index) => {
+          const localStimulusCode = `L_${String(index + 1).padStart(2, '0')}`;
+          const stimulusId = `${preEvalGroup}_${localStimulusCode}`;
+          const displayCode = `${preEvalGroup}${String(index + 1).padStart(2, '0')}`;
+          return {
+            id: stimulusId,
+            stimulusId,
+            candidateId: displayCode,
+            displayCode,
+            preEvalGroup,
+            localStimulusCode,
+            typeCode: preEvalGroup,
+            typeName: TYPE_RULES[preEvalGroup].typeName,
+            sortOrder: groupIndex * PRE_EVAL_GROUP_SIZE + index + 1,
+            mode: 'preEvaluation',
+            isActive: true,
+            conditionType: null,
+            imagePath: publicAssetPath(`/logos/pre-eval/${preEvalGroup}/${localStimulusCode}.png`),
+          };
+        })
+      );
       const counts = records.reduce((acc, logo) => {
-        acc[logo.typeCode] = (acc[logo.typeCode] || 0) + 1;
+        acc[logo.preEvalGroup] = (acc[logo.preEvalGroup] || 0) + 1;
         return acc;
       }, {});
-      const isValid = records.length === 50
-        && counts.A === 14
-        && counts.B === 14
-        && counts.C === 12
-        && counts.D === 10;
-      if (!isValid) throw new Error(`Manifest count mismatch: ${JSON.stringify(counts)} total ${records.length}`);
+      const isValid = records.length === 48
+        && PRE_EVAL_GROUPS.every(group => counts[group] === PRE_EVAL_GROUP_SIZE)
+        && new Set(records.map(logo => logo.stimulusId)).size === 48;
+      if (!isValid) throw new Error(`Pre-evaluation candidate mismatch: ${JSON.stringify(counts)} total ${records.length}`);
       return records;
     }
 
@@ -91,7 +103,7 @@
       return 'xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16)) + '-' + Date.now().toString(36);
     }
 
-    const STORAGE_KEY = 'ovbne_pilot_eval_v1';
+    const STORAGE_KEY = 'ovbne_pre_eval_v2';
     const saveData = d => { try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} };
     const loadData = () => {
       try {
@@ -160,7 +172,7 @@
     /* ─── IntroScreen ─────────────────────────────────────── */
     const INTRO_CHECKS = [
       '본 예비평가는 완성 로고 선정이 아니라 본실험 자극 구성을 위한 절차임을 확인했습니다.',
-      '50개 시안은 예비시안이며, 본실험 후보 27개 구성을 위해 검토해야 함을 확인했습니다.',
+      '48개 시안은 예비시안이며, 본실험 후보 27개 구성을 위해 검토해야 함을 확인했습니다.',
       'SET 1, SET 2, SET 3은 본실험 조건 간 비교 가능성을 확보할 수 있도록 구성해야 함을 확인했습니다.',
       '특정 SET에 유사한 시안이나 시각적 편중이 집중되지 않도록 확인하며 진행하겠습니다.',
     ];
@@ -172,7 +184,7 @@
 
       const processItems = [
         '1단계: OVBNE 브랜드 브리프 확인',
-        '2단계: 50개 AI 로고 예비시안 검토',
+        '2단계: 48개 AI 로고 예비시안 검토',
         '3단계: 유형별 기준에 따라 본실험에 사용하기 어려운 시안 제외',
         '4단계: 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 배정',
         '5단계: SET별 고정 배정 기준 확인 후 세트 구성 확정',
@@ -206,7 +218,7 @@
                 </p>
 
                 <p>
-                  본실험에서는 AI 정보 제시 유형에 따라 전문 디자이너의 로고 시안 판단 과정이 어떻게 달라지는지 비교합니다. 이를 위해 본 예비평가에서는 50개의 AI 로고 예비시안 중 본실험 자극으로 사용하기 어려운 시안을 제외하고, 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 구성합니다.
+                  본실험에서는 AI 정보 제시 유형에 따라 전문 디자이너의 로고 시안 판단 과정이 어떻게 달라지는지 비교합니다. 이를 위해 본 예비평가에서는 48개의 AI 로고 예비시안 중 본실험 자극으로 사용하기 어려운 시안을 제외하고, 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 구성합니다.
                 </p>
 
                 <p>
@@ -477,7 +489,7 @@
     }
 
     /* ─── EliminationScreen ──────────────────────────────── */
-    const ELIM_LIMIT = 23;
+    const ELIM_LIMIT = 21;
     function LegacyEliminationScreen({ eliminatedIds, onEliminate, onNext, onBack, timestampElimStart, cardSize=180, onCardSize }) {
       const count = eliminatedIds.length;
       const isComplete = count === ELIM_LIMIT;
@@ -501,7 +513,7 @@
               <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
                 <div className={`h-1.5 rounded-full transition-all duration-300 ${isComplete?'bg-red-500':'bg-red-300'}`} style={{width:`${(count/ELIM_LIMIT)*100}%`}} />
               </div>
-              {isComplete && <span className="text-xs font-semibold text-red-600 whitespace-nowrap shrink-0">✓ 23개 선택 완료</span>}
+              {isComplete && <span className="text-xs font-semibold text-red-600 whitespace-nowrap shrink-0">✓ 21개 선택 완료</span>}
               {timestampElimStart && (
                 <div className={`text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded ${elimMin<5?'text-amber-600 bg-amber-50':'text-gray-400'}`}>
                   탈락 선별 <span className="font-semibold">{elimMin}분</span> 경과{elimMin<5&&<span className="ml-1" style={{fontSize:'10px'}}>(5분 이상 권장)</span>}
@@ -526,7 +538,7 @@
           {/* 안내 */}
           <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
             <p className="text-sm text-amber-800 leading-relaxed">
-              본실험에서 제외할 로고 시안 <strong>23개</strong>를 선택해 주세요. 정확히 23개를 선택해야 다음 단계로 진행됩니다.
+              본실험에서 제외할 로고 시안 <strong>21개</strong>를 선택해 주세요. 정확히 21개를 선택해야 다음 단계로 진행됩니다.
               {!isComplete && count>0 && <span className="ml-2 font-medium">— {ELIM_LIMIT-count}개 더 선택 필요</span>}
             </p>
           </div>
@@ -622,13 +634,13 @@
             <div>
               <p className="text-gray-400 uppercase tracking-widest mb-1" style={{fontSize:'10px',fontWeight:600}}>시안 선별 확인</p>
               <h1 className="text-xl font-semibold text-gray-900">선별 결과를 확인해 주세요</h1>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">카드를 드래그하여 탈락/평가 박스 사이에서 직접 옮길 수 있습니다. 탈락 시안이 정확히 <strong>23개</strong>일 때 평가를 시작할 수 있습니다.</p>
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed">카드를 드래그하여 탈락/평가 박스 사이에서 직접 옮길 수 있습니다. 탈락 시안이 정확히 <strong>21개</strong>일 때 평가를 시작할 수 있습니다.</p>
             </div>
 
             {!isExact && (
               <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-2.5 text-sm text-amber-700 flex items-center gap-2">
                 <span>⚠</span>
-                <span>현재 탈락 시안 <strong>{eliminatedIds.length}개</strong> — 정확히 23개여야 합니다{eliminatedIds.length<ELIM_LIMIT?` (${ELIM_LIMIT-eliminatedIds.length}개 더 탈락으로 이동 필요)`:`  (${eliminatedIds.length-ELIM_LIMIT}개 평가로 이동 필요)`}</span>
+                <span>현재 제외 시안 <strong>{eliminatedIds.length}개</strong> — 정확히 {ELIM_LIMIT}개여야 합니다{eliminatedIds.length<ELIM_LIMIT?` (${ELIM_LIMIT-eliminatedIds.length}개 더 제외 선택 필요)`:`  (${eliminatedIds.length-ELIM_LIMIT}개 제외 해제 필요)`}</span>
               </div>
             )}
 
@@ -640,7 +652,7 @@
             >
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
-                <h2 className="text-sm font-semibold text-red-700">탈락 시안 — {eliminated.length}개{eliminated.length!==ELIM_LIMIT&&<span className="ml-2 text-xs font-normal text-red-400">(23개 필요)</span>}</h2>
+                <h2 className="text-sm font-semibold text-red-700">탈락 시안 — {eliminated.length}개{eliminated.length!==ELIM_LIMIT&&<span className="ml-2 text-xs font-normal text-red-400">(21개 필요)</span>}</h2>
                 <span className="text-xs text-red-300 ml-auto">본실험에서 제외 · 여기로 드래그</span>
               </div>
               {eliminated.length===0
@@ -674,7 +686,7 @@
               <button onClick={onBack} className="flex-1 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">← 수정하기</button>
               <button onClick={onNext} disabled={!isExact}
                 className={`flex-1 py-3 text-sm font-medium rounded-md transition-colors ${isExact?'bg-gray-900 text-white hover:bg-gray-700':'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
-                {isExact ? '평가 시작하기 →' : `탈락 ${eliminatedIds.length} / 23 — 조건 미충족`}
+                {isExact ? '평가 시작하기 →' : `제외 ${eliminatedIds.length} / ${ELIM_LIMIT} — 조건 미충족`}
               </button>
             </div>
           </div>
@@ -740,10 +752,10 @@
             <header className="sticky top-0 z-30 rounded-xl border border-slate-200 bg-white/95 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] backdrop-blur">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                 <div className="max-w-5xl">
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">1층 성립 기준 확인</h1>
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">1차 실험후보 제외</h1>
                   <p className="mt-0.5 text-sm font-semibold text-slate-400">본실험에 사용하기 어려운 예비시안 제외</p>
                   <p className="mt-3 text-base leading-7 text-slate-600">
-                    총 50개의 AI 로고 예비시안을 유형별로 확인합니다. 브랜드 맥락에서 벗어나거나, 형태 오독 가능성·조형 붕괴·텍스트 오류·장면형 이미지 등 본실험 자극으로 사용하기 어려운 시안을 제외해 주세요.
+                    총 48개의 AI 로고 예비시안을 유형별로 확인합니다. 각 유형에서 7개씩, 총 21개의 본실험에 사용하기 어려운 시안을 제외해 주세요.
                   </p>
                 </div>
                 <div className="grid min-w-[320px] grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -949,7 +961,11 @@
 
       const handleNext = () => {
         const result = candidates.map(c => ({
+          stimulusId: c.stimulusId,
+          preEvalGroup: c.preEvalGroup,
+          localStimulusCode: c.localStimulusCode,
           candidateId: c.candidateId,
+          displayCode: c.displayCode || c.candidateId,
           typeCode: c.typeCode,
           naturalness: ratings[c.id].naturalness,
           harmony: ratings[c.id].harmony,
@@ -975,7 +991,7 @@
                 {/* 2열: 설명 텍스트 2단 */}
                 <div className="flex-1 border-l border-slate-100 px-6 flex flex-col justify-center gap-1 min-w-0">
                   <p className="text-xs leading-[1.65] text-slate-600">
-                    아래 27개 시안은 1층 성립 기준 확인 후 남은 본실험 후보 시안입니다. 각 시안에 대해 자연성, 조화성, 정교성을 평정해 주세요. 이 평정은 최종 로고 선정이나 시안의 우열 판단을 위한 것이 아니라, 본실험 자극 안에서 세 차원의 분포 폭을 확보하기 위한 자료로 활용됩니다.
+                    아래 27개 시안은 1차 실험후보 제외 후 남은 본실험 후보 시안입니다. 각 시안에 대해 자연성, 조화성, 정교성을 평정해 주세요. 이 평정은 완성 로고 선정이나 시안의 우열 판단을 위한 것이 아니라, 본실험 자극 안에서 세 차원의 분포 폭을 확보하기 위한 자료로 활용됩니다.
                   </p>
                   <p className="text-[11px] leading-[1.6] text-slate-400">
                     명백히 성립하기 어려운 시안은 이전 단계에서 제외되었으므로, 본 단계에서는 전문가가 후보로 검토할 수 있는 범위 안에서 상대적인 차이를 확인합니다.
@@ -1052,12 +1068,12 @@
 
     /* ─── SetAssignmentScreen ────────────────────────────── */
     const CARD_W = 90; /* 풀·SET 슬롯 공통 카드 너비(px) */
-    const SET_QUOTA = { A: 3, B: 3, C: 2, D: 1 };
+    const SET_QUOTA = { A: 3, B: 3, C: 3 };
     const SET_TOTAL = 9;
     const SKEYS = ['SET_1', 'SET_2', 'SET_3'];
     const SLABELS = { SET_1: 'SET 1', SET_2: 'SET 2', SET_3: 'SET 3' };
     const SET_CHECKLIST = [
-      { key: 'typeCompositionChecked', label: '각 SET은 A 3개, B 3개, C 2개, D 1개의 유형별 고정 배정 기준을 충족합니다.' },
+      { key: 'typeCompositionChecked', label: '각 SET은 A 3개, B 3개, C 3개의 고정 배정 기준을 충족합니다.' },
       { key: 'similarStructureChecked', label: '유사한 조형 구조의 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
       { key: 'misreadingRiskChecked', label: '형태 오독 가능성이 큰 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
       { key: 'complexityDistributionChecked', label: '복잡하거나 장식적인 시안이 특정 SET에 집중되지 않도록 확인했습니다.' },
@@ -1068,12 +1084,16 @@
     const INIT_CHECKLIST = Object.fromEntries(SET_CHECKLIST.map(i => [i.key, false]));
 
     function setCountTypes(ids) {
-      return ids.reduce((acc, id) => { acc[id[0]]++; return acc; }, { A:0, B:0, C:0, D:0 });
+      return ids.reduce((acc, id) => {
+        const group = id.split('_')[0];
+        if (acc[group] !== undefined) acc[group]++;
+        return acc;
+      }, { A:0, B:0, C:0 });
     }
     function setIsValid(ids) {
       if (ids.length !== SET_TOTAL) return false;
       const c = setCountTypes(ids);
-      return c.A===3 && c.B===3 && c.C===2 && c.D===1;
+      return c.A===3 && c.B===3 && c.C===3;
     }
 
     function SetCard({ candidate, zone, draggingId, onDragStart, onDragEnd }) {
@@ -1153,10 +1173,10 @@
     }
 
     function TypedSetZone({ setKey, setLabel, allCandidates, assignment, dragging, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, flex }) {
-      const getByType = (t) => allCandidates.filter(c => assignment[c.id]===setKey && c.id[0]===t);
+      const getByType = (t) => allCandidates.filter(c => assignment[c.id]===setKey && c.preEvalGroup===t);
       const ids = allCandidates.filter(c => assignment[c.id]===setKey).map(c => c.id);
       const valid = setIsValid(ids);
-      const draggingType = dragging?.id?.[0];
+      const draggingType = dragging?.type;
       const sharedProps = { draggingType, dragTarget, onDragOver, onDragLeave, onDrop, onDragStart, onDragEnd, draggingId: dragging?.id };
       return (
         <div style={{
@@ -1169,7 +1189,7 @@
             <h3 style={{fontSize:'15px', fontWeight:700, color:'#111827', margin:0}}>{setLabel}</h3>
             {valid
               ? <span style={{fontSize:'11px', color:'#15803d', fontWeight:600, background:'#dcfce7', padding:'3px 10px', borderRadius:'9999px'}}>기준 충족 ✓</span>
-              : <span style={{fontSize:'11px', color:'#9ca3af'}}>A 3 · B 3 · C 2 · D 1</span>
+              : <span style={{fontSize:'11px', color:'#9ca3af'}}>A 3 · B 3 · C 3</span>
             }
           </div>
           {/* A행 */}
@@ -1181,10 +1201,8 @@
             <TypeSlots setKey={setKey} type='B' quota={3} filled={getByType('B')} {...sharedProps} />
           </div>
           {/* C+D 합행 */}
-          <div style={{padding:'8px 12px', display:'flex', gap:'8px', alignItems:'center'}}>
-            <TypeSlots setKey={setKey} type='C' quota={2} filled={getByType('C')} {...sharedProps} />
-            <div style={{width:'1px', background:'#e5e7eb', alignSelf:'stretch', flexShrink:0}} />
-            <TypeSlots setKey={setKey} type='D' quota={1} filled={getByType('D')} {...sharedProps} />
+          <div style={{padding:'8px 12px'}}>
+            <TypeSlots setKey={setKey} type='C' quota={3} filled={getByType('C')} {...sharedProps} />
           </div>
         </div>
       );
@@ -1192,7 +1210,7 @@
 
     function SetAssignmentScreen({ candidates, onBack, onNext }) {
       const typeCounts = setCountTypes(candidates.map(c => c.id));
-      const isDataValid = candidates.length===27 && typeCounts.A===9 && typeCounts.B===9 && typeCounts.C===6 && typeCounts.D===3;
+      const isDataValid = candidates.length===27 && typeCounts.A===9 && typeCounts.B===9 && typeCounts.C===9;
 
       const [assignment, setAssignment] = useState(() => {
         const a = {}; candidates.forEach(c => { a[c.id] = 'pool'; }); return a;
@@ -1212,8 +1230,8 @@
                 본실험 후보 구성이 맞지 않습니다. 이전 단계에서 실험후보 제외 선택을 다시 확인해 주세요.
               </p>
               <p style={{fontSize:'13px', color:'#6b7280', background:'#f9fafb', borderRadius:'8px', padding:'12px 16px', marginBottom:'20px'}}>
-                현재: 전체 {candidates.length}개 (A {typeCounts.A} · B {typeCounts.B} · C {typeCounts.C} · D {typeCounts.D})<br/>
-                필요: 전체 27개 (A 9 · B 9 · C 6 · D 3)
+                현재: 전체 {candidates.length}개 (A {typeCounts.A} · B {typeCounts.B} · C {typeCounts.C})<br/>
+                기준: 전체 27개 (A 9 · B 9 · C 9)
               </p>
               <button onClick={onBack} style={{padding:'10px 24px', background:'#111827', color:'white', border:'none', borderRadius:'8px', fontSize:'14px', fontWeight:500, cursor:'pointer'}}>
                 ← 이전 단계로 수정하기
@@ -1230,9 +1248,9 @@
         const from = assignment[id];
         if (from === to) return;
         if (to !== 'pool') {
-          const type = id[0];
+          const type = id.split('_')[0];
           const inTarget = candidates.filter(c => assignment[c.id] === to);
-          if (inTarget.filter(c => c.id[0] === type).length >= SET_QUOTA[type]) {
+          if (inTarget.filter(c => c.preEvalGroup === type).length >= SET_QUOTA[type]) {
             showToast('이 SET의 유형별 고정 배정 기준을 초과했습니다.'); return;
           }
           if (inTarget.length >= SET_TOTAL) {
@@ -1242,7 +1260,7 @@
         setAssignment(prev => ({ ...prev, [id]: to }));
       };
 
-      const handleDragStart = (id) => setDragging({ id, type: id[0] });
+      const handleDragStart = (id) => setDragging({ id, type: id.split('_')[0] });
       const handleDragEnd = () => { setDragging(null); setDragTarget(null); };
       const handleDragOver = (target) => setDragTarget(target);
       const handleDragLeave = () => setDragTarget(null);
@@ -1258,9 +1276,9 @@
           const ids = getCandidatesIn(key).map(c => c.id);
           sa[key] = ids;
           const c = setCountTypes(ids);
-          sc[key] = { A:c.A, B:c.B, C:c.C, D:c.D, total:ids.length, isValid:setIsValid(ids) };
+          sc[key] = { A:c.A, B:c.B, C:c.C, total:ids.length, isValid:setIsValid(ids), conditionType: CONDITION_TYPES[SKEYS.indexOf(key)] };
         });
-        onNext({ individualSetAssignment: sa, individualSetComposition: sc, setAssignmentChecklist: checklist });
+        onNext({ individualSetAssignment: sa, individualSetComposition: sc, conditionTypes: CONDITION_TYPES, setAssignmentChecklist: checklist });
       };
 
       return (
@@ -1278,7 +1296,7 @@
               <h1 style={{fontSize:'18px', fontWeight:700, color:'#111827', margin:'0 0 8px'}}>2차 본실험 후보 시안 SET 구성안 작성</h1>
               <p style={{fontSize:'13px', color:'#374151', lineHeight:1.7, margin:'0 0 4px'}}>
                 1차 실험후보 제외 후 남은 27개 본실험 후보 시안을 SET 1, SET 2, SET 3으로 배정해 주세요.
-                각 SET은 총 9개 시안으로 구성하며, A 3개, B 3개, C 2개, D 1개의 유형별 고정 배정 기준을 충족해야 합니다.
+                각 SET은 총 9개 시안으로 구성하며, A 3개, B 3개, C 3개의 유형별 고정 배정 기준을 충족해야 합니다.
               </p>
               <p style={{fontSize:'13px', color:'#374151', lineHeight:1.7, margin:'4px 0 0'}}>
                 SET 구성 시 유형별 고정 배정 기준뿐 아니라 자연성, 조화성, 정교성의 상대적 분포가 특정 SET에 과도하게 편중되지 않도록 확인해 주세요.
@@ -1288,7 +1306,7 @@
                 특정 SET에 유사한 조형 구조, 오독 가능성이 큰 시안, 복잡하거나 장식적인 시안이 집중되지 않도록 배정해 주세요.
               </p>
               <div style={{display:'flex', flexWrap:'wrap', gap:'20px', marginTop:'12px', paddingTop:'12px', borderTop:'1px solid #f3f4f6'}}>
-                {[['본실험 후보 시안','27개'],['SET 수','3개'],['SET별 구성','각 9개'],['SET별 기준','A 3 · B 3 · C 2 · D 1']].map(([label, value]) => (
+                {[['본실험 후보 시안','27개'],['SET 수','3개'],['SET별 구성','각 9개'],['SET별 기준','A 3 · B 3 · C 3']].map(([label, value]) => (
                   <div key={label} style={{display:'flex', alignItems:'center', gap:'6px'}}>
                     <span style={{fontSize:'11px', color:'#9ca3af'}}>{label}</span>
                     <span style={{fontSize:'11px', fontWeight:600, color:'#1f2937', background:'#f3f4f6', padding:'2px 8px', borderRadius:'4px'}}>{value}</span>
@@ -1317,7 +1335,7 @@
                       {poolCandidates.length===0 ? '모두 배정됨' : `${poolCandidates.length}개 남음`}
                     </span>
                     {['A','B','C','D'].map(t => {
-                      const cnt = poolCandidates.filter(c => c.id[0]===t).length;
+                      const cnt = poolCandidates.filter(c => c.preEvalGroup===t).length;
                       return cnt>0 ? <span key={t} style={{fontSize:'10px', color:'#9ca3af'}}>{t} {cnt}</span> : null;
                     })}
                   </div>
@@ -1366,7 +1384,7 @@
                 </p>
                 <div style={{borderTop:'1px solid #f3f4f6', paddingTop:'12px', marginBottom:'16px'}}>
                   <p style={{fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.05em', margin:'0 0 8px'}}>확인 기준</p>
-                  {['각 SET은 A 3개, B 3개, C 2개, D 1개로 구성','유사한 조형 구조의 시안이 특정 SET에 집중되지 않도록 배정','형태 오독 가능성이 큰 시안이 특정 SET에 집중되지 않도록 배정','복잡하거나 장식적인 시안이 특정 SET에 집중되지 않도록 배정','상대적으로 완성도가 높거나 낮아 보이는 시안이 특정 SET에 집중되지 않도록 배정'].map((item, i) => (
+                  {['각 SET은 A 3개, B 3개, C 3개로 구성','유사한 조형 구조의 시안이 특정 SET에 집중되지 않도록 배정','형태 오독 가능성이 큰 시안이 특정 SET에 집중되지 않도록 배정','복잡하거나 장식적인 시안이 특정 SET에 집중되지 않도록 배정','상대적으로 완성도가 높거나 낮아 보이는 시안이 특정 SET에 집중되지 않도록 배정'].map((item, i) => (
                     <div key={i} style={{display:'flex', gap:'6px', marginBottom:'6px'}}>
                       <span style={{color:'#d1d5db', flexShrink:0, marginTop:'2px'}}>·</span>
                       <span style={{fontSize:'11px', color:'#4b5563', lineHeight:1.6}}>{item}</span>
@@ -1487,7 +1505,7 @@
               <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">OVBNE 브랜드 브리프</h1>
               <div className="mx-auto grid max-w-[980px] gap-3.5 text-left text-[16px] leading-[1.85] text-gray-800">
                 <p>
-                  아래 정보는 50개 후보 시안이 OVBNE 브랜드 맥락에서 본실험 자극으로 사용 가능한지 판단하기 위한 참고 기준입니다. 평가자는 완성 로고의 우열을 판단하기보다, 각 시안이 브랜드 맥락과 최소한의 관련성을 갖는지 확인해 주세요.
+                  아래 정보는 48개 후보 시안이 OVBNE 브랜드 맥락에서 본실험 자극으로 사용 가능한지 판단하기 위한 참고 기준입니다. 평가자는 완성 로고의 우열을 판단하기보다, 각 시안이 브랜드 맥락과 최소한의 관련성을 갖는지 확인해 주세요.
                 </p>
                 <p>
                   OVBNE는 대형 라이프스타일 브랜드, 독립 오브제 브랜드, 온라인 감성 셀렉트숍과 경쟁하는 신규 브랜드로 설정됩니다. 본 예비평가에서는 특정 경쟁 브랜드와의 직접 비교가 아니라, 각 시안이 OVBNE 브랜드 맥락에서 과도하게 다른 업종으로 오독되지 않는지를 확인합니다.
@@ -2231,9 +2249,14 @@
       };
       const handleBasicInfoSubmit = (data) => {
         const formationGate = {
-          excludedCandidates: eliminatedIds,
+          excludedStimulusIds: eliminatedIds,
+          excludedCandidates: eliminatedIds.map(id => {
+            const logo = logos.find(l => l.id === id);
+            return logo?.candidateId || id;
+          }),
+          confirmedStimulusIds: evaluationLogos.map(l => l.stimulusId),
           confirmedCandidates: evaluationLogos.map(l => l.candidateId),
-          excludedCountByType: TYPE_ORDER.reduce((acc, code) => { acc[code] = eliminatedIds.filter(id => id[0] === code).length; return acc; }, {}),
+          excludedCountByType: TYPE_ORDER.reduce((acc, code) => { acc[code] = eliminatedIds.filter(id => id.split('_')[0] === code).length; return acc; }, {}),
           confirmedCountByType: TYPE_ORDER.reduce((acc, code) => { acc[code] = evaluationLogos.filter(l => l.typeCode === code).length; return acc; }, {}),
           totalExcluded: eliminatedIds.length,
           totalConfirmed: evaluationLogos.length,
@@ -2251,8 +2274,8 @@
         };
         // Export dimension ratings CSV
         if (submission.dimensionRatings && submission.dimensionRatings.length > 0) {
-          const dimCols = ['evaluatorId', 'candidateId', 'typeCode', 'naturalness', 'harmony', 'refinement'];
-          const dimRows = submission.dimensionRatings.map(r => [pid, r.candidateId, r.typeCode, r.naturalness, r.harmony, r.refinement]);
+          const dimCols = ['evaluatorId', 'stimulusId', 'preEvalGroup', 'localStimulusCode', 'candidateId', 'typeCode', 'naturalness', 'harmony', 'refinement'];
+          const dimRows = submission.dimensionRatings.map(r => [pid, r.stimulusId, r.preEvalGroup, r.localStimulusCode, r.candidateId, r.typeCode, r.naturalness, r.harmony, r.refinement]);
           const dimCsv = [dimCols, ...dimRows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
           triggerDownload(new Blob(['﻿' + dimCsv], { type: 'text/csv;charset=utf-8;' }), `pretest_dimension_ratings_${pid}.csv`);
         }
