@@ -833,7 +833,7 @@
       );
     }
 
-    function EliminationReviewScreen({ logos, excludedIds, onBack, onNext }) {
+    function StaticEliminationReviewScreen({ logos, excludedIds, onBack, onNext }) {
       const candidates = logos.filter(logo => !excludedIds.includes(logo.id));
       const grouped = groupByType(candidates);
       const candidateSets = TYPE_ORDER.reduce((acc, code) => {
@@ -890,6 +890,209 @@
                 <button onClick={() => onNext()} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
                   2차 시각 완성도 평가로 이동
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ReviewDragCard({ logo, zone, draggingId, onDragStart, onDragEnd, onMove }) {
+      const isExcluded = zone === 'excluded';
+      const isDragging = draggingId === logo.id;
+      return (
+        <article
+          draggable
+          onDragStart={() => onDragStart(logo.id)}
+          onDragEnd={onDragEnd}
+          className={`group rounded-lg border bg-white p-2 transition ${isDragging ? 'opacity-40' : 'hover:border-slate-300 hover:shadow-sm'} ${isExcluded ? 'border-rose-100' : 'border-slate-200'}`}
+          style={{cursor:'grab'}}
+        >
+          <div className="aspect-square rounded-md bg-slate-50 p-2">
+            <img src={logo.imagePath} alt={logo.candidateId} className={`h-full w-full object-contain ${isExcluded ? 'opacity-55' : ''}`} draggable={false} />
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="font-mono text-sm font-bold text-slate-950">{logo.candidateId}</p>
+            <button
+              type="button"
+              onClick={() => onMove(logo.id, isExcluded ? 'candidate' : 'excluded')}
+              className={`rounded-md px-2 py-1 text-[11px] font-bold transition ${isExcluded ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
+            >
+              {isExcluded ? '후보로' : '제외로'}
+            </button>
+          </div>
+        </article>
+      );
+    }
+
+    function EliminationReviewScreen({ logos, excludedIds, onExcludeChange, onBack, onNext }) {
+      const [dragId, setDragId] = useState(null);
+      const [dragOver, setDragOver] = useState(null);
+
+      const excludedSet = new Set(excludedIds);
+      const candidates = logos.filter(logo => !excludedSet.has(logo.id));
+      const excluded = logos.filter(logo => excludedSet.has(logo.id));
+      const groupedCandidates = groupByType(candidates);
+      const groupedExcluded = groupByType(excluded);
+
+      const counts = TYPE_ORDER.reduce((acc, code) => {
+        acc[code] = {
+          candidate: groupedCandidates[code].length,
+          excluded: groupedExcluded[code].length,
+        };
+        return acc;
+      }, {});
+      const isReady = TYPE_ORDER.every(code =>
+        counts[code].candidate === TYPE_RULES[code].keep &&
+        counts[code].excluded === TYPE_RULES[code].exclude
+      ) && candidates.length === PRE_EVAL_TOTAL_KEEP && excluded.length === PRE_EVAL_TOTAL_EXCLUDE;
+
+      const moveTo = (id, target) => {
+        const logo = logos.find(item => item.id === id);
+        if (!logo) return;
+        const isCurrentlyExcluded = excludedIds.includes(id);
+
+        if (target === 'excluded') {
+          if (isCurrentlyExcluded) return;
+          onExcludeChange([...excludedIds, id]);
+          return;
+        }
+
+        if (!isCurrentlyExcluded) return;
+        onExcludeChange(excludedIds.filter(item => item !== id));
+      };
+
+      const handleDrop = (target) => {
+        if (dragId) moveTo(dragId, target);
+        setDragId(null);
+        setDragOver(null);
+      };
+
+      const zoneClass = (target) => (
+        `rounded-xl border bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition ${
+          dragOver === target
+            ? target === 'excluded'
+              ? 'border-rose-300 bg-rose-50/50'
+              : 'border-slate-400 bg-slate-50'
+            : 'border-slate-200'
+        }`
+      );
+
+      const renderGroup = (code, zone) => {
+        const rule = TYPE_RULES[code];
+        const items = zone === 'candidate' ? groupedCandidates[code] : groupedExcluded[code];
+        const current = zone === 'candidate' ? counts[code].candidate : counts[code].excluded;
+        const target = zone === 'candidate' ? rule.keep : rule.exclude;
+        return (
+          <section key={`${zone}-${code}`} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-slate-950">{rule.title}</h3>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${current === target ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                {current} / {target}
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {items.map(logo => (
+                <ReviewDragCard
+                  key={logo.id}
+                  logo={logo}
+                  zone={zone}
+                  draggingId={dragId}
+                  onDragStart={setDragId}
+                  onDragEnd={() => { setDragId(null); setDragOver(null); }}
+                  onMove={moveTo}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
+          <div className="mx-auto max-w-[1680px] space-y-6">
+            <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-5xl">
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">본실험 후보 시안 확인 및 수정</h1>
+                  <p className="mt-4 text-base leading-7 text-slate-600">
+                    1차 실험후보 제외 결과를 확인해 주세요. 변심하거나 잘못 제외한 시안이 있으면 카드를 드래그하거나 카드의 이동 버튼을 눌러 양쪽 칸 사이에서 바로 수정할 수 있습니다.
+                  </p>
+                </div>
+                <div className="grid min-w-[420px] grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">본실험 후보</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-950">{candidates.length}개</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">실험후보 제외</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-950">{excluded.length}개</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">기준</p>
+                    <p className="mt-1 text-sm font-bold leading-6 text-slate-950">A/B/C<br/>9개 · 7개</p>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <main className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.55fr)]">
+              <section
+                className={zoneClass('candidate')}
+                onDragOver={e => { e.preventDefault(); setDragOver('candidate'); }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => handleDrop('candidate')}
+              >
+                <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950">본실험 후보 시안</h2>
+                    <p className="mt-1 text-sm text-slate-500">다음 단계에서 시각 완성도를 평가할 27개 시안입니다.</p>
+                  </div>
+                  <span className={`rounded-full px-4 py-2 text-sm font-bold ${candidates.length === PRE_EVAL_TOTAL_KEEP ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {candidates.length} / {PRE_EVAL_TOTAL_KEEP}
+                  </span>
+                </div>
+                <div className="space-y-5">
+                  {TYPE_ORDER.map(code => renderGroup(code, 'candidate'))}
+                </div>
+              </section>
+
+              <section
+                className={zoneClass('excluded')}
+                onDragOver={e => { e.preventDefault(); setDragOver('excluded'); }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => handleDrop('excluded')}
+              >
+                <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950">실험후보 제외 시안</h2>
+                    <p className="mt-1 text-sm text-slate-500">본실험 자극으로 사용하기 어렵다고 표시한 21개 시안입니다.</p>
+                  </div>
+                  <span className={`rounded-full px-4 py-2 text-sm font-bold ${excluded.length === PRE_EVAL_TOTAL_EXCLUDE ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {excluded.length} / {PRE_EVAL_TOTAL_EXCLUDE}
+                  </span>
+                </div>
+                <div className="space-y-5">
+                  {TYPE_ORDER.map(code => renderGroup(code, 'excluded'))}
+                </div>
+              </section>
+            </main>
+
+            <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
+              <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                  1차 제외 선택으로 돌아가기
+                </button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {!isReady && <p className="text-sm font-bold text-amber-600">A/B/C 각 후보 9개, 제외 7개가 맞아야 다음 단계로 이동할 수 있습니다.</p>}
+                  <button
+                    onClick={() => onNext()}
+                    disabled={!isReady}
+                    className={`rounded-lg px-6 py-3 text-sm font-bold transition ${isReady ? 'bg-slate-950 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}
+                  >
+                    2차 시각 완성도 평가로 이동
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2301,7 +2504,7 @@
       if (screen === 'eliminate') return (
         <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('eliminateReview')} onBack={() => window.history.back()} />
       );
-      if (screen === 'eliminateReview') return <EliminationReviewScreen key={eliminatedIds.slice().sort().join(',')} logos={logos} excludedIds={eliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
+      if (screen === 'eliminateReview') return <EliminationReviewScreen key={eliminatedIds.slice().sort().join(',')} logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
       if (screen === 'dimensionRating') return <DimensionRatingScreen key={eliminatedIds.slice().sort().join(',')} candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleDimensionRatingNext} />;
       if (screen === 'setAssignment') return <SetAssignmentScreen candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleSetAssignmentNext} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => window.history.back()} onSubmit={handleBasicInfoSubmit} />;
