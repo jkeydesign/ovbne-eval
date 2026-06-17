@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -19,6 +19,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel" data-presets="env,react">
+    /** @jsxRuntime classic */
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
     /* ─── 상수 & 가중치 ───────────────────────────────────── */
