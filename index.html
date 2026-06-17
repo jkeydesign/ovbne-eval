@@ -798,7 +798,7 @@
                         <h2 className="text-lg font-bold text-slate-950">{rule.title}</h2>
                         <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">아래 시안 중 본실험에 사용하기 어렵다고 판단되는 {rule.exclude}개를 제외해 주세요.</p>
                       </div>
-                      <div className={`rounded-full px-4 py-2 text-sm font-bold ${current === rule.exclude ? 'bg-slate-950 text-white' : 'bg-blue-50 text-blue-800'}`}>
+                      <div className={`rounded-full px-5 py-2 text-xl font-bold ${current === rule.exclude ? 'bg-slate-950 text-white' : 'bg-blue-50 text-blue-800'}`}>
                         제외 {current} / {rule.exclude}
                       </div>
                     </div>
@@ -987,7 +987,7 @@
           <section key={`${zone}-${code}`} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-bold text-slate-950">{rule.title}</h3>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${current === target ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+              <span className={`rounded-full px-4 py-2 text-xl font-bold ${current === target ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                 {current} / {target}
               </span>
             </div>
@@ -1036,7 +1036,7 @@
               </div>
             </header>
 
-            <main className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.55fr)]">
+            <main className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.55fr)]">
               <section
                 className={zoneClass('candidate')}
                 onDragOver={e => { e.preventDefault(); setDragOver('candidate'); }}
@@ -1058,7 +1058,7 @@
               </section>
 
               <section
-                className={zoneClass('excluded')}
+                className={`${zoneClass('excluded')} xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto`}
                 onDragOver={e => { e.preventDefault(); setDragOver('excluded'); }}
                 onDragLeave={() => setDragOver(null)}
                 onDrop={() => handleDrop('excluded')}
@@ -1183,30 +1183,32 @@
         <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
           <div className="mx-auto max-w-[1680px] space-y-6">
             <header className="sticky top-0 z-30 rounded-xl border border-slate-200 bg-white/95 shadow-[0_2px_8px_rgba(15,23,42,0.06)] backdrop-blur">
-              <div className="mx-auto grid max-w-[1680px] grid-cols-[240px_minmax(420px,1fr)_520px_120px] items-stretch gap-0 px-6 py-4">
+              <div className="mx-auto grid max-w-[1680px] grid-cols-[220px_minmax(0,1fr)_128px] items-stretch gap-0 px-6 py-4">
                 <div className="flex flex-col justify-center pr-7">
-                  <h1 className="text-[24px] font-bold leading-[1.25] tracking-tight text-slate-950">2차 시각 완성도 평가</h1>
+                  <h1 className="text-[26px] font-bold leading-[1.22] tracking-tight text-slate-950">
+                    2차<br/>시각 완성도 평가
+                  </h1>
                 </div>
 
-                <div className="flex min-w-0 flex-col justify-center gap-1 border-l border-slate-100 px-7">
-                  <p className="text-[13px] leading-[1.7] text-slate-600">
-                    아래 27개 시안은 1차 실험후보 제외 후 남은 본실험 후보 시안입니다. 각 시안에 대해 자연성, 조화성, 정교성을 평가해 주세요.
-                  </p>
-                  <p className="text-[12px] leading-[1.6] text-slate-400">
-                    본 평가는 완성 로고 선정이나 시안의 우열 판단이 아니라, SET 구성 전 후보 시안의 시각 완성도 분포를 확인하기 위한 절차입니다.
-                  </p>
-                </div>
+                <div className="flex min-w-0 flex-col justify-center gap-3 border-l border-slate-100 px-8">
+                  <div className="grid grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-5">
+                    <p className="text-[13px] leading-[1.75] text-slate-600">
+                      아래 27개 시안은 1차 실험후보 제외 후 남은 본실험 후보 시안입니다. 각 시안에 대해 자연성, 조화성, 정교성을 평가해 주세요.
+                    </p>
+                    <p className="text-[13px] leading-[1.75] text-slate-500">
+                      본 평가는 완성 로고 선정이나 시안의 우열 판단이 아니라, SET 구성 전 후보 시안의 시각 완성도 분포를 확인하기 위한 절차입니다.
+                    </p>
+                  </div>
 
-                <div className="flex flex-col justify-center border-l border-slate-100 px-7">
                   <div className="grid grid-cols-3 gap-3">
                     {DIM_DEFS.map(d => (
-                      <div key={d.key} className="rounded-lg border border-slate-100 bg-slate-50 px-3.5 py-3">
-                        <p className="mb-1 text-[12px] font-bold text-slate-800">{d.label}</p>
-                        <p className="text-[11px] leading-[1.55] text-slate-500">{d.desc}</p>
+                      <div key={d.key} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                        <p className="mb-1 text-[13px] font-bold text-slate-800">{d.label}</p>
+                        <p className="text-[12px] leading-[1.55] text-slate-500">{d.desc}</p>
                       </div>
                     ))}
                   </div>
-                  <p className="mt-2 text-[11px] text-slate-400">척도: 1 낮음 · 2 다소 낮음 · 3 보통 · 4 다소 높음 · 5 높음</p>
+                  <p className="text-[11px] text-slate-400">척도: 1 낮음 · 2 다소 낮음 · 3 보통 · 4 다소 높음 · 5 높음</p>
                 </div>
 
                 <div className="flex flex-col items-center justify-center border-l border-slate-100 pl-7">
