@@ -888,7 +888,7 @@
                   뒤로 가서 수정하기
                 </button>
                 <button onClick={() => onNext()} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
-                  2층 완성도 분포 평정으로 이동
+                  2차 시각 완성도 평가로 이동
                 </button>
               </div>
             </div>
@@ -979,45 +979,38 @@
       return (
         <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
           <div className="mx-auto max-w-[1680px] space-y-6">
-            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
-              <div className="mx-auto max-w-[1680px] px-6 py-3 flex items-stretch gap-0">
-
-                {/* 1열: 단계 배지 + 제목 */}
-                <div className="flex flex-col justify-center pr-6 shrink-0" style={{minWidth:'200px'}}>
-                  <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">예비평가 · 2층</span>
-                  <h1 className="text-[22px] font-bold tracking-tight text-slate-950 leading-tight">2층 완성도<br/>분포 평정</h1>
+            <header className="sticky top-0 z-30 rounded-xl border border-slate-200 bg-white/95 shadow-[0_2px_8px_rgba(15,23,42,0.06)] backdrop-blur">
+              <div className="mx-auto grid max-w-[1680px] grid-cols-[240px_minmax(420px,1fr)_520px_120px] items-stretch gap-0 px-6 py-4">
+                <div className="flex flex-col justify-center pr-7">
+                  <h1 className="text-[24px] font-bold leading-[1.25] tracking-tight text-slate-950">2차 시각 완성도 평가</h1>
                 </div>
 
-                {/* 2열: 설명 텍스트 2단 */}
-                <div className="flex-1 border-l border-slate-100 px-6 flex flex-col justify-center gap-1 min-w-0">
-                  <p className="text-xs leading-[1.65] text-slate-600">
-                    아래 27개 시안은 1차 실험후보 제외 후 남은 본실험 후보 시안입니다. 각 시안에 대해 자연성, 조화성, 정교성을 평정해 주세요. 이 평정은 완성 로고 선정이나 시안의 우열 판단을 위한 것이 아니라, 본실험 자극 안에서 세 차원의 분포 폭을 확보하기 위한 자료로 활용됩니다.
+                <div className="flex min-w-0 flex-col justify-center gap-1 border-l border-slate-100 px-7">
+                  <p className="text-[13px] leading-[1.7] text-slate-600">
+                    아래 27개 시안은 1차 실험후보 제외 후 남은 본실험 후보 시안입니다. 각 시안에 대해 자연성, 조화성, 정교성을 평가해 주세요.
                   </p>
-                  <p className="text-[11px] leading-[1.6] text-slate-400">
-                    명백히 성립하기 어려운 시안은 이전 단계에서 제외되었으므로, 본 단계에서는 전문가가 후보로 검토할 수 있는 범위 안에서 상대적인 차이를 확인합니다.
+                  <p className="text-[12px] leading-[1.6] text-slate-400">
+                    본 평가는 완성 로고 선정이나 시안의 우열 판단이 아니라, SET 구성 전 후보 시안의 시각 완성도 분포를 확인하기 위한 절차입니다.
                   </p>
                 </div>
 
-                {/* 3열: 차원 정의 3개 그리드 */}
-                <div className="border-l border-slate-100 px-6 flex flex-col justify-center shrink-0" style={{width:'420px'}}>
-                  <div className="grid grid-cols-3 gap-3 mb-1.5">
+                <div className="flex flex-col justify-center border-l border-slate-100 px-7">
+                  <div className="grid grid-cols-3 gap-3">
                     {DIM_DEFS.map(d => (
-                      <div key={d.key} className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-                        <p className="text-[11px] font-bold text-slate-800 mb-0.5">{d.label}</p>
-                        <p className="text-[10px] leading-[1.55] text-slate-500">{d.desc}</p>
+                      <div key={d.key} className="rounded-lg border border-slate-100 bg-slate-50 px-3.5 py-3">
+                        <p className="mb-1 text-[12px] font-bold text-slate-800">{d.label}</p>
+                        <p className="text-[11px] leading-[1.55] text-slate-500">{d.desc}</p>
                       </div>
                     ))}
                   </div>
-                  <p className="text-[10px] text-slate-400 tracking-tight">척도: 1 낮음 · 2 다소 낮음 · 3 보통 · 4 다소 높음 · 5 높음</p>
+                  <p className="mt-2 text-[11px] text-slate-400">척도: 1 낮음 · 2 다소 낮음 · 3 보통 · 4 다소 높음 · 5 높음</p>
                 </div>
 
-                {/* 4열: 진행 카운터 */}
-                <div className="border-l border-slate-100 pl-6 flex flex-col justify-center items-center shrink-0" style={{minWidth:'88px'}}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">평정 진행</p>
-                  <p className="text-3xl font-bold text-slate-950 leading-none">{ratedCount}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">/ {candidates.length}개</p>
+                <div className="flex flex-col items-center justify-center border-l border-slate-100 pl-7">
+                  <p className="mb-1 text-[11px] font-bold tracking-widest text-slate-400">평가 진행</p>
+                  <p className="text-3xl font-bold leading-none text-slate-950">{ratedCount}</p>
+                  <p className="mt-1 text-xs text-slate-400">/ {candidates.length}개</p>
                 </div>
-
               </div>
             </header>
 
