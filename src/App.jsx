@@ -1184,9 +1184,12 @@
 
                   <div className="grid grid-cols-3 gap-3">
                     {DIM_DEFS.map(d => (
-                      <div key={d.key} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-                        <p className="mb-1 text-[13px] font-bold text-slate-800">{d.label}</p>
-                        <p className="text-[12px] leading-[1.55] text-slate-500">{d.desc}</p>
+                      <div key={d.key} className="rounded-lg border-l-4 border-l-indigo-600 border border-slate-200 bg-indigo-50/30 px-4 py-3 shadow-[0_1px_2px_rgba(99,102,241,0.02)]">
+                        <p className="mb-1.5 text-[14px] font-extrabold text-indigo-950 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                          {d.label}
+                        </p>
+                        <p className="text-[12px] font-medium leading-[1.6] text-slate-700">{d.desc}</p>
                       </div>
                     ))}
                   </div>
