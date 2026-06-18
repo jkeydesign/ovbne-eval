@@ -1701,6 +1701,7 @@
 
     function BriefScreen({ mode, onStart, onBack }) {
       const isVR = mode === 'visual-rating';
+      const [confirmed, setConfirmed] = useState(false);
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-[#111111]">
           <div className="max-w-4xl w-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 shadow-sm">
@@ -1742,14 +1743,36 @@
               </div>
 
               <div className="w-full mt-6 pt-6 border-t border-slate-200">
-                <p>브랜드 브리프는 이후 모든 후보 시안을 검토할 때 동일하게 적용되는 참고 기준입니다.</p>
+                <p className="text-[15px] text-slate-700">브랜드 브리프는 이후 모든 후보 시안을 검토할 때 동일하게 적용되는 참고 기준입니다.</p>
+                
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:bg-slate-100 mt-4">
+                  <input
+                    type="checkbox"
+                    checked={confirmed}
+                    onChange={e => setConfirmed(e.target.checked)}
+                    className="mt-1 h-5 w-5 shrink-0 cursor-pointer"
+                    style={{accentColor:'#111827'}}
+                  />
+                  <span className={`text-[15px] font-bold leading-relaxed transition-colors ${confirmed ? 'text-[#111111]' : 'text-gray-500'}`}>
+                    브랜드 브리프를 모두 읽고 이해하였습니다.
+                  </span>
+                </label>
+
                 <div className="mt-5 flex gap-4">
                   {onBack && (
                     <button onClick={onBack} className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-50 transition">
                       이전 화면
                     </button>
                   )}
-                  <button onClick={onStart} className="flex-[2] py-4 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition shadow-sm">
+                  <button 
+                    onClick={onStart} 
+                    disabled={!confirmed}
+                    className={`flex-[2] py-4 rounded-lg font-bold transition shadow-sm ${
+                      confirmed 
+                        ? 'bg-slate-900 text-white hover:bg-slate-800' 
+                        : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                    }`}
+                  >
                     {isVR ? '브리프 확인 후 2차 평가로 이동' : '브리프 확인 후 제외 선택으로 이동'}
                   </button>
                 </div>
