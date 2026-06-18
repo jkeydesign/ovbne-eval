@@ -2364,6 +2364,26 @@
       const [logos, setLogos] = useState([]);
       const [stats, setStats] = useState({});
       const [manualExclusions, setManualExclusions] = useState([]);
+      const [selectedSubmission, setSelectedSubmission] = useState(null);
+
+      const handleDeleteSubmission = async (sub) => {
+        if (!sub.docId) {
+          alert('데이터 ID가 누락되었습니다. 삭제할 수 없습니다.');
+          return;
+        }
+        if (!confirm(`이 참가자(${sub.participant_id || sub.evaluatorCode || 'N/A'})의 데이터를 Firebase에서 영구 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.`)) {
+          return;
+        }
+        
+        try {
+          await db.collection('screening_submissions').doc(sub.docId).delete();
+          setSubmissions(prev => prev.filter(s => s.docId !== sub.docId));
+          alert('참여자 데이터가 Firebase에서 영구 삭제되었습니다.');
+        } catch (error) {
+          console.error(error);
+          alert('데이터 삭제에 실패했습니다: ' + error.message);
+        }
+      };
       
       const [activeTab, setActiveTab] = useState('A');
       const [dragId, setDragId] = useState(null);
@@ -2373,7 +2393,7 @@
         setLoading(true);
         try {
           const snapshot = await db.collection('screening_submissions').get();
-          const docs = snapshot.docs.map(doc => doc.data());
+          const docs = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
           if (docs.length === 0) {
             alert('Firebase에 저장된 1차 선별 결과가 없습니다.');
           } else {
@@ -2673,6 +2693,7 @@
                           <th className="p-3 text-blue-600">전화번호</th>
                           <th className="p-3 text-blue-600">이메일</th>
                           <th className="p-3">제외 시안 코드 목록</th>
+                          <th className="p-3 text-center">작업</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -2710,6 +2731,22 @@
                               <td className="p-3 text-xs">{phone}</td>
                               <td className="p-3 text-xs">{email}</td>
                               <td className="p-3 text-xs max-w-xs truncate" title={excludedList}>{excludedList || '없음'}</td>
+                              <td className="p-3 text-xs text-center flex gap-1 justify-center">
+                                <button
+                                  onClick={() => setSelectedSubmission(sub)}
+                                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded transition text-[10px]"
+                                  title="상세 보기"
+                                >
+                                  🔍 상세
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSubmission(sub)}
+                                  className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded transition text-[10px]"
+                                  title="삭제"
+                                >
+                                  ❌ 삭제
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -2721,6 +2758,72 @@
               )}
             </div>
           </div>
+
+          {selectedSubmission && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col border border-slate-200 text-slate-900">
+                {/* Modal Header */}
+                <div className="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center rounded-t-xl">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      1차 선별 평가 참여자 상세 데이터
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      ID: <span className="font-mono font-bold text-blue-600">{selectedSubmission.evaluatorCode || selectedSubmission.participant_id}</span> | 이름: {selectedSubmission.contactProfile?.name || selectedSubmission.basicInfo?.name || selectedSubmission.basic_info?.name || 'N/A'}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedSubmission(null)}
+                    className="text-slate-400 hover:text-slate-600 text-2xl font-semibold outline-none"
+                  >
+                    &times;
+                  </button>
+                </div>
+                
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto space-y-4">
+                  <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-lg border border-slate-100 text-xs">
+                    <div><span className="text-slate-400 block">연령대</span> <span className="font-bold text-slate-800">{selectedSubmission.evaluatorProfile?.ageGroup || selectedSubmission.basicInfo?.ageGroup || selectedSubmission.basic_info?.ageGroup || 'N/A'}</span></div>
+                    <div><span className="text-slate-400 block">전문 분야</span> <span className="font-bold text-slate-800">{selectedSubmission.evaluatorProfile?.workField || selectedSubmission.basicInfo?.mainField || selectedSubmission.basic_info?.mainField || 'N/A'}</span></div>
+                    <div><span className="text-slate-400 block">실무 경력</span> <span className="font-bold text-slate-800">{selectedSubmission.evaluatorProfile?.designCareer || selectedSubmission.basicInfo?.designExperience || selectedSubmission.basic_info?.designExperience || 'N/A'}</span></div>
+                    <div><span className="text-slate-400 block">로고 경험</span> <span className="font-bold text-slate-800">{selectedSubmission.evaluatorProfile?.logoCareer || selectedSubmission.basicInfo?.brandProjectExperience || selectedSubmission.basic_info?.brandProjectExperience || 'N/A'}</span></div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 mb-2">제외(탈락) 처리한 시안 목록 (총 {(selectedSubmission.excludedCandidateIds || selectedSubmission.excluded_candidate_ids || []).length}개)</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {(selectedSubmission.excludedCandidateIds || selectedSubmission.excluded_candidate_ids || []).length === 0 ? (
+                        <span className="text-xs text-slate-400 italic">제외한 시안이 없습니다.</span>
+                      ) : (
+                        (selectedSubmission.excludedCandidateIds || selectedSubmission.excluded_candidate_ids || []).map((id) => {
+                          const typeCode = id.substring(0, 1); // e.g. A01 -> A
+                          const imgUrl = publicAssetPath(`/public/logos/pre-eval/${typeCode}/L_${id}.png`);
+                          return (
+                            <div key={id} className="flex flex-col items-center p-1 border border-slate-200 rounded bg-slate-50 w-16 h-20">
+                              <div className="w-12 h-12 flex items-center justify-center bg-white overflow-hidden rounded border border-slate-100">
+                                <img src={imgUrl} alt={id} className="max-w-full max-h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                              </div>
+                              <span className="text-[10px] font-bold font-mono text-slate-600 mt-1">{id}</span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Modal Footer */}
+                <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                  <button 
+                    onClick={() => setSelectedSubmission(null)}
+                    className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </PasswordProtected>
       );
     }
@@ -2906,6 +3009,26 @@
       });
       const [draggingId, setDraggingId] = useState(null);
       const [dragOverZone, setDragOverZone] = useState(null);
+      const [selectedSubmission, setSelectedSubmission] = useState(null);
+
+      const handleDeleteSubmission = async (sub) => {
+        if (!sub.docId) {
+          alert('데이터 ID가 누락되었습니다. 삭제할 수 없습니다.');
+          return;
+        }
+        if (!confirm(`이 참가자(${sub.participant_id || sub.evaluatorCode || 'N/A'})의 데이터를 Firebase에서 영구 삭제하시겠습니까?\n이 작업은 복구할 수 없으며, 모든 집계 점수와 그래프가 즉시 다시 반영됩니다.`)) {
+          return;
+        }
+        
+        try {
+          await db.collection('visual_rating_submissions').doc(sub.docId).delete();
+          setSubmissions(prev => prev.filter(s => s.docId !== sub.docId));
+          alert('참여자 데이터가 Firebase에서 영구 삭제되었습니다.');
+        } catch (error) {
+          console.error(error);
+          alert('데이터 삭제에 실패했습니다: ' + error.message);
+        }
+      };
 
       const handleDragStart = (e, stimulusId) => {
         setDraggingId(stimulusId);
@@ -2991,7 +3114,7 @@
         setLoading(true);
         try {
           const snapshot = await db.collection('visual_rating_submissions').get();
-          const docs = snapshot.docs.map(doc => doc.data());
+          const docs = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
           if (docs.length === 0) {
             alert('Firebase에 저장된 2차 평가 결과가 없습니다.');
           } else {
@@ -3385,6 +3508,7 @@
                             <th className="p-3 text-blue-600">전화번호</th>
                             <th className="p-3 text-blue-600">이메일</th>
                             <th className="p-3">평가결과 길이</th>
+                            <th className="p-3 text-center">작업</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -3428,6 +3552,22 @@
                                 <td className="p-3 text-xs">{phone}</td>
                                 <td className="p-3 text-xs">{email}</td>
                                 <td className="p-3 text-xs font-mono text-slate-500">{(sub.ratings || []).length}개</td>
+                                <td className="p-3 text-xs text-center flex gap-1 justify-center">
+                                  <button
+                                    onClick={() => setSelectedSubmission(sub)}
+                                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded transition text-[10px]"
+                                    title="상세 보기"
+                                  >
+                                    🔍 상세
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSubmission(sub)}
+                                    className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded transition text-[10px]"
+                                    title="삭제"
+                                  >
+                                    ❌ 삭제
+                                  </button>
+                                </td>
                               </tr>
                             );
                           })}
@@ -3832,6 +3972,93 @@
               )}
             </div>
           </div>
+
+          {selectedSubmission && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col border border-slate-200 text-slate-900">
+                {/* Modal Header */}
+                <div className="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center rounded-t-xl">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      실험참가자 상세 평가 데이터
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      ID: <span className="font-mono font-bold text-blue-600">{selectedSubmission.participant_id || selectedSubmission.evaluatorCode}</span> | 이름: {selectedSubmission.basic_info?.name || selectedSubmission.basicInfo?.name || 'N/A'}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedSubmission(null)}
+                    className="text-slate-400 hover:text-slate-600 text-2xl font-semibold outline-none"
+                  >
+                    &times;
+                  </button>
+                </div>
+                
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-lg border border-slate-100 text-xs">
+                    <div><span className="text-slate-400 block">연령대</span> <span className="font-bold text-slate-800">{selectedSubmission.qualification?.ageGroup || selectedSubmission.basic_info?.ageGroup || selectedSubmission.basicInfo?.ageGroup || 'N/A'}</span></div>
+                    <div><span className="text-slate-400 block">전문 분야</span> <span className="font-bold text-slate-800">{Array.isArray(selectedSubmission.basic_info?.mainField || selectedSubmission.basicInfo?.mainField) ? (selectedSubmission.basic_info?.mainField || selectedSubmission.basicInfo?.mainField).join(', ') : (selectedSubmission.basic_info?.mainField || selectedSubmission.basicInfo?.mainField || 'N/A')}</span></div>
+                    <div><span className="text-slate-400 block">실무 경력</span> <span className="font-bold text-slate-800">{selectedSubmission.qualification?.designExperience || selectedSubmission.basic_info?.designExperience || selectedSubmission.basicInfo?.designExperience || 'N/A'}</span></div>
+                    <div><span className="text-slate-400 block">로고 경험</span> <span className="font-bold text-slate-800">{selectedSubmission.qualification?.brandProjectExperience || selectedSubmission.basic_info?.brandProjectExperience || selectedSubmission.basicInfo?.brandProjectExperience || 'N/A'}</span></div>
+                  </div>
+
+                  <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                    <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                          <th className="p-3">시안 이미지</th>
+                          <th className="p-3">시안 ID</th>
+                          <th className="p-3">유형</th>
+                          <th className="p-3">자연성 점수</th>
+                          <th className="p-3">조화성 점수</th>
+                          <th className="p-3">정교성 점수</th>
+                          <th className="p-3 font-bold text-slate-900">평균 점수</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {(selectedSubmission.ratings || []).map((r, idx) => {
+                          const imgUrl = publicAssetPath(`/public/logos/pre-eval/${r.typeCode}/L_${r.stimulusId.split('_').pop()}.png`);
+                          const nat = r.ratings?.naturalness ?? 0;
+                          const har = r.ratings?.harmony ?? 0;
+                          const ref = r.ratings?.refinement ?? r.ratings?.elaboration ?? 0;
+                          const avg = Number(((nat + har + ref) / 3).toFixed(2));
+                          
+                          return (
+                            <tr key={idx} className="hover:bg-slate-50">
+                              <td className="p-2">
+                                <div className="w-10 h-10 border border-slate-100 rounded bg-white flex items-center justify-center overflow-hidden">
+                                  <img src={imgUrl} alt={r.candidateId} className="max-w-full max-h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                                </div>
+                              </td>
+                              <td className="p-2 font-mono font-bold text-slate-800">{r.candidateId || r.stimulusId}</td>
+                              <td className="p-2 font-semibold text-slate-500">
+                                {r.typeCode === 'A' ? 'A (구상)' : r.typeCode === 'B' ? 'B (기하)' : r.typeCode === 'C' ? 'C (유기)' : r.typeCode}
+                              </td>
+                              <td className="p-2 font-mono font-bold text-slate-800">{nat || 'N/A'}</td>
+                              <td className="p-2 font-mono font-bold text-slate-800">{har || 'N/A'}</td>
+                              <td className="p-2 font-mono font-bold text-slate-800">{ref || 'N/A'}</td>
+                              <td className="p-2 font-mono font-extrabold text-blue-600">{avg || 'N/A'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                {/* Modal Footer */}
+                <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                  <button 
+                    onClick={() => setSelectedSubmission(null)}
+                    className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </PasswordProtected>
       );
     }
