@@ -441,14 +441,14 @@
 
             <section className="mx-auto grid max-w-[820px] gap-[28px] text-[16px] leading-[1.85] text-gray-800">
 
-              {/* 예비평가자 코드 */}
+              {/* 성함 또는 예비평가자 ID */}
               <div>
-                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[예비평가자 코드]</h2>
+                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[성함 혹은 연구자에게 부여받은 예비평가자 ID]</h2>
                 <input
                   type="text"
                   value={info.evaluatorCode || ''}
                   onChange={e => setField('evaluatorCode', e.target.value)}
-                  placeholder="연구자로부터 받은 코드를 입력해 주세요"
+                  placeholder="성함 혹은 연구자에게 부여받은 예비평가자 ID를 입력해 주세요"
                   className="w-full rounded-lg border border-black/20 bg-white px-4 py-3 text-[16px] text-gray-800 outline-none transition-colors focus:border-black"
                 />
               </div>
