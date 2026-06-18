@@ -953,6 +953,11 @@
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                   {activeItemsExcluded.map(logo => <ReviewDragCard key={logo.id} logo={logo} zone="excluded" draggingId={dragId} onDragStart={setDragId} onDragEnd={() => { setDragId(null); setDragOver(null); }} onMove={moveTo} />)}
+                  {Array.from({ length: Math.max(0, activeRule.exclude - activeItemsExcluded.length) }).map((_, i) => (
+                    <div key={`empty-${i}`} className="flex aspect-[4/4.8] flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50">
+                      <p className="text-sm font-bold text-slate-400">여기로 드래그</p>
+                    </div>
+                  ))}
                 </div>
               </section>
             </main>
