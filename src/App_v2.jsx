@@ -124,6 +124,7 @@
       return {
         mode: "screening",
         evaluatorCode: actualId,
+        basicInfo: basicInfo,
         evaluatorProfile: {
           evaluatorCode: actualId,
           ageGroup: basicInfo.ageGroup || "",
@@ -135,9 +136,9 @@
         },
         contactProfile: basicInfo.incentiveConsent ? {
           evaluatorCode: actualId,
-          name: basicInfo.name || "",
-          email: basicInfo.email || "",
-          phone: basicInfo.phone || "",
+          name: basicInfo.name || basicInfo.evaluatorCode || "",
+          email: basicInfo.incentiveEmail || basicInfo.email || "",
+          phone: basicInfo.incentivePhone || basicInfo.phone || "",
           portfolioUrl: basicInfo.portfolioUrl || "",
           contactConsent: basicInfo.incentiveConsent
         } : undefined,
@@ -161,6 +162,7 @@
       return {
         mode: "visual-rating",
         evaluatorCode: pid,
+        basicInfo: basicInfo,
         evaluatorProfile: {
           evaluatorCode: pid,
           ageGroup: basicInfo.ageGroup || "",
@@ -172,9 +174,9 @@
         },
         contactProfile: basicInfo.incentiveConsent ? {
           evaluatorCode: pid,
-          name: basicInfo.name || "",
-          email: basicInfo.email || "",
-          phone: basicInfo.phone || "",
+          name: basicInfo.name || basicInfo.evaluatorCode || "",
+          email: basicInfo.incentiveEmail || basicInfo.email || "",
+          phone: basicInfo.incentivePhone || basicInfo.phone || "",
           portfolioUrl: basicInfo.portfolioUrl || "",
           contactConsent: basicInfo.incentiveConsent
         } : undefined,
@@ -2484,10 +2486,19 @@
           const basic = sub.basicInfo || sub.basic_info || {};
           const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).sort().join(';');
           
-          const consent = basic.incentiveConsent ? '동의' : '미동의';
-          const email = contact.email || basic.incentiveEmail || basic.email || '';
-          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || '';
-          const name = contact.name || basic.name || '';
+          // Robust fallback from actionEvents log where data wasn't saved in top level
+          let actionSubmitBasic = {};
+          if (Array.isArray(sub.actionEvents)) {
+            const submitEvt = sub.actionEvents.find(e => e.action === 'submit_click' || e.action === 'submit');
+            if (submitEvt && submitEvt.details && submitEvt.details.basicInfo) {
+              actionSubmitBasic = submitEvt.details.basicInfo;
+            }
+          }
+          
+          const consent = (basic.incentiveConsent || contact.contactConsent || actionSubmitBasic.incentiveConsent) ? '동의' : '미동의';
+          const email = contact.email || basic.incentiveEmail || basic.email || actionSubmitBasic.incentiveEmail || actionSubmitBasic.email || '';
+          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || '';
+          const name = contact.name || basic.name || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || '';
           
           return [
             sub.evaluatorCode || basic.evaluatorCode || '',
@@ -2642,10 +2653,20 @@
                           const contact = sub.contactProfile || {};
                           const basic = sub.basicInfo || sub.basic_info || {};
                           const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).sort().join(', ');
-                          const consent = basic.incentiveConsent ? '동의' : '미동의';
-                          const email = contact.email || basic.incentiveEmail || basic.email || 'N/A';
-                          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || 'N/A';
-                          const name = contact.name || basic.name || 'N/A';
+                          
+                          // Robust fallback from actionEvents log where data wasn't saved in top level
+                          let actionSubmitBasic = {};
+                          if (Array.isArray(sub.actionEvents)) {
+                            const submitEvt = sub.actionEvents.find(e => e.action === 'submit_click' || e.action === 'submit');
+                            if (submitEvt && submitEvt.details && submitEvt.details.basicInfo) {
+                              actionSubmitBasic = submitEvt.details.basicInfo;
+                            }
+                          }
+                          
+                          const consent = (basic.incentiveConsent || contact.contactConsent || actionSubmitBasic.incentiveConsent) ? '동의' : '미동의';
+                          const email = contact.email || basic.incentiveEmail || basic.email || actionSubmitBasic.incentiveEmail || actionSubmitBasic.email || 'N/A';
+                          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || 'N/A';
+                          const name = contact.name || basic.name || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || 'N/A';
                           return (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="p-3 font-mono text-xs font-bold text-blue-600">{sub.evaluatorCode || basic.evaluatorCode || 'N/A'}</td>
@@ -2875,10 +2896,19 @@
           const qual = sub.qualification || sub.evaluatorProfile || sub.basic_info || {};
           const contact = sub.contactProfile || sub.contact_profile || {};
           
-          const consent = basic.incentiveConsent ? '동의' : '미동의';
-          const email = contact.email || basic.incentiveEmail || basic.email || '';
-          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || '';
-          const name = contact.name || basic.name || '';
+          // Robust fallback from action_events log
+          let actionSubmitBasic = {};
+          if (Array.isArray(sub.action_events || sub.actionEvents)) {
+            const submitEvt = (sub.action_events || sub.actionEvents).find(e => e.action === 'submit_click' || e.action === 'submit');
+            if (submitEvt && submitEvt.details && submitEvt.details.basicInfo) {
+              actionSubmitBasic = submitEvt.details.basicInfo;
+            }
+          }
+          
+          const consent = (basic.incentiveConsent || contact.contactConsent || actionSubmitBasic.incentiveConsent) ? '동의' : '미동의';
+          const email = contact.email || basic.incentiveEmail || basic.email || actionSubmitBasic.incentiveEmail || actionSubmitBasic.email || '';
+          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || '';
+          const name = contact.name || basic.name || sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || '';
           
           const ratingsStr = JSON.stringify(sub.ratings || []);
 
@@ -2975,10 +3005,19 @@
                           const qual = sub.qualification || sub.evaluatorProfile || sub.basic_info || {};
                           const contact = sub.contactProfile || sub.contact_profile || {};
                           
-                          const consent = basic.incentiveConsent ? '동의' : '미동의';
-                          const email = contact.email || basic.incentiveEmail || basic.email || 'N/A';
-                          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || 'N/A';
-                          const name = contact.name || basic.name || 'N/A';
+                          // Robust fallback from action_events log
+                          let actionSubmitBasic = {};
+                          if (Array.isArray(sub.action_events || sub.actionEvents)) {
+                            const submitEvt = (sub.action_events || sub.actionEvents).find(e => e.action === 'submit_click' || e.action === 'submit');
+                            if (submitEvt && submitEvt.details && submitEvt.details.basicInfo) {
+                              actionSubmitBasic = submitEvt.details.basicInfo;
+                            }
+                          }
+                          
+                          const consent = (basic.incentiveConsent || contact.contactConsent || actionSubmitBasic.incentiveConsent) ? '동의' : '미동의';
+                          const email = contact.email || basic.incentiveEmail || basic.email || actionSubmitBasic.incentiveEmail || actionSubmitBasic.email || 'N/A';
+                          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || 'N/A';
+                          const name = contact.name || basic.name || sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || 'N/A';
                           
                           return (
                             <tr key={idx} className="hover:bg-slate-50">
