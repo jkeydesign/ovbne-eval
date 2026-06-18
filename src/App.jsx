@@ -1179,7 +1179,7 @@
               <div className="mx-auto grid max-w-[1680px] grid-cols-[220px_minmax(0,1fr)_128px] items-stretch gap-0 px-6 py-4">
                 <div className="flex flex-col justify-center pr-7">
                   <h1 className="text-[26px] font-bold leading-[1.22] tracking-tight text-slate-950">
-                    2차<br/>시각 완성도 평가
+                    2차<br/>시각체계 평가
                   </h1>
                 </div>
 
