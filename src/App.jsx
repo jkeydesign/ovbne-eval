@@ -2350,14 +2350,14 @@
       const [tsStart] = useState(() => new Date().toISOString());
 
       useEffect(() => {
-        db.collection('admin').doc('current_visual_rating_set').get()
-          .then(doc => {
-            if (doc.exists) {
-              setCandidatesData(doc.data());
-              setScreen('intro');
-            } else {
-              setScreen('waiting');
-            }
+        fetch('../data/selected_27_for_visual_rating.json')
+          .then(res => {
+            if (!res.ok) throw new Error('File not found');
+            return res.json();
+          })
+          .then(data => {
+            setCandidatesData(data);
+            setScreen('intro');
           })
           .catch(err => {
             console.error('Failed to load dataset:', err);
@@ -2373,8 +2373,11 @@
       if (screen === 'waiting') {
         return (
           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">2차 평정 대기 중</h1>
-            <p className="text-slate-600">관리자가 본실험 27개 세트 데이터를 아직 업로드하지 않았습니다.<br/>데이터가 업로드된 후 새로고침해 주세요.</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">?곗씠???湲?以?/h1>
+            <p className="text-slate-600">
+              <code>data/selected_27_for_visual_rating.json</code> ?뚯씪??遺덈윭?ㅼ? 紐삵뻽?듬땲??<br/>
+              ?대떦 寃쎈줈???뚯씪???щ컮瑜닿쾶 議댁옱?섎뒗吏 ?뺤씤??二쇱꽭??
+            </p>
           </div>
         );
       }
@@ -2697,6 +2700,26 @@
         </PasswordProtected>
       );
     }
+
+    function App() {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      const search = window.location.search;
+
+      // Handle the case where GitHub Pages uses query or hash params, or pathnames
+      if (path.includes('visual-rating/admin2')) return <Admin2App />;
+      if (path.includes('visual-rating')) return <VisualRatingApp />;
+      if (path.includes('admin') && !path.includes('visual-rating')) return <AdminApp />;
+      
+      // Fallback check URLSearchParams mode logic
+      const mode = new URLSearchParams(search).get('mode');
+      if (mode === 'visual-rating') return <VisualRatingApp />;
+      if (mode === 'admin') return <AdminApp />;
+
+      return <ScreeningApp />;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     function PasswordProtected({ children }) {
       const [pwd, setPwd] = useState('');
       const [authed, setAuthed] = useState(false);
@@ -2750,5 +2773,6 @@
         </PasswordProtected>
       );
     }
+
 
 
