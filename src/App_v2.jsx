@@ -291,7 +291,7 @@
                 </p>
 
                 <p className="font-semibold text-[#111111] mt-2">
-                  ※ 예비평가 실험을 제출해 주신 분들 중 자격 확인 후 상품권을 지급해드립니다.
+                  ※ {isVR ? '본평가' : '예비평가'} 실험을 제출해 주신 분들 중 자격 확인 후 상품권을 지급해드립니다.
                 </p>
 
                 <p>감사합니다.</p>
@@ -1184,7 +1184,7 @@
                 <div className="flex min-w-0 flex-col justify-center gap-3 border-l border-slate-100 px-8">
                   <div className="grid grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-5">
                     <p className="text-[13px] leading-[1.75] text-slate-600">
-                      각 시안에 대해 자연성, 조화성, 정교성을 자세히 읽고 평가해 주세요.
+                      각 시안에 대해 <strong className="text-slate-900 font-extrabold text-[14px]">자연성, 조화성, 정교성</strong>을 자세히 읽고 평가해 주세요.
                     </p>
                     <p className="text-[13px] leading-[1.75] text-slate-500">
                       본 평가는 완성형이나 순위 판단이 아니라, 동일한 갯수의 평균 품질의 SET 시안들의 시각 체계 분포를 확인하기 위한 실험입니다.
@@ -1193,8 +1193,8 @@
 
                   <div className="grid grid-cols-3 gap-3">
                     {DIM_DEFS.map(d => (
-                      <div key={d.key} className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                        <p className="mb-1.5 text-[15px] font-extrabold text-black">
+                      <div key={d.key} className="rounded-lg border border-slate-300 bg-white px-4 py-3 shadow-sm">
+                        <p className="mb-1.5 text-lg font-black text-slate-900">
                           {d.label}
                         </p>
                         <p className="text-[12px] font-medium leading-[1.6] text-slate-700">{d.desc}</p>
