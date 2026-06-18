@@ -126,10 +126,10 @@
         evaluatorProfile: {
           evaluatorCode: pid,
           ageGroup: basicInfo.ageGroup || "",
-          workField: basicInfo.workField || "",
-          designCareer: basicInfo.designCareer || "",
-          logoCareer: basicInfo.logoCareer || "",
-          recentBrandProject: basicInfo.recentBrandProject || "",
+          workField: basicInfo.mainField || basicInfo.workField || "",
+          designCareer: basicInfo.designExperience || basicInfo.designCareer || "",
+          logoCareer: basicInfo.brandProjectExperience || basicInfo.logoCareer || "",
+          recentBrandProject: basicInfo.recentProjectExp || basicInfo.recentBrandProject || "",
           aiToolExperience: basicInfo.aiToolExperience || ""
         },
         contactProfile: basicInfo.incentiveConsent ? {
@@ -162,10 +162,10 @@
         evaluatorProfile: {
           evaluatorCode: pid,
           ageGroup: basicInfo.ageGroup || "",
-          workField: basicInfo.workField || "",
-          designCareer: basicInfo.designCareer || "",
-          logoCareer: basicInfo.logoCareer || "",
-          recentBrandProject: basicInfo.recentBrandProject || "",
+          workField: basicInfo.mainField || basicInfo.workField || "",
+          designCareer: basicInfo.designExperience || basicInfo.designCareer || "",
+          logoCareer: basicInfo.brandProjectExperience || basicInfo.logoCareer || "",
+          recentBrandProject: basicInfo.recentProjectExp || basicInfo.recentBrandProject || "",
           aiToolExperience: basicInfo.aiToolExperience || ""
         },
         contactProfile: basicInfo.incentiveConsent ? {
