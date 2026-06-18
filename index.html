@@ -296,7 +296,8 @@
                 </p>
 
                 <p>
-                  전문가님의 판단은 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다. 제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다.
+                  전문가님의 판단은 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다.<br />
+                  제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다.
                 </p>
 
                 <p>감사합니다.</p>
@@ -306,7 +307,7 @@
                 <dl className="grid gap-2">
                   <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
                     <dt className="font-bold text-[#111111]">연구명</dt>
-                    <dd>생성형 AI 기반 브랜드 로고 시안에서 AI 정보 제시 유형이 전문 디자이너의 전략적 판단에 미치는 영향</dd>
+                    <dd>생성형 AI 기반 브랜드 로고 시안에서 AI 정보 제시 유형이<br />전문 디자이너의 전략적 판단에 미치는 영향</dd>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
                     <dt className="font-bold text-[#111111]">연구자</dt>
@@ -333,6 +334,11 @@
                 <ul className="grid list-disc gap-1.5 pl-5">
                   {cautions.map(item => <li key={item}>{item}</li>)}
                 </ul>
+                {!isVR && (
+                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] font-semibold leading-7 text-slate-700">
+                    <span className="font-extrabold text-slate-950">제외 조건: </span> 브랜드 맥락 이탈, 형태 오독 가능성, 조형 붕괴, 텍스트 오류, 평면화 이미지는 본실험 자극으로 사용하기 어려운 시안으로 판단합니다.
+                  </div>
+                )}
               </GuideSection>
 
               <section>
