@@ -809,9 +809,9 @@
             <button
               type="button"
               onClick={() => onMove(logo.id, isExcluded ? 'candidate' : 'excluded')}
-              className={`rounded-md px-2 py-1 text-[11px] font-bold transition ${isExcluded ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${isExcluded ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
             >
-              {isExcluded ? '후보로' : '제외로'}
+              {isExcluded ? '후보' : '제외'}
             </button>
           </div>
         </article>
@@ -1581,35 +1581,98 @@
         </section>
       );
     }
+    const BRIEF_BLOCKS = [
+      {
+        title: '브랜드명',
+        value: '오브네 OVBNE',
+        description: 'OVBNE는 Objet, Value, Balance, New, Everyday의 의미를 결합한 조어로, 일상 오브제가 지닌 가치와 균형 잡힌 생활 감각, 새롭게 감각화된 일상을 의미합니다.',
+      },
+      {
+        title: '업종',
+        value: '리빙 오브제 · 홈데코 큐레이션 매장 및 온라인 쇼핑몰',
+        description: '일상에서 사용하는 오브제, 문구, 홈데코 제품을 감도 있게 제안하는 신규 라이프스타일 브랜드입니다.',
+      },
+      {
+        title: '타깃',
+        value: '25~35세 도시 거주자',
+        description: '자기 취향과 감도 있는 소비를 중시하며, 과시적 고가 브랜드보다 일상 안에서 세련된 선택을 선호하는 소비자입니다.',
+      },
+      {
+        title: '포지셔닝',
+        value: '미들 프리미엄 라이프스타일 브랜드',
+        description: '대중적 소품샵보다 감도 있고, 고가 편집숍보다 접근 가능한 브랜드로, 취향을 가진 도시 생활자의 일상 공간에 자연스럽게 스며드는 오브제 브랜드를 지향합니다.',
+      },
+    ];
+    const VALUE_TAGS = ['일상성', '균형감', '취향성'];
+    const MEDIA_TAGS = ['제품 라벨', '패키지 스티커', '쇼핑몰', '명함', '웹사이트', 'SNS 프로필', '온라인 배너', '제품 태그', '팝업 부스 사인'];
+
+    function BriefInfoBlock({ title, value, description, children }) {
+      return (
+        <section>
+          <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[{title}]</h2>
+          {value && <p className="font-extrabold text-[#111111]">{value}</p>}
+          {description && <p className="mt-1.5">{description}</p>}
+          {children && <div className="mt-1.5">{children}</div>}
+        </section>
+      );
+    }
+
     function BriefScreen({ mode, onStart, onBack }) {
       const isVR = mode === 'visual-rating';
       return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <div className="max-w-3xl w-full bg-white rounded-xl border border-slate-200 shadow-sm p-8 sm:p-12">
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">OVBNE 브랜드 브리프</h1>
-            <p className="text-slate-600 mb-8 leading-relaxed">
-              {isVR 
-                ? '본실험에 사용될 로고 시안의 조형 판단 맥락을 이해하기 위한 참고 정보입니다.' 
-                : '아래 브랜드 브리프를 읽고, 브랜드 맥락에 맞지 않는 시안을 제외하는 기준으로 삼아 주세요.'}
-            </p>
-            <div className="bg-slate-50 rounded-lg p-6 mb-8 border border-slate-100">
-              <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2 text-sm leading-6">
-                <div><dt className="font-bold text-slate-500">브랜드명</dt><dd className="mt-1 font-semibold text-slate-900">오브네 OVBNE</dd></div>
-                <div><dt className="font-bold text-slate-500">브랜드 성격</dt><dd className="mt-1 font-medium text-slate-900">리빙 오브제·홈데코 큐레이션, 미들 프리미엄 라이프스타일</dd></div>
-                <div><dt className="font-bold text-slate-500">핵심 가치</dt><dd className="mt-1 font-medium text-slate-900">일상성, 균형감, 취향성</dd></div>
-                <div><dt className="font-bold text-slate-500">타깃 고객</dt><dd className="mt-1 font-medium text-slate-900">25~35세 도시 거주자</dd></div>
-              </dl>
-              <div className="mt-6 pt-6 border-t border-slate-200">
-                <p className="text-sm font-bold text-slate-500 mb-2">의미</p>
-                <p className="text-sm text-slate-700 leading-relaxed">OVBNE는 Objet, Value, Balance, New, Everyday의 의미를 결합한 조어로, 일상 오브제가 지닌 가치와 균형 잡힌 생활 감각, 새롭게 감각화된 일상을 의미합니다.</p>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-[#111111]">
+          <div className="max-w-4xl w-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 shadow-sm">
+            <header className="mb-[52px] text-center">
+              <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">OVBNE 브랜드 브리프</h1>
+              <div className="mx-auto grid max-w-[980px] gap-3.5 text-left text-[16px] leading-[1.85] text-gray-800">
+                <p>
+                  {isVR 
+                    ? '아래 정보는 본실험에 사용될 로고 시안의 조형 판단 맥락을 이해하기 위한 참고 정보입니다.' 
+                    : '아래 정보는 48개 후보 시안이 OVBNE 브랜드 맥락에서 본실험 자극으로 사용 가능한지 판단하기 위한 참고 기준입니다. 평가자는 완성 로고의 우열을 판단하기보다, 각 시안이 브랜드 맥락과 최소한의 관련성을 갖는지 확인해 주세요.'}
+                </p>
+                <p>
+                  OVBNE는 대형 라이프스타일 브랜드, 독립 오브제 브랜드, 온라인 감성 셀렉트숍과 경쟁하는 신규 브랜드로 설정됩니다. 본 예비평가에서는 특정 경쟁 브랜드와의 직접 비교가 아니라, 각 시안이 OVBNE 브랜드 맥락에서 과도하게 다른 업종으로 오독되지 않는지를 확인합니다.
+                </p>
               </div>
-            </div>
-            <div className="flex gap-4">
-              <button onClick={onBack} className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-50 transition">뒤로가기</button>
-              <button onClick={onStart} className="flex-[2] py-4 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition shadow-sm">
-                {isVR ? '평가 화면으로 이동' : '제외 화면으로 이동'}
-              </button>
-            </div>
+            </header>
+
+            <main className="mx-auto grid max-w-[980px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
+              <div className="grid gap-x-10 gap-y-[34px] lg:grid-cols-2">
+                {BRIEF_BLOCKS.map(item => <BriefInfoBlock key={item.title} {...item} />)}
+
+                <BriefInfoBlock
+                  title="핵심 가치"
+                  description="후보 시안 검토 시 참고할 브랜드 가치 키워드입니다."
+                >
+                  <ul className="grid list-disc gap-1.5 pl-5">
+                    {VALUE_TAGS.map(item => <li key={item}>{item}</li>)}
+                  </ul>
+                </BriefInfoBlock>
+
+                <BriefInfoBlock
+                  title="적용 매체"
+                  description="후보 시안이 기본적으로 활용될 수 있는 매체 범위입니다."
+                >
+                  <ul className="grid list-disc gap-1.5 pl-5 sm:grid-cols-2">
+                    {MEDIA_TAGS.map(item => <li key={item}>{item}</li>)}
+                  </ul>
+                </BriefInfoBlock>
+              </div>
+
+              <div className="w-full mt-6 pt-6 border-t border-slate-200">
+                <p>브랜드 브리프는 이후 모든 후보 시안을 검토할 때 동일하게 적용되는 참고 기준입니다.</p>
+                <div className="mt-5 flex gap-4">
+                  {onBack && (
+                    <button onClick={onBack} className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-50 transition">
+                      이전 화면
+                    </button>
+                  )}
+                  <button onClick={onStart} className="flex-[2] py-4 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition shadow-sm">
+                    {isVR ? '브리프 확인 후 2차 평가로 이동' : '브리프 확인 후 제외 선택으로 이동'}
+                  </button>
+                </div>
+              </div>
+            </main>
           </div>
         </div>
       );
