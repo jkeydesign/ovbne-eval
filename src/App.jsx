@@ -2985,13 +2985,13 @@
         <div
           draggable
           onDragStart={e => onDragStart(e, s.stimulusId)}
-          className="relative cursor-grab active:cursor-grabbing bg-white p-1.5 border border-slate-200 rounded-lg hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex flex-col items-center justify-center w-16 h-20 select-none shrink-0"
+          className="relative cursor-grab active:cursor-grabbing bg-white p-2 border border-slate-200 rounded-lg hover:border-slate-400 hover:shadow-sm transition-all duration-200 flex flex-col items-center justify-center w-20 h-24 select-none shrink-0"
           title={`${s.candidateId || s.stimulusId} (시각체계 평균: ${s.visualMean.toFixed(2)})`}
         >
-          <div className="w-12 h-12 flex items-center justify-center overflow-hidden bg-slate-50/50 rounded">
+          <div className="w-16 h-16 flex items-center justify-center overflow-hidden bg-slate-50/50 rounded-md">
             <img src={imgUrl} alt={s.candidateId} className="max-w-full max-h-full object-contain pointer-events-none" onError={(e) => { e.target.style.display = 'none'; }} />
           </div>
-          <span className="text-[9px] font-bold font-mono text-slate-800 mt-1.5 tracking-tight">{s.candidateId || s.stimulusId}</span>
+          <span className="text-[10px] font-black font-mono text-slate-800 mt-1 tracking-tight">{s.candidateId || s.stimulusId}</span>
         </div>
       );
     }
@@ -3739,7 +3739,7 @@
                               
                               <div className="grid grid-cols-3 gap-2">
                                 {/* Type A Column */}
-                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs flex flex-col min-h-[160px]">
+                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs flex flex-col min-h-[340px]">
                                   <span className="text-[8px] font-extrabold text-slate-400 block mb-2 tracking-tighter text-center border-b border-slate-100 pb-1">A (구상) ({groupedByTypeCode.A.length})</span>
                                   <div className="flex flex-col gap-1.5 flex-1 items-center justify-start py-0.5">
                                     {groupedByTypeCode.A.length === 0 && <span className="text-[9px] text-slate-300 italic my-auto">드롭</span>}
@@ -3750,7 +3750,7 @@
                                 </div>
                                 
                                 {/* Type B Column */}
-                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs flex flex-col min-h-[160px]">
+                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs flex flex-col min-h-[340px]">
                                   <span className="text-[8px] font-extrabold text-slate-400 block mb-2 tracking-tighter text-center border-b border-slate-100 pb-1">B (기하) ({groupedByTypeCode.B.length})</span>
                                   <div className="flex flex-col gap-1.5 flex-1 items-center justify-start py-0.5">
                                     {groupedByTypeCode.B.length === 0 && <span className="text-[9px] text-slate-300 italic my-auto">드롭</span>}
@@ -3761,7 +3761,7 @@
                                 </div>
                                 
                                 {/* Type C Column */}
-                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs flex flex-col min-h-[160px]">
+                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs flex flex-col min-h-[340px]">
                                   <span className="text-[8px] font-extrabold text-slate-400 block mb-2 tracking-tighter text-center border-b border-slate-100 pb-1">C (유기) ({groupedByTypeCode.C.length})</span>
                                   <div className="flex flex-col gap-1.5 flex-1 items-center justify-start py-0.5">
                                     {groupedByTypeCode.C.length === 0 && <span className="text-[9px] text-slate-300 italic my-auto">드롭</span>}
@@ -3939,7 +3939,7 @@
                               return (
                                 <tr key={idx} className="hover:bg-slate-50">
                                   <td className="p-3">
-                                    <div className="w-12 h-12 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
+                                    <div className="w-16 h-16 border border-slate-200 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow-xs">
                                       <img src={imgUrl} alt={s.candidateId} className="max-w-full max-h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                                     </div>
                                   </td>
@@ -4031,7 +4031,7 @@
                           return (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="p-2">
-                                <div className="w-10 h-10 border border-slate-100 rounded bg-white flex items-center justify-center overflow-hidden">
+                                <div className="w-14 h-14 border border-slate-100 rounded bg-white flex items-center justify-center overflow-hidden">
                                   <img src={imgUrl} alt={r.candidateId} className="max-w-full max-h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                                 </div>
                               </td>
