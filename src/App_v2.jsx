@@ -2869,7 +2869,7 @@
             alert('데이터 저장 실패. 다시 시도해 주세요.');
           });
       }} />;
-      if (screen === 'thanks') return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800 font-bold text-xl">참여해 주셔서 감사합니다! (2차 평가 완료)</div>;
+      if (screen === 'thanks') return <SubmissionCompleteScreen onFinish={() => window.location.reload()} />;
 
       return null;
     }
