@@ -1,4 +1,4 @@
-﻿    const firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyDl_O6dQuLzZ2gtt4Yt1Q4D52Rq882nQm8",
       authDomain: "ovbne-eval-74bb6.firebaseapp.com",
       projectId: "ovbne-eval-74bb6",
@@ -33,8 +33,14 @@
     const TYPE_ORDER = ['A', 'B', 'C'];
 
     function getPublicBasePath() {
-      const path = window.location.pathname;
-      return path.endsWith('/') ? path : path.replace(/[^/]*$/, '');
+      let path = window.location.pathname;
+      if (!path.endsWith('/')) {
+        path = path.replace(/[^/]*$/, '');
+      }
+      path = path.replace(/visual-rating\/admin2\/$/, '');
+      path = path.replace(/visual-rating\/$/, '');
+      path = path.replace(/admin\/$/, '');
+      return path;
     }
     function publicAssetPath(path) {
       return `${getPublicBasePath()}${path.replace(/^\//, '')}`;
@@ -2421,9 +2427,11 @@
             className="bg-white border border-slate-200 rounded p-2 text-center shadow-sm cursor-grab active:cursor-grabbing hover:border-slate-400"
           >
             <img src={logo.imagePath} alt={logo.id} className="w-full aspect-square object-contain mb-2" />
-            <div className="font-bold text-xs text-slate-800">{logo.candidateId}</div>
-            <div className="text-[11px] mt-1 bg-slate-100 rounded py-0.5">
-              <span className="text-rose-600 font-bold">제외 {excl}</span> / <span className="text-emerald-600 font-bold">유지 {keep}</span>
+            <div className="font-bold text-sm text-slate-800">{logo.candidateId}</div>
+            <div className="text-xs mt-1.5 bg-slate-100 rounded py-1 flex justify-around font-bold shadow-sm">
+              <span className="text-rose-600">제외 {excl}</span>
+              <span className="text-slate-300">|</span>
+              <span className="text-emerald-600">유지 {keep}</span>
             </div>
           </div>
         );
