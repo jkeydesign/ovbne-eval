@@ -2754,7 +2754,7 @@
               setScreen('intro');
             } else {
               // Fallback to local JSON
-              fetch('../data/selected_27_for_visual_rating.json')
+              fetch(publicAssetPath('data/selected_27_for_visual_rating.json'))
                 .then(res => {
                   if (!res.ok) throw new Error('파일을 찾을 수 없습니다.');
                   return res.json();
@@ -2775,7 +2775,7 @@
             if (!active) return;
             console.error('Firebase error, falling back to local JSON:', err);
             // Fallback to local JSON
-            fetch('../data/selected_27_for_visual_rating.json')
+            fetch(publicAssetPath('data/selected_27_for_visual_rating.json'))
               .then(res => {
                 if (!res.ok) throw new Error('파일을 찾을 수 없습니다.');
                 return res.json();
@@ -2910,7 +2910,7 @@
               }));
               setCandidates(mapped);
             } else {
-              fetch('../data/selected_27_for_visual_rating.json')
+              fetch(publicAssetPath('data/selected_27_for_visual_rating.json'))
                 .then(res => res.json())
                 .then(localData => {
                   if (!active) return;
@@ -2930,7 +2930,7 @@
           .catch(err => {
             if (!active) return;
             console.error('Firebase error in Admin, falling back to local JSON:', err);
-            fetch('../data/selected_27_for_visual_rating.json')
+            fetch(publicAssetPath('data/selected_27_for_visual_rating.json'))
               .then(res => res.json())
               .then(localData => {
                 if (!active) return;
