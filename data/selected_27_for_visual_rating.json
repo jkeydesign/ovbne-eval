@@ -1,232 +1,259 @@
-﻿{
-    "selectedCandidates":  [
-                               {
-                                   "id":  "A_L_01",
-                                   "stimulusId":  "A_L_01",
-                                   "candidateId":  "A01",
-                                   "typeGroup":  "A",
-                                   "localCode":  "01",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_01.png"
-                               },
-                               {
-                                   "id":  "A_L_02",
-                                   "stimulusId":  "A_L_02",
-                                   "candidateId":  "A02",
-                                   "typeGroup":  "A",
-                                   "localCode":  "02",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_02.png"
-                               },
-                               {
-                                   "id":  "A_L_06",
-                                   "stimulusId":  "A_L_06",
-                                   "candidateId":  "A06",
-                                   "typeGroup":  "A",
-                                   "localCode":  "06",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_06.png"
-                               },
-                               {
-                                   "id":  "A_L_07",
-                                   "stimulusId":  "A_L_07",
-                                   "candidateId":  "A07",
-                                   "typeGroup":  "A",
-                                   "localCode":  "07",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_07.png"
-                               },
-                               {
-                                   "id":  "A_L_08",
-                                   "stimulusId":  "A_L_08",
-                                   "candidateId":  "A08",
-                                   "typeGroup":  "A",
-                                   "localCode":  "08",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_08.png"
-                               },
-                               {
-                                   "id":  "A_L_10",
-                                   "stimulusId":  "A_L_10",
-                                   "candidateId":  "A10",
-                                   "typeGroup":  "A",
-                                   "localCode":  "10",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_10.png"
-                               },
-                               {
-                                   "id":  "A_L_12",
-                                   "stimulusId":  "A_L_12",
-                                   "candidateId":  "A12",
-                                   "typeGroup":  "A",
-                                   "localCode":  "12",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_12.png"
-                               },
-                               {
-                                   "id":  "A_L_13",
-                                   "stimulusId":  "A_L_13",
-                                   "candidateId":  "A13",
-                                   "typeGroup":  "A",
-                                   "localCode":  "13",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_13.png"
-                               },
-                               {
-                                   "id":  "A_L_16",
-                                   "stimulusId":  "A_L_16",
-                                   "candidateId":  "A16",
-                                   "typeGroup":  "A",
-                                   "localCode":  "16",
-                                   "imageSrc":  "../public/logos/pre-eval/A/L_16.png"
-                               },
-                               {
-                                   "id":  "B_L_02",
-                                   "stimulusId":  "B_L_02",
-                                   "candidateId":  "B02",
-                                   "typeGroup":  "B",
-                                   "localCode":  "02",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_02.png"
-                               },
-                               {
-                                   "id":  "B_L_05",
-                                   "stimulusId":  "B_L_05",
-                                   "candidateId":  "B05",
-                                   "typeGroup":  "B",
-                                   "localCode":  "05",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_05.png"
-                               },
-                               {
-                                   "id":  "B_L_07",
-                                   "stimulusId":  "B_L_07",
-                                   "candidateId":  "B07",
-                                   "typeGroup":  "B",
-                                   "localCode":  "07",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_07.png"
-                               },
-                               {
-                                   "id":  "B_L_08",
-                                   "stimulusId":  "B_L_08",
-                                   "candidateId":  "B08",
-                                   "typeGroup":  "B",
-                                   "localCode":  "08",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_08.png"
-                               },
-                               {
-                                   "id":  "B_L_12",
-                                   "stimulusId":  "B_L_12",
-                                   "candidateId":  "B12",
-                                   "typeGroup":  "B",
-                                   "localCode":  "12",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_12.png"
-                               },
-                               {
-                                   "id":  "B_L_13",
-                                   "stimulusId":  "B_L_13",
-                                   "candidateId":  "B13",
-                                   "typeGroup":  "B",
-                                   "localCode":  "13",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_13.png"
-                               },
-                               {
-                                   "id":  "B_L_14",
-                                   "stimulusId":  "B_L_14",
-                                   "candidateId":  "B14",
-                                   "typeGroup":  "B",
-                                   "localCode":  "14",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_14.png"
-                               },
-                               {
-                                   "id":  "B_L_15",
-                                   "stimulusId":  "B_L_15",
-                                   "candidateId":  "B15",
-                                   "typeGroup":  "B",
-                                   "localCode":  "15",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_15.png"
-                               },
-                               {
-                                   "id":  "B_L_16",
-                                   "stimulusId":  "B_L_16",
-                                   "candidateId":  "B16",
-                                   "typeGroup":  "B",
-                                   "localCode":  "16",
-                                   "imageSrc":  "../public/logos/pre-eval/B/L_16.png"
-                               },
-                               {
-                                   "id":  "C_L_01",
-                                   "stimulusId":  "C_L_01",
-                                   "candidateId":  "C01",
-                                   "typeGroup":  "C",
-                                   "localCode":  "01",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_01.png"
-                               },
-                               {
-                                   "id":  "C_L_02",
-                                   "stimulusId":  "C_L_02",
-                                   "candidateId":  "C02",
-                                   "typeGroup":  "C",
-                                   "localCode":  "02",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_02.png"
-                               },
-                               {
-                                   "id":  "C_L_07",
-                                   "stimulusId":  "C_L_07",
-                                   "candidateId":  "C07",
-                                   "typeGroup":  "C",
-                                   "localCode":  "07",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_07.png"
-                               },
-                               {
-                                   "id":  "C_L_09",
-                                   "stimulusId":  "C_L_09",
-                                   "candidateId":  "C09",
-                                   "typeGroup":  "C",
-                                   "localCode":  "09",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_09.png"
-                               },
-                               {
-                                   "id":  "C_L_10",
-                                   "stimulusId":  "C_L_10",
-                                   "candidateId":  "C10",
-                                   "typeGroup":  "C",
-                                   "localCode":  "10",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_10.png"
-                               },
-                               {
-                                   "id":  "C_L_11",
-                                   "stimulusId":  "C_L_11",
-                                   "candidateId":  "C11",
-                                   "typeGroup":  "C",
-                                   "localCode":  "11",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_11.png"
-                               },
-                               {
-                                   "id":  "C_L_13",
-                                   "stimulusId":  "C_L_13",
-                                   "candidateId":  "C13",
-                                   "typeGroup":  "C",
-                                   "localCode":  "13",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_13.png"
-                               },
-                               {
-                                   "id":  "C_L_14",
-                                   "stimulusId":  "C_L_14",
-                                   "candidateId":  "C14",
-                                   "typeGroup":  "C",
-                                   "localCode":  "14",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_14.png"
-                               },
-                               {
-                                   "id":  "C_L_16",
-                                   "stimulusId":  "C_L_16",
-                                   "candidateId":  "C16",
-                                   "typeGroup":  "C",
-                                   "localCode":  "16",
-                                   "imageSrc":  "../public/logos/pre-eval/C/L_16.png"
-                               }
-                           ],
-    "version":  "1.0",
-    "source":  "auto_aggregation_from_firestore",
-    "generatedAt":  "2026-06-18T21:28:23.684Z",
-    "fileType":  "selected_27_for_visual_rating",
-    "selectionRule":  {
-                          "typeComposition":  {
-                                                  "C":  9,
-                                                  "B":  9,
-                                                  "A":  9
-                                              },
-                          "totalCandidates":  27
-                      }
+{
+  "fileType": "selected_27_for_visual_rating",
+  "version": "1.0",
+  "generatedAt": "2026-06-18T17:08:14.269Z",
+  "source": "admin_screening_aggregation_manual",
+  "selectionRule": {
+    "totalCandidates": 27,
+    "typeComposition": {
+      "A": 9,
+      "B": 9,
+      "C": 9
+    }
+  },
+  "selectedCandidates": [
+    {
+      "stimulusId": "A_L_01",
+      "typeGroup": "A",
+      "localCode": "A01",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_01.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_02",
+      "typeGroup": "A",
+      "localCode": "A02",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_02.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_05",
+      "typeGroup": "A",
+      "localCode": "A05",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_05.png",
+      "excludeVoteCount": 3,
+      "keepVoteCount": 5,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_07",
+      "typeGroup": "A",
+      "localCode": "A07",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_07.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_08",
+      "typeGroup": "A",
+      "localCode": "A08",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_08.png",
+      "excludeVoteCount": 2,
+      "keepVoteCount": 6,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_10",
+      "typeGroup": "A",
+      "localCode": "A10",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_10.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_12",
+      "typeGroup": "A",
+      "localCode": "A12",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_12.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_13",
+      "typeGroup": "A",
+      "localCode": "A13",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_13.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "A_L_16",
+      "typeGroup": "A",
+      "localCode": "A16",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/A/L_16.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_02",
+      "typeGroup": "B",
+      "localCode": "B02",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_02.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_04",
+      "typeGroup": "B",
+      "localCode": "B04",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_04.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_06",
+      "typeGroup": "B",
+      "localCode": "B06",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_06.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_07",
+      "typeGroup": "B",
+      "localCode": "B07",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_07.png",
+      "excludeVoteCount": 2,
+      "keepVoteCount": 6,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_08",
+      "typeGroup": "B",
+      "localCode": "B08",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_08.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_12",
+      "typeGroup": "B",
+      "localCode": "B12",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_12.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_14",
+      "typeGroup": "B",
+      "localCode": "B14",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_14.png",
+      "excludeVoteCount": 2,
+      "keepVoteCount": 6,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_15",
+      "typeGroup": "B",
+      "localCode": "B15",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_15.png",
+      "excludeVoteCount": 3,
+      "keepVoteCount": 5,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "B_L_16",
+      "typeGroup": "B",
+      "localCode": "B16",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/B/L_16.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_01",
+      "typeGroup": "C",
+      "localCode": "C01",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_01.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_02",
+      "typeGroup": "C",
+      "localCode": "C02",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_02.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_03",
+      "typeGroup": "C",
+      "localCode": "C03",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_03.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_04",
+      "typeGroup": "C",
+      "localCode": "C04",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_04.png",
+      "excludeVoteCount": 2,
+      "keepVoteCount": 6,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_07",
+      "typeGroup": "C",
+      "localCode": "C07",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_07.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_09",
+      "typeGroup": "C",
+      "localCode": "C09",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_09.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_11",
+      "typeGroup": "C",
+      "localCode": "C11",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_11.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_13",
+      "typeGroup": "C",
+      "localCode": "C13",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_13.png",
+      "excludeVoteCount": 1,
+      "keepVoteCount": 7,
+      "mainExcludeReason": ""
+    },
+    {
+      "stimulusId": "C_L_14",
+      "typeGroup": "C",
+      "localCode": "C14",
+      "imageSrc": "/ovbne-eval/public/logos/pre-eval/C/L_14.png",
+      "excludeVoteCount": 0,
+      "keepVoteCount": 8,
+      "mainExcludeReason": ""
+    }
+  ]
 }
