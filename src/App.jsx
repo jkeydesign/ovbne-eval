@@ -120,11 +120,12 @@
     };
 
     function buildScreeningResponse(pid, tsStart, evaluationLogos, eliminatedIds, qualification, basicInfo, actionEvents = []) {
+      const actualId = (basicInfo.evaluatorCode || "").trim() || pid;
       return {
         mode: "screening",
-        evaluatorCode: pid,
+        evaluatorCode: actualId,
         evaluatorProfile: {
-          evaluatorCode: pid,
+          evaluatorCode: actualId,
           ageGroup: basicInfo.ageGroup || "",
           workField: basicInfo.mainField || basicInfo.workField || "",
           designCareer: basicInfo.designExperience || basicInfo.designCareer || "",
@@ -133,7 +134,7 @@
           aiToolExperience: basicInfo.aiToolExperience || ""
         },
         contactProfile: basicInfo.incentiveConsent ? {
-          evaluatorCode: pid,
+          evaluatorCode: actualId,
           name: basicInfo.name || "",
           email: basicInfo.email || "",
           phone: basicInfo.phone || "",
@@ -141,7 +142,7 @@
           contactConsent: basicInfo.incentiveConsent
         } : undefined,
         layer1Responses: evaluationLogos.map(l => ({
-          evaluatorCode: pid,
+          evaluatorCode: actualId,
           stimulusId: l.id,
           typeGroup: l.typeCode,
           excludeSelected: eliminatedIds.includes(l.id),
@@ -2754,8 +2755,9 @@
           candidateId: logo.candidateId,
           ratings: ratings[logo.id]
         }));
+        const actualId = (info.evaluatorCode || "").trim() || pid;
         const docData = {
-          participant_id: pid,
+          participant_id: actualId,
           timestamp_start: tsStart,
           timestamp_submit: new Date().toISOString(),
           basic_info: info,
