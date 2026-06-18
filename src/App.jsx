@@ -201,23 +201,27 @@
     const downloadJSON = (data, prefix) => triggerDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `pre_eval_${prefix}_${data.evaluatorCode}_${new Date().getTime()}.json`);
 
     /* ─── IntroScreen ─────────────────────────────────────── */
-    const INTRO_CHECKS = [
+    const INTRO_CHECKS_SCREENING = [
       '본 예비평가는 완성된 로고 선정이 아니라 본실험의 자극 구성을 위한 절차임을 확인했습니다.',
       '48개 시안은 AI가 생성한 로고 시안임을 확인했습니다.',
       '본실험에 사용하기 어려운 시안을 제외하겠습니다.',
     ];
+    const INTRO_CHECKS_VR = [
+      '본 평가는 완성된 로고 선정이 아니라 본실험의 자극 구성을 위한 절차임을 확인했습니다.',
+      '자연성·조화성·정교성 평가는 시안의 시각적 특성을 파악하기 위한 평가임을 확인했습니다.',
+    ];
 
     function IntroScreen({ mode, onStart }) {
       const isVR = mode === 'visual-rating';
-      const [checked, setChecked] = useState([false, false, false]);
+      const checks = isVR ? INTRO_CHECKS_VR : INTRO_CHECKS_SCREENING;
+      const [checked, setChecked] = useState(() => checks.map(() => false));
       const allChecked = checked.every(Boolean);
       const toggle = (i) => setChecked(prev => prev.map((v, idx) => idx === i ? !v : v));
 
       const processItems = isVR ? [
-        '1단계: 본실험 시안용 27개 후보 파일 업로드',
-        '2단계: 브랜드 브리프 재확인',
-        '3단계: 27개 시안별 자연성·조화성·정교성 평가',
-        '4단계: 기본 정보 입력 및 제출',
+        '1단계: 브랜드 브리프 확인 (중요)',
+        '2단계: 27개 시안별 자연성·조화성·정교성 평가',
+        '3단계: 실험자 기본 정보 확인 및 제출',
       ] : [
         '1단계: 예비평가자 자격 확인',
         '2단계: 브랜드 브리프 확인 (중요)',
@@ -229,7 +233,8 @@
       const cautions = isVR ? [
         '가장 좋아 보이는 로고를 고르는 절차가 아닙니다.',
         '시각체계(자연성·조화성·정교성) 점수를 평가해 주세요.',
-        '각 차원별 의미를 숙지하시고 직관적으로 1~5점을 매겨주세요.'
+        '각 차원별 의미를 숙지하시고 직관적으로 1~5점을 매겨주세요.',
+        '자연성·조화성·정교성 점수를 위해 꼭 내용을 숙지하시고 평가해 주세요.'
       ] : [
         '가장 좋아 보이는 로고를 고르는 절차가 아닙니다.',
         '본실험에서 비교·판단 가능한 시안 퀄리티인지 검토해 주세요.',
@@ -285,6 +290,10 @@
                   제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다.
                 </p>
 
+                <p className="font-semibold text-[#111111] mt-2">
+                  ※ 예비평가 실험을 제출해 주신 분들에게는 소정의 사례비 지급 절차가 예정되어 있습니다.
+                </p>
+
                 <p>감사합니다.</p>
               </section>
 
@@ -330,7 +339,7 @@
                 <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[확인 체크]</h2>
                 <p>아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
                 <div className="my-5 grid gap-2">
-                  {INTRO_CHECKS.map((label, i) => (
+                  {checks.map((label, i) => (
                     <label key={i} className="flex cursor-pointer items-start gap-3 text-gray-800">
                       <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer" style={{accentColor:'#020617'}} />
                       <span>{label}</span>
