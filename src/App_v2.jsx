@@ -1193,11 +1193,6 @@
                     </p>
                   </div>
  
-                  <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 text-[13px] text-amber-950 leading-relaxed">
-                    <span className="font-extrabold text-amber-950">💡 실험방법: </span>
-                    1. 자연성 내용을 숙지하고, 자연성만 전체 평가합니다. 순차대로 반복하면 효율적이고 정확하게 평가할 수 있습니다.
-                  </div>
-
                   <div className="grid grid-cols-3 gap-3">
                     {DIM_DEFS.map(d => (
                       <div key={d.key} className="rounded-lg border border-slate-300 bg-white px-4 py-3 shadow-sm">
@@ -1208,13 +1203,18 @@
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2.5 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-2 text-slate-900 shadow-sm">
-                    <span className="inline-flex shrink-0 items-center justify-center rounded bg-slate-800 px-2 py-0.5 text-[11px] font-extrabold text-white tracking-wider">
-                      평가 척도
-                    </span>
-                    <span className="text-[14px] font-bold text-black">
-                      1 매우낮음 &middot; 2 다소 낮음 &middot; 3 보통 &middot; 4 다소 높음 &middot; 5 매우높음
-                    </span>
+                  <div className="flex flex-col gap-3 rounded-lg bg-slate-50 border border-slate-200 px-4 py-2.5 text-slate-900 shadow-sm md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <span className="inline-flex shrink-0 items-center justify-center rounded bg-slate-800 px-2 py-0.5 text-[11px] font-extrabold text-white tracking-wider">
+                        평가 척도
+                      </span>
+                      <span className="text-[14px] font-bold text-black">
+                        1 매우낮음 &middot; 2 다소 낮음 &middot; 3 보통 &middot; 4 다소 높음 &middot; 5 매우높음
+                      </span>
+                    </div>
+                    <div className="text-[13px] font-extrabold text-slate-800 md:border-l md:border-slate-300 md:pl-4">
+                      💡 <span className="font-black text-black">실험방법:</span> 1. 자연성 내용을 숙지하고, 자연성만 전체 평가합니다. 순차대로 반복하면 효율적이고 정확하게 평가할 수 있습니다.
+                    </div>
                   </div>
                 </div>
 
