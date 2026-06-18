@@ -397,40 +397,76 @@
 
     /* ─── Evaluator Basic Info ────────────────────────────── */
     const BASIC_INFO_FIELDS = [
-      { key: 'gender', label: '성별', options: ['여성', '남성', '응답하지 않음'] },
-      { key: 'ageGroup', label: '연령대', options: ['20대', '30대', '40대', '50대 이상', '응답하지 않음'] },
-      { key: 'designExperience', label: '디자인 실무 경력', options: ['5년 이상~7년 미만', '7년 이상~10년 미만', '10년 이상~15년 미만', '15년 이상'] },
-      { key: 'mainField', label: '주요 업무 분야', options: ['브랜드 디자인', '그래픽 디자인', '시각 아이덴티티 디자인', 'UX/UI 디자인', '패키지 디자인', '광고/캠페인 디자인', '기타'] },
-      { key: 'brandIdentityProjectExperience', label: '브랜드 로고, BI/CI 또는 브랜드 아이덴티티 관련 프로젝트 경험', options: ['3건 이상~5건 미만', '5건 이상~10건 미만', '10건 이상', '기타'] },
+      { key: 'ageGroup',               label: '연령대',                                                options: ['20대', '30대', '40대', '50대 이상'] },
+      { key: 'mainField',              label: '현재 주요 업무 분야',                                   options: ['브랜드디자인', '그래픽디자인', 'BX', 'CI·BI', '편집·패키지', 'UI·UX', '기타'] },
+      { key: 'designExperience',       label: '디자인 실무 경력',                                      options: ['5~7년', '8~10년', '11~15년', '16년 이상'] },
+      { key: 'brandProjectExperience', label: '로고·BI·CI·브랜드 아이덴티티 프로젝트 경험',            options: ['3~5년', '6~10년', '11년 이상'] },
+      { key: 'recentProjectExp',       label: '최근 3년 내 로고 또는 브랜드 아이덴티티 프로젝트 경험', options: ['있음', '없음'] },
+      { key: 'aiToolExperience',       label: '생성형 AI 이미지 또는 로고 도구 사용 경험',             options: ['없음', '가끔 사용', '자주 사용', '실무 활용'] },
     ];
 
     function BasicInfoScreen({ value, onChange, onBack, onSubmit }) {
       const info = value || {};
       const setField = (key, nextValue) => onChange({ ...info, [key]: nextValue });
-      const requiredDone = BASIC_INFO_FIELDS.every(field => Boolean(info[field.key]));
+      const isMultiField = key => key === 'mainField';
+      const hasFieldValue = field => {
+        const current = info[field.key];
+        return isMultiField(field.key) ? Array.isArray(current) && current.length > 0 : Boolean(current);
+      };
+      const toggleOption = (key, option) => {
+        if (!isMultiField(key)) {
+          setField(key, option);
+          return;
+        }
+        const current = Array.isArray(info[key]) ? info[key] : (info[key] ? [info[key]] : []);
+        const next = current.includes(option)
+          ? current.filter(item => item !== option)
+          : [...current, option];
+        setField(key, next);
+      };
+      const requiredDone =
+        BASIC_INFO_FIELDS.every(hasFieldValue) &&
+        Boolean(info.evaluatorCode && info.evaluatorCode.trim()) &&
+        info.criteriaConfirmed === true;
 
       return (
         <main className="min-h-screen bg-white px-4 py-10 text-[#111111]">
           <div className="mx-auto py-[46px]" style={{width:'min(1120px, 92vw)'}}>
             <header className="mb-[52px] text-center">
-              <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">예비평가자 기초 정보 입력</h1>
+              <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">예비평가자 기본 정보 및 자격 확인</h1>
               <p className="mx-auto max-w-[820px] text-left text-[16px] leading-[1.85] text-gray-800">
-                아래 항목은 예비평가 결과를 해석하기 위한 기초 배경 정보로만 활용됩니다. 개인을 식별할 수 있는 이름, 연락처, 이메일은 수집하지 않습니다.
+                아래 항목은 예비평가 참여 기준 확인과 응답 특성 파악을 위한 기본 정보입니다. 입력 내용은 예비평가 자료의 해석과 연구대상자 자격 확인 목적으로만 사용됩니다.
               </p>
             </header>
 
             <section className="mx-auto grid max-w-[820px] gap-[28px] text-[16px] leading-[1.85] text-gray-800">
+
+              {/* 예비평가자 코드 */}
+              <div>
+                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[예비평가자 코드]</h2>
+                <input
+                  type="text"
+                  value={info.evaluatorCode || ''}
+                  onChange={e => setField('evaluatorCode', e.target.value)}
+                  placeholder="연구자로부터 받은 코드를 입력해 주세요"
+                  className="w-full rounded-lg border border-black/20 bg-white px-4 py-3 text-[16px] text-gray-800 outline-none transition-colors focus:border-black"
+                />
+              </div>
+
+              {/* 선택형 항목 */}
               {BASIC_INFO_FIELDS.map(field => (
                 <div key={field.key}>
                   <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[{field.label}]</h2>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {field.options.map(option => {
-                      const selected = info[field.key] === option;
+                      const selected = isMultiField(field.key)
+                        ? (Array.isArray(info[field.key]) ? info[field.key] : [info[field.key]].filter(Boolean)).includes(option)
+                        : info[field.key] === option;
                       return (
                         <button
                           key={option}
                           type="button"
-                          onClick={() => setField(field.key, option)}
+                          onClick={() => toggleOption(field.key, option)}
                           className={`rounded-lg border px-4 py-3 text-left text-[15px] font-bold transition-colors ${selected ? 'border-black bg-black text-white' : 'border-black/20 bg-white text-gray-800 hover:bg-gray-50'}`}
                         >
                           {option}
@@ -441,14 +477,26 @@
                 </div>
               ))}
 
+              {/* 예비평가 기준 이해 여부 */}
               <div>
-                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[예비평가 관련 의견]</h2>
-                <textarea
-                  value={info.comment || ''}
-                  onChange={event => setField('comment', event.target.value)}
-                  placeholder="예비시안 검토 또는 SET 구성 과정에서 참고할 의견이 있다면 자유롭게 작성해 주세요."
-                  className="min-h-[140px] w-full rounded-lg border border-black/20 bg-white p-4 text-[16px] leading-7 text-gray-800 outline-none transition-colors focus:border-black"
-                />
+                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[예비평가 기준 이해 여부]</h2>
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-black/20 bg-white px-4 py-4 transition-colors hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={info.criteriaConfirmed === true}
+                    onChange={e => setField('criteriaConfirmed', e.target.checked)}
+                    className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer"
+                    style={{accentColor:'#111827'}}
+                  />
+                  <span className={`text-[15px] font-bold leading-relaxed transition-colors ${info.criteriaConfirmed ? 'text-[#111111]' : 'text-gray-500'}`}>
+                    확인했습니다
+                  </span>
+                </label>
+              </div>
+
+              {/* 별도 제출 안내 */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-5 py-4 text-[14px] leading-[1.75] text-slate-600">
+                사례비 지급 및 자격 확인을 위한 성명, 이메일, 포트폴리오 자료는 예비평가 응답과 분리된 <strong className="font-semibold text-slate-800">별도 양식</strong>으로 제출해 주세요.
               </div>
 
               <div className="grid gap-3 pt-2 sm:grid-cols-2">
@@ -458,17 +506,19 @@
                 <button
                   type="button"
                   onClick={() => onSubmit({
-                    gender: info.gender,
+                    evaluatorCode: info.evaluatorCode?.trim() || '',
                     ageGroup: info.ageGroup,
+                    mainField: Array.isArray(info.mainField) ? info.mainField : (info.mainField ? [info.mainField] : []),
                     designExperience: info.designExperience,
-                    mainField: info.mainField,
-                    brandIdentityProjectExperience: info.brandIdentityProjectExperience,
-                    comment: info.comment || '',
+                    brandProjectExperience: info.brandProjectExperience,
+                    recentProjectExp: info.recentProjectExp,
+                    aiToolExperience: info.aiToolExperience,
+                    criteriaConfirmed: info.criteriaConfirmed,
                   })}
                   disabled={!requiredDone}
                   className={`rounded-lg px-5 py-4 text-[16px] font-extrabold transition-colors ${requiredDone ? 'bg-black text-white hover:bg-neutral-800' : 'cursor-not-allowed bg-gray-200 text-gray-500'}`}
                 >
-                  제출하기
+                  예비평가 제출하기
                 </button>
               </div>
             </section>
@@ -483,8 +533,7 @@
           <div className="mx-auto grid min-h-[70vh] place-items-center" style={{width:'min(1120px, 92vw)'}}>
             <section className="mx-auto max-w-[820px] text-center text-[16px] leading-[1.85] text-gray-800">
               <h1 className="mb-6 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">예비평가 제출 완료</h1>
-              <p>예비평가가 완료되었습니다. 귀한 시간을 내어 본실험 자극 구성을 위한 예비평가에 참여해 주셔서 감사합니다.</p>
-              <p className="mt-4">제출된 자료는 본실험 자극 구성 및 연구 분석을 위한 기초 자료로 활용됩니다.</p>
+              <p>예비평가가 제출되었습니다. 응답해 주신 자료는 본실험 후보 시안 구성과 SET 배정 기준을 검토하는 데 활용됩니다. 참여해 주셔서 감사합니다.</p>
               <button type="button" onClick={onFinish} className="mt-8 rounded-lg bg-black px-8 py-4 text-[16px] font-extrabold text-white transition-colors hover:bg-neutral-800">
                 종료하기
               </button>
@@ -2463,7 +2512,7 @@
         setDimensionRatings(result);
         setDimensionRatingDraft(draftRatings);
         saveData({ dimensionRatings: result, dimensionRatingDraft: draftRatings });
-        goScreen('setAssignment');
+        goScreen('basicInfo');
       };
       const handleSetAssignmentNext = (payload) => { setSetAssignmentResult(payload); goScreen('basicInfo'); };
       const handleSubmit = () => goScreen('review');
@@ -2498,7 +2547,6 @@
           excluded_candidate_ids: eliminatedIds,
           formationGate,
           dimensionRatings: dimensionRatings || [],
-          ...setAssignmentResult,
         };
         // Export dimension ratings CSV
         if (submission.dimensionRatings && submission.dimensionRatings.length > 0) {
@@ -2538,7 +2586,7 @@
       );
       if (screen === 'eliminateReview') return <EliminationReviewScreen key={eliminatedIds.slice().sort().join(',')} logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
       if (screen === 'dimensionRating') return <DimensionRatingScreen key={eliminatedIds.slice().sort().join(',')} candidates={evaluationLogos} initialRatings={dimensionRatingDraft} onRatingsChange={handleDimensionRatingDraftChange} onBack={() => window.history.back()} onNext={handleDimensionRatingNext} />;
-      if (screen === 'setAssignment') return <SetAssignmentScreen candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleSetAssignmentNext} />;
+      if (screen === 'setAssignment' && new URLSearchParams(window.location.search).has('admin')) return <SetAssignmentScreen candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleSetAssignmentNext} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => window.history.back()} onSubmit={handleBasicInfoSubmit} />;
       if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => { window.location.href = 'about:blank'; }} />;
       if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => window.history.back()} onSubmit={handleFinalSubmit} />;
