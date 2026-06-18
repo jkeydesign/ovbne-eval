@@ -494,9 +494,31 @@
                 </label>
               </div>
 
-              {/* 별도 제출 안내 */}
+              {/* 사례비 지급 연락처 */}
               <div className="rounded-lg border border-slate-200 bg-slate-50 px-5 py-4 text-[14px] leading-[1.75] text-slate-600">
-                사례비 지급 및 자격 확인을 위한 성명, 이메일, 포트폴리오 자료는 예비평가 응답과 분리된 <strong className="font-semibold text-slate-800">별도 양식</strong>으로 제출해 주세요.
+                실험 사례비 지급을 위한 이메일 주소와 전화번호를 기재해 주세요. 이 항목은 선택 입력입니다.
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="mb-2 block text-[14px] font-bold text-slate-700">이메일 주소</span>
+                    <input
+                      type="email"
+                      value={info.incentiveEmail || ''}
+                      onChange={e => setField('incentiveEmail', e.target.value)}
+                      placeholder="이메일 주소를 입력해 주세요"
+                      className="w-full rounded-lg border border-black/20 bg-white px-4 py-3 text-[15px] text-gray-800 outline-none transition-colors focus:border-black"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-[14px] font-bold text-slate-700">전화번호</span>
+                    <input
+                      type="tel"
+                      value={info.incentivePhone || ''}
+                      onChange={e => setField('incentivePhone', e.target.value)}
+                      placeholder="전화번호를 입력해 주세요"
+                      className="w-full rounded-lg border border-black/20 bg-white px-4 py-3 text-[15px] text-gray-800 outline-none transition-colors focus:border-black"
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="grid gap-3 pt-2 sm:grid-cols-2">
@@ -513,6 +535,8 @@
                     brandProjectExperience: info.brandProjectExperience,
                     recentProjectExp: info.recentProjectExp,
                     aiToolExperience: info.aiToolExperience,
+                    incentiveEmail: info.incentiveEmail?.trim() || '',
+                    incentivePhone: info.incentivePhone?.trim() || '',
                     criteriaConfirmed: info.criteriaConfirmed,
                   })}
                   disabled={!requiredDone}
