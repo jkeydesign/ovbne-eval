@@ -2831,7 +2831,7 @@
         stimulusId: c.stimulusId,
         typeCode: c.typeGroup,
         candidateId: c.localCode,
-        imagePath: publicAssetPath(`/public/logos/pre-eval/${c.typeGroup}/L_${c.localCode}.png`),
+        imagePath: publicAssetPath(`/public/logos/pre-eval/${c.typeGroup}/L_${c.stimulusId.split('_').pop()}.png`),
       }));
 
       if (screen === 'intro') return <IntroScreen mode="visual-rating" onStart={() => goScreen('qualification')} />;
