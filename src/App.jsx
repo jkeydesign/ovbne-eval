@@ -1197,7 +1197,7 @@
                         <p className="mb-1.5 text-[15px] font-extrabold text-black">
                           {d.label}
                         </p>
-                        <p className="text-[12px] font-medium leading-[1.6] text-slate-700">{d.desc}</p>
+                        <p className="text-[13px] font-bold leading-[1.6] text-slate-950">{d.desc}</p>
                       </div>
                     ))}
                   </div>
