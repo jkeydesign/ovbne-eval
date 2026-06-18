@@ -8,6 +8,8 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -19,6 +21,19 @@
 <body>
   <div id="root"></div>
   <script type="text/babel" data-presets="env,react">
+    const firebaseConfig = {
+      apiKey: "AIzaSyDl_O6dQuLzZ2gtt4Yt1Q4D52Rq882nQm8",
+      authDomain: "ovbne-eval-74bb6.firebaseapp.com",
+      projectId: "ovbne-eval-74bb6",
+      storageBucket: "ovbne-eval-74bb6.firebasestorage.app",
+      messagingSenderId: "1008961053289",
+      appId: "1:1008961053289:web:96fec8c68f3705e03ab8f8"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
     /** @jsxRuntime classic */
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
@@ -2327,8 +2342,12 @@
           refinement: ratings[logo.id]?.refinement
         }));
         const submission = buildVisualRatingResponse(pid, tsStart, logos.map(l => l.id), dimensionRatingsArr, {}, info);
-        triggerDownload(new Blob([JSON.stringify(submission, null, 2)], { type: 'application/json' }), `visual_rating_submission_${pid}.json`);
-        goScreen('complete');
+        db.collection('visual_rating_submissions').add(submission)
+          .then(() => goScreen('complete'))
+          .catch(error => {
+            console.error(error);
+            alert('데이터 저장에 실패했습니다. 다시 시도해 주세요.\n' + error.message);
+          });
       }} />;
       if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => window.location.reload()} />;
       return null;
@@ -2367,8 +2386,12 @@
       const handleBasicInfoSubmit = (data) => {
         setBasicInfo(data);
         const submission = buildScreeningResponse(pid, tsStart, logos, eliminatedIds, qualification, data);
-        triggerDownload(new Blob([JSON.stringify(submission, null, 2)], { type: 'application/json' }), `screening_submission_${pid}.json`);
-        goScreen('complete');
+        db.collection('screening_submissions').add(submission)
+          .then(() => goScreen('complete'))
+          .catch(error => {
+            console.error(error);
+            alert('데이터 저장에 실패했습니다. 다시 시도해 주세요.\n' + error.message);
+          });
       };
 
       if (screen === 'intro') return <IntroScreen mode="screening" onStart={() => goScreen('qualification')} />;
@@ -2390,6 +2413,24 @@
       const [files, setFiles] = useState([]);
       const [submissions, setSubmissions] = useState([]);
       const [result, setResult] = useState(null);
+      const [loading, setLoading] = useState(false);
+
+      const fetchFromFirebase = async () => {
+        setLoading(true);
+        try {
+          const snapshot = await db.collection('screening_submissions').get();
+          const docs = snapshot.docs.map(doc => doc.data());
+          if (docs.length === 0) {
+            alert('Firebase에 저장된 1차 선별 결과가 없습니다.');
+          } else {
+            setSubmissions(docs);
+            alert(`Firebase에서 ${docs.length}개의 응답을 성공적으로 불러왔습니다!`);
+          }
+        } catch (e) {
+          alert('Firebase에서 데이터를 불러오지 못했습니다.\n' + e.message);
+        }
+        setLoading(false);
+      };
 
       const handleFiles = async (e) => {
         const fileList = Array.from(e.target.files);
@@ -2468,9 +2509,15 @@
           <div className="max-w-4xl mx-auto space-y-6">
             <h1 className="text-3xl font-bold tracking-tight">관리자 모드: 예비평가 결과 집계 및 SET 자동 구성</h1>
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl font-bold mb-4">1차 선별 데이터 업로드</h2>
-              <input type="file" multiple accept=".json" onChange={handleFiles} className="block w-full mb-4 text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:font-semibold file:bg-slate-100 file:text-slate-700" />
-              <p className="text-sm text-slate-600 mb-4">{submissions.length}개의 파일이 업로드되었습니다.</p>
+              <h2 className="text-xl font-bold mb-4">1차 선별 데이터 취합</h2>
+              <div className="flex gap-4 mb-4">
+                <button onClick={fetchFromFirebase} disabled={loading} className="px-4 py-2 bg-slate-900 text-white font-bold rounded hover:bg-slate-800 transition">
+                  {loading ? '불러오는 중...' : 'Firebase에서 자동으로 불러오기'}
+                </button>
+                <div className="text-sm text-slate-500 flex items-center">또는 파일 업로드:</div>
+                <input type="file" multiple accept=".json" onChange={handleFiles} className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:font-semibold file:bg-slate-100 file:text-slate-700" />
+              </div>
+              <p className="text-sm text-slate-600 mb-4">{submissions.length}개의 응답 데이터가 준비되었습니다.</p>
               <button onClick={handleAggregate} className="bg-slate-900 text-white px-6 py-2 rounded font-bold hover:bg-slate-800">
                 결과 집계하여 27개 후보 확정
               </button>
