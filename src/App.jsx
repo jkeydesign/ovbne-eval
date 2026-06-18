@@ -119,7 +119,7 @@
       }
     };
 
-    function buildScreeningResponse(pid, tsStart, evaluationLogos, eliminatedIds, qualification, basicInfo) {
+    function buildScreeningResponse(pid, tsStart, evaluationLogos, eliminatedIds, qualification, basicInfo, actionEvents = []) {
       return {
         mode: "screening",
         evaluatorCode: pid,
@@ -148,10 +148,11 @@
           excludeReason: "",
           timestamp: new Date().toISOString()
         })),
-        selectedCandidateIds: evaluationLogos.filter(l => !eliminatedIds.includes(l.id)).map(l => l.id),
-        excludedCandidateIds: eliminatedIds,
+        selectedCandidateIds: evaluationLogos.filter(l => !eliminatedIds.includes(l.id)).map(l => l.id).sort(),
+        excludedCandidateIds: [...eliminatedIds].sort(),
         submittedAt: new Date().toISOString(),
-        completionStatus: "completed"
+        completionStatus: "completed",
+        actionEvents: actionEvents
       };
     }
 
@@ -1117,7 +1118,7 @@
       );
     }
 
-    function DimensionRatingScreen({ candidates, initialRatings = {}, onRatingsChange, onBack, onNext }) {
+    function DimensionRatingScreen({ candidates, initialRatings = {}, onRatingsChange, onBack, onNext, onLogEvent }) {
       const [ratings, setRatings] = useState(() => {
         const r = {};
         candidates.forEach(c => {
@@ -1131,6 +1132,7 @@
       });
 
       const handleRate = (id, dim, value) => {
+        onLogEvent?.('rate_dimension', { logoId: id, dimension: dim, value: value });
         setRatings(prev => {
           const next = { ...prev, [id]: { ...prev[id], [dim]: value } };
           onRatingsChange?.(next);
@@ -2209,8 +2211,17 @@
       const [qualification, setQualification] = useState({});
       const [basicInfo, setBasicInfo] = useState({});
       
-      const [pid] = useState(generateId);
+      const [pid, setPid] = useState('E000');
+      const [actionEvents, setActionEvents] = useState([]);
       const [tsStart] = useState(() => new Date().toISOString());
+
+      const logEvent = (action, details = {}) => {
+        setActionEvents(prev => [...prev, {
+          timestamp: new Date().toISOString(),
+          action,
+          details
+        }]);
+      };
 
       useEffect(() => {
         let active = true;
@@ -2224,16 +2235,46 @@
             if (!active) return;
             setManifestStatus({ loading: false, error: error.message });
           });
+
+        db.collection('screening_submissions').get()
+          .then(snapshot => {
+            if (!active) return;
+            const nextNum = snapshot.size + 1;
+            const formatted = 'E' + String(nextNum).padStart(3, '0');
+            setPid(formatted);
+            logEvent('initialize_id', { id: formatted, existingCount: snapshot.size });
+          })
+          .catch(err => {
+            if (!active) return;
+            const fallbackId = 'E' + Math.floor(100 + Math.random() * 900);
+            setPid(fallbackId);
+            logEvent('initialize_id_fallback', { id: fallbackId, error: err.message });
+          });
+
         return () => { active = false; };
       }, []);
 
       const goScreen = (nextScreen) => {
+        logEvent('screen_change', { from: screen, to: nextScreen });
         setScreen(nextScreen);
+      };
+
+      const handleExcludeChange = (nextExcludedIds) => {
+        const added = nextExcludedIds.filter(id => !eliminatedIds.includes(id));
+        const removed = eliminatedIds.filter(id => !nextExcludedIds.includes(id));
+        if (added.length > 0) {
+          logEvent('exclude_logo', { logoId: added[0] });
+        }
+        if (removed.length > 0) {
+          logEvent('restore_logo', { logoId: removed[0] });
+        }
+        setEliminatedIds(nextExcludedIds);
       };
 
       const handleBasicInfoSubmit = (data) => {
         setBasicInfo(data);
-        const submission = buildScreeningResponse(pid, tsStart, logos, eliminatedIds, qualification, data);
+        logEvent('submit_click', { basicInfo: data });
+        const submission = buildScreeningResponse(pid, tsStart, logos, eliminatedIds, qualification, data, actionEvents);
         db.collection('screening_submissions').add(submission)
           .then(() => goScreen('complete'))
           .catch(error => {
@@ -2250,7 +2291,7 @@
           <p className="text-lg font-bold text-slate-950">로딩 중...</p>
         </div>
       );
-      if (screen === 'eliminate') return <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('basicInfo')} onBack={() => goScreen('brief')} />;
+      if (screen === 'eliminate') return <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={handleExcludeChange} onNext={() => goScreen('basicInfo')} onBack={() => goScreen('brief')} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('eliminate')} onSubmit={handleBasicInfoSubmit} />;
       if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => window.location.reload()} />;
       
@@ -2427,7 +2468,7 @@
         
         const rows = submissions.map(sub => {
           const profile = sub.evaluatorProfile || {};
-          const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).join(';');
+          const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).sort().join(';');
           return [
             sub.evaluatorCode || '',
             sub.submittedAt || '',
@@ -2564,7 +2605,7 @@
                       <tbody className="divide-y divide-slate-100 text-slate-700">
                         {submissions.map((sub, idx) => {
                           const profile = sub.evaluatorProfile || {};
-                          const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).join(', ');
+                          const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).sort().join(', ');
                           return (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="p-3 font-mono text-xs">{sub.evaluatorCode || 'N/A'}</td>
@@ -2593,13 +2634,24 @@
       const [candidatesData, setCandidatesData] = useState(null);
       const [ratings, setRatings] = useState({});
       const [basicInfo, setBasicInfo] = useState({});
-      const [pid] = useState(generateId);
+      const [pid, setPid] = useState('E000');
+      const [actionEvents, setActionEvents] = useState([]);
       const [tsStart] = useState(() => new Date().toISOString());
 
+      const logEvent = (action, details = {}) => {
+        setActionEvents(prev => [...prev, {
+          timestamp: new Date().toISOString(),
+          action,
+          details
+        }]);
+      };
+
       useEffect(() => {
+        let active = true;
         // Try Firebase first
         db.collection('admin').doc('current_visual_rating_set').get()
           .then(doc => {
+            if (!active) return;
             if (doc.exists) {
               setCandidatesData(doc.data());
               setScreen('intro');
@@ -2611,16 +2663,19 @@
                   return res.json();
                 })
                 .then(data => {
+                  if (!active) return;
                   setCandidatesData(data);
                   setScreen('intro');
                 })
                 .catch(err => {
+                  if (!active) return;
                   console.error('Failed to load local dataset:', err);
                   setScreen('waiting');
                 });
             }
           })
           .catch(err => {
+            if (!active) return;
             console.error('Firebase error, falling back to local JSON:', err);
             // Fallback to local JSON
             fetch('../data/selected_27_for_visual_rating.json')
@@ -2629,17 +2684,39 @@
                 return res.json();
               })
               .then(data => {
+                if (!active) return;
                 setCandidatesData(data);
                 setScreen('intro');
               })
               .catch(err2 => {
+                if (!active) return;
                 console.error('Failed to load local dataset:', err2);
                 setScreen('waiting');
               });
           });
+
+        db.collection('visual_rating_submissions').get()
+          .then(snapshot => {
+            if (!active) return;
+            const nextNum = snapshot.size + 1;
+            const formatted = 'E' + String(nextNum).padStart(3, '0');
+            setPid(formatted);
+            logEvent('initialize_id', { id: formatted, existingCount: snapshot.size });
+          })
+          .catch(err => {
+            if (!active) return;
+            const fallbackId = 'E' + Math.floor(100 + Math.random() * 900);
+            setPid(fallbackId);
+            logEvent('initialize_id_fallback', { id: fallbackId, error: err.message });
+          });
+
+        return () => { active = false; };
       }, []);
 
-      const goScreen = (s) => setScreen(s);
+      const goScreen = (s) => {
+        logEvent('screen_change', { from: screen, to: s });
+        setScreen(s);
+      };
 
       if (screen === 'loading') {
         return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">데이터를 불러오는 중입니다...</div>;
@@ -2667,9 +2744,10 @@
 
       if (screen === 'intro') return <IntroScreen mode="visual-rating" onStart={() => goScreen('brief')} />;
       if (screen === 'brief') return <BriefScreen mode="visual-rating" onBack={() => goScreen('intro')} onStart={() => goScreen('rating')} />;
-      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={(res) => { setRatings(res); goScreen('basicInfo'); }} />;
+      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={(res) => { setRatings(res); goScreen('basicInfo'); }} onLogEvent={logEvent} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('rating')} onSubmit={(info) => {
         setBasicInfo(info);
+        logEvent('submit_click', { basicInfo: info });
         const dimensionRatingsArr = logos.map(logo => ({
           stimulusId: logo.stimulusId,
           typeCode: logo.typeCode,
@@ -2682,6 +2760,7 @@
           timestamp_submit: new Date().toISOString(),
           basic_info: info,
           ratings: dimensionRatingsArr,
+          action_events: actionEvents
         };
         db.collection('visual_rating_submissions').add(docData)
           .then(() => goScreen('thanks'))
