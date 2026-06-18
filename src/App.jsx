@@ -2874,6 +2874,23 @@
       return null;
     }
 
+    function DraggableLogoCard({ s, onDragStart }) {
+      const imgUrl = publicAssetPath(`/public/logos/pre-eval/${s.typeCode}/L_${s.stimulusId.split('_').pop()}.png`);
+      return (
+        <div
+          draggable
+          onDragStart={e => onDragStart(e, s.stimulusId)}
+          className="relative cursor-grab active:cursor-grabbing bg-white p-1 border border-slate-200 rounded hover:border-slate-400 hover:shadow-xs transition flex flex-col items-center justify-center w-12 h-14 select-none shrink-0"
+          title={`${s.candidateId || s.stimulusId} (시각체계 평균: ${s.visualMean.toFixed(2)})`}
+        >
+          <div className="w-8 h-8 flex items-center justify-center overflow-hidden">
+            <img src={imgUrl} alt={s.candidateId} className="max-w-full max-h-full object-contain pointer-events-none" onError={(e) => { e.target.style.display = 'none'; }} />
+          </div>
+          <span className="text-[8px] font-black font-mono text-slate-700 mt-0.5 tracking-tight">{s.candidateId || s.stimulusId}</span>
+        </div>
+      );
+    }
+
     function Admin2App() {
       const [uploading, setUploading] = useState(false);
       const [submissions, setSubmissions] = useState([]);
@@ -2887,6 +2904,26 @@
           return {};
         }
       });
+      const [draggingId, setDraggingId] = useState(null);
+      const [dragOverZone, setDragOverZone] = useState(null);
+
+      const handleDragStart = (e, stimulusId) => {
+        setDraggingId(stimulusId);
+        e.dataTransfer.setData('text/plain', stimulusId);
+      };
+
+      const handleDrop = (e, zoneId) => {
+        e.preventDefault();
+        const stimulusId = e.dataTransfer.getData('text/plain') || draggingId;
+        if (stimulusId) {
+          setSetAssignments(prev => ({
+            ...prev,
+            [stimulusId]: zoneId === "" ? "" : Number(zoneId)
+          }));
+        }
+        setDraggingId(null);
+        setDragOverZone(null);
+      };
 
       useEffect(() => {
         localStorage.setItem('visual_rating_set_assignments', JSON.stringify(setAssignments));
@@ -3412,7 +3449,6 @@
                       </button>
                     </div>
                   </div>
-
                   {/* 세트별 시각체계 평정 평균 분포 시각화 막대 그래프 */}
                   {candidateStats.length > 0 && (
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-6">
@@ -3426,12 +3462,12 @@
                           <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
                             {[1, 2, 3].map(setId => {
                               const val = setSummary[setId].naturalnessMean;
-                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              const barHeight = val > 0 ? (val / 5.0) * 120 : 0;
                               return (
                                 <div key={setId} className="flex flex-col items-center gap-1 w-10">
                                   <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
                                   <div 
-                                    style={{ height: heightPct }} 
+                                    style={{ height: `${barHeight}px` }} 
                                     className={`w-full rounded-t-sm transition-all duration-500 ${
                                       setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
                                     }`}
@@ -3448,12 +3484,12 @@
                           <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
                             {[1, 2, 3].map(setId => {
                               const val = setSummary[setId].harmonyMean;
-                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              const barHeight = val > 0 ? (val / 5.0) * 120 : 0;
                               return (
                                 <div key={setId} className="flex flex-col items-center gap-1 w-10">
                                   <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
                                   <div 
-                                    style={{ height: heightPct }} 
+                                    style={{ height: `${barHeight}px` }} 
                                     className={`w-full rounded-t-sm transition-all duration-500 ${
                                       setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
                                     }`}
@@ -3470,12 +3506,12 @@
                           <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
                             {[1, 2, 3].map(setId => {
                               const val = setSummary[setId].elaborationMean;
-                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              const barHeight = val > 0 ? (val / 5.0) * 120 : 0;
                               return (
                                 <div key={setId} className="flex flex-col items-center gap-1 w-10">
                                   <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
                                   <div 
-                                    style={{ height: heightPct }} 
+                                    style={{ height: `${barHeight}px` }} 
                                     className={`w-full rounded-t-sm transition-all duration-500 ${
                                       setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
                                     }`}
@@ -3492,12 +3528,12 @@
                           <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
                             {[1, 2, 3].map(setId => {
                               const val = setSummary[setId].visualMean;
-                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              const barHeight = val > 0 ? (val / 5.0) * 120 : 0;
                               return (
                                 <div key={setId} className="flex flex-col items-center gap-1 w-10">
                                   <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
                                   <div 
-                                    style={{ height: heightPct }} 
+                                    style={{ height: `${barHeight}px` }} 
                                     className={`w-full rounded-t-sm transition-all duration-500 ${
                                       setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
                                     }`}
@@ -3515,6 +3551,117 @@
                         <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-500 rounded-sm"></div>SET 2</div>
                         <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-300 rounded-sm"></div>SET 3</div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* 드래그 앤 드롭 세트 배정 */}
+                  {candidateStats.length > 0 && (
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-6">
+                      <h2 className="text-xl font-bold mb-1">본실험용 27개 시안 세트 배정 (드래그 & 드롭)</h2>
+                      <p className="text-sm text-slate-500 mb-6">
+                        시안 카드를 마우스로 드래그하여 각 SET 상자에 직접 배정할 수 있습니다. 
+                        자동 균형 배정 버튼을 눌러 초기 세팅을 하거나, 직접 수동으로 세트를 이동 및 미배정 처리할 수 있습니다.
+                      </p>
+                      
+                      {/* SET 상자 3개 */}
+                      <div className="grid gap-6 md:grid-cols-3 mb-6">
+                        {[1, 2, 3].map(setId => {
+                          const s = setSummary[setId];
+                          const assignedCand = candidateStats.filter(c => setAssignments[c.stimulusId] === setId);
+                          const groupedByTypeCode = { A: [], B: [], C: [] };
+                          assignedCand.forEach(c => {
+                            if (groupedByTypeCode[c.typeCode]) groupedByTypeCode[c.typeCode].push(c);
+                          });
+                          
+                          const isHovered = dragOverZone === String(setId);
+                          
+                          return (
+                            <div 
+                              key={setId}
+                              onDragOver={e => e.preventDefault()}
+                              onDragEnter={e => { e.preventDefault(); setDragOverZone(String(setId)); }}
+                              onDragLeave={e => { e.preventDefault(); setDragOverZone(null); }}
+                              onDrop={e => handleDrop(e, setId)}
+                              className={`border rounded-xl p-4 transition-all ${
+                                isHovered ? 'border-indigo-600 bg-indigo-50/50 shadow-md scale-[1.01]' : 'border-slate-200 bg-slate-50 shadow-sm'
+                              }`}
+                            >
+                              <div className="flex justify-between items-center mb-3">
+                                <h3 className="font-bold text-slate-900 text-lg">SET {setId}</h3>
+                                <span className="text-xs bg-slate-200/85 text-slate-700 font-extrabold px-2 py-0.5 rounded">
+                                  A:{s.A} B:{s.B} C:{s.C} (총 {s.count}개)
+                                </span>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                {/* Type A */}
+                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+                                  <span className="text-[10px] font-extrabold text-slate-400 block mb-1.5 tracking-wider">A 유형 (구상) · {groupedByTypeCode.A.length}개</span>
+                                  <div className="flex flex-wrap gap-1.5 min-h-[44px] items-center">
+                                    {groupedByTypeCode.A.length === 0 && <span className="text-[10px] text-slate-300 italic py-2 pl-1">드롭하여 배치</span>}
+                                    {groupedByTypeCode.A.map(c => (
+                                      <DraggableLogoCard key={c.stimulusId} s={c} onDragStart={handleDragStart} />
+                                    ))}
+                                  </div>
+                                </div>
+                                
+                                {/* Type B */}
+                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+                                  <span className="text-[10px] font-extrabold text-slate-400 block mb-1.5 tracking-wider">B 유형 (기하) · {groupedByTypeCode.B.length}개</span>
+                                  <div className="flex flex-wrap gap-1.5 min-h-[44px] items-center">
+                                    {groupedByTypeCode.B.length === 0 && <span className="text-[10px] text-slate-300 italic py-2 pl-1">드롭하여 배치</span>}
+                                    {groupedByTypeCode.B.map(c => (
+                                      <DraggableLogoCard key={c.stimulusId} s={c} onDragStart={handleDragStart} />
+                                    ))}
+                                  </div>
+                                </div>
+                                
+                                {/* Type C */}
+                                <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+                                  <span className="text-[10px] font-extrabold text-slate-400 block mb-1.5 tracking-wider">C 유형 (유기) · {groupedByTypeCode.C.length}개</span>
+                                  <div className="flex flex-wrap gap-1.5 min-h-[44px] items-center">
+                                    {groupedByTypeCode.C.length === 0 && <span className="text-[10px] text-slate-300 italic py-2 pl-1">드롭하여 배치</span>}
+                                    {groupedByTypeCode.C.map(c => (
+                                      <DraggableLogoCard key={c.stimulusId} s={c} onDragStart={handleDragStart} />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* 미배정 시안 풀 */}
+                      {(() => {
+                        const unassignedCand = candidateStats.filter(c => !setAssignments[c.stimulusId]);
+                        const isHovered = dragOverZone === "";
+                        return (
+                          <div 
+                            onDragOver={e => e.preventDefault()}
+                            onDragEnter={e => { e.preventDefault(); setDragOverZone(""); }}
+                            onDragLeave={e => { e.preventDefault(); setDragOverZone(null); }}
+                            onDrop={e => handleDrop(e, "")}
+                            className={`border rounded-xl p-4 transition-all ${
+                              isHovered ? 'border-indigo-400 bg-indigo-50/30' : 'border-dashed border-slate-300 bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="font-bold text-slate-700 text-sm">미배정 시안 풀 ({unassignedCand.length}개 시안)</span>
+                              {unassignedCand.length > 0 && <span className="text-[10px] text-slate-400 font-medium">※ 시안을 마우스로 잡고 위쪽의 SET 상자 영역으로 끌어서 옮기세요.</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-2 min-h-[50px] items-center">
+                              {unassignedCand.length === 0 ? (
+                                <span className="text-xs text-slate-400 italic py-2">모든 시안이 세트에 배정되었습니다. (균형 배정 완료)</span>
+                              ) : (
+                                unassignedCand.map(c => (
+                                  <DraggableLogoCard key={c.stimulusId} s={c} onDragStart={handleDragStart} />
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
