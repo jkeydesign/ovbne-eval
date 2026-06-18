@@ -225,46 +225,136 @@
 
     function IntroScreen({ mode, onStart }) {
       const isVR = mode === 'visual-rating';
+      const [checked, setChecked] = useState([false, false, false, false]);
+      const allChecked = checked.every(Boolean);
+      const toggle = (i) => setChecked(prev => prev.map((v, idx) => idx === i ? !v : v));
+
+      const processItems = isVR ? [
+        '1단계: 본실험 시안용 27개 후보 파일 업로드',
+        '2단계: 브랜드 브리프 재확인',
+        '3단계: 27개 시안별 자연성·조화성·정교성 평가',
+        '4단계: 기본 정보 입력 및 제출',
+      ] : [
+        '1단계: 예비평가자 자격 확인',
+        '2단계: 브랜드 브리프 확인 (중요)',
+        '3단계: 48개 AI 로고 예비시안 확인',
+        '4단계: 실험에 사용하기 어려운 21개 시안 제외',
+        '5단계: 실험자 기본 정보 확인 및 제출',
+      ];
+      
+      const cautions = isVR ? [
+        '가장 좋아 보이는 로고를 고르는 절차가 아닙니다.',
+        '시각체계(자연성·조화성·정교성) 점수를 평가해 주세요.',
+        '각 차원별 의미를 숙지하시고 직관적으로 1~5점을 매겨주세요.'
+      ] : [
+        '가장 좋아 보이는 로고를 고르는 절차가 아닙니다.',
+        '본실험에서 비교·판단 가능한 시안 퀄리티인지 검토해 주세요.',
+        '브랜드 맥락과 현저히 맞지 않는 시안은 제외해 주세요.',
+        '다른 업종으로 오독되는 시안은 제외해 주세요.',
+        '로고의 기본 형식으로 보기 어려운 시안은 제외해 주세요.',
+        '형태가 깨졌거나 식별이 어려울 것 같은 시안은 제외해 주세요.',
+      ];
+
+      const GuideSection = ({ title, children }) => (
+        <section>
+          <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[{title}]</h2>
+          {children}
+        </section>
+      );
+
       return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-white rounded-xl border border-slate-200 shadow-sm p-8 sm:p-12">
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">
-              OVBNE 로고 예비시안 {isVR ? '2차 시각체계 평정' : '1차 선별 평가'}
-            </h1>
-            <p className="text-slate-600 mb-8 leading-relaxed">
-              {isVR 
-                ? '본 평가는 1차 선별된 27개 후보 시안에 대해 자연성, 조화성, 정교성을 평가합니다. 본 점수는 로고의 우열을 가리기 위함이 아니며, 본실험 세트 균형 구성을 위한 시각체계 점수 데이터로 사용됩니다.' 
-                : '본 평가는 AI 로고 예비시안 중 본실험 자극으로 사용하기 어려운 시안을 제외하여 최종 후보를 선정하는 1차 선별 과정입니다.'}
-            </p>
-            <div className="bg-amber-50 rounded-lg p-5 mb-8 border border-amber-100">
-              <h2 className="text-sm font-bold text-amber-900 mb-2">진행 안내</h2>
-              <ul className="list-disc pl-5 text-sm text-amber-800 space-y-1.5 leading-relaxed">
+        <main className="min-h-screen bg-white px-4 py-10 text-[#111111]">
+          <div className="mx-auto py-[46px]" style={{width:'min(1120px, 92vw)'}}>
+            <header className="mb-[52px] text-center">
+              <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">
+                OVBNE 로고 예비시안 {isVR ? '2차 시각체계 평정' : '1차 선별 평가'}
+              </h1>
+            </header>
+
+            <div className="mx-auto grid max-w-[820px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
+              <section className="grid gap-3.5">
+                <p>안녕하십니까? 바쁘신 중에도 본 예비평가에 참여해 주셔서 감사합니다.</p>
+
+                <p>
+                  AI로 생성된 로고 시안은 빠르게 많아지고 있지만,
+                  여전히 실무 전문가의 시각적 판단이 필요하다는 취지의 연구를 하고 있습니다.
+                </p>
+
                 {isVR ? (
-                  <>
-                    <li>1차 선별을 통해 확정된 27개 시안만 평가합니다.</li>
-                    <li>각 시안별로 자연성, 조화성, 정교성을 1~5점으로 평정합니다.</li>
-                    <li>모든 시안에 대해 점수를 입력해야 제출할 수 있습니다.</li>
-                  </>
+                  <p>
+                    따라서 본 평가는 1차 선별된 27개의 후보 시안에 대해 자연성, 조화성, 정교성 등 시각체계 점수를 수집하기 위한 2차 평가 과정입니다.
+                  </p>
                 ) : (
-                  <>
-                    <li>총 48개의 시안 중 A, B, C 각 유형별로 7개씩, 총 21개를 제외합니다.</li>
-                    <li>화면의 드래그 앤 드롭 기능을 통해 본실험 후보와 제외 시안을 나눌 수 있습니다.</li>
-                    <li>선택이 모두 완료되면 기본 정보 입력 후 평가가 종료됩니다.</li>
-                  </>
+                  <p>
+                    따라서 본 예비평가는 AI가 생성한 48개의 로고 시안들 가운데
+                    본실험에 사용할 수 있는 후보 시안 27개를 선별하기 위한 1차 평가 과정입니다.
+                  </p>
                 )}
-              </ul>
+
+                <p>
+                  완성된 로고를 고르는 평가는 아닙니다.<br />
+                  AI 로고 생성 기술을 검증하는 평가도 아닙니다.
+                </p>
+
+                <p>
+                  전문가님의 판단은 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다. 제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다.
+                </p>
+
+                <p>감사합니다.</p>
+              </section>
+
+              <GuideSection title="연구 기본 정보">
+                <dl className="grid gap-2">
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">연구명</dt>
+                    <dd>생성형 AI 기반 브랜드 로고 시안에서 AI 정보 제시 유형이 전문 디자이너의 전략적 판단에 미치는 영향</dd>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">연구자</dt>
+                    <dd>박사 연구원 강은영</dd>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">소속</dt>
+                    <dd>홍익대학교 대학원 시각디자인과</dd>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
+                    <dt className="font-bold text-[#111111]">지도교수</dt>
+                    <dd>허민재 교수</dd>
+                  </div>
+                </dl>
+              </GuideSection>
+
+              <GuideSection title="실험 진행 순서">
+                <ul className="grid list-disc gap-1.5 pl-5">
+                  {processItems.map(item => <li key={item}>{item}</li>)}
+                </ul>
+              </GuideSection>
+
+              <GuideSection title="평가 시 유의사항">
+                <ul className="grid list-disc gap-1.5 pl-5">
+                  {cautions.map(item => <li key={item}>{item}</li>)}
+                </ul>
+              </GuideSection>
+
+              <section>
+                <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[확인 체크]</h2>
+                <p>아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
+                <div className="my-5 grid gap-2">
+                  {INTRO_CHECKS.map((label, i) => (
+                    <label key={i} className="flex cursor-pointer items-start gap-3 text-gray-800">
+                      <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer" style={{accentColor:'#020617'}} />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+                <button onClick={onStart} disabled={!allChecked}
+                  className={`w-full rounded-lg py-4 text-[16px] font-extrabold transition-colors ${allChecked ? 'bg-black text-white hover:bg-neutral-800' : 'cursor-not-allowed bg-gray-200 text-gray-500'}`}>
+                  예비평가 시작
+                </button>
+              </section>
             </div>
-            <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-lg mb-8 border border-slate-100">
-              <input type="checkbox" id="consent" className="w-4 h-4 text-slate-900 rounded border-slate-300 focus:ring-slate-900" />
-              <label htmlFor="consent" className="text-sm font-medium text-slate-700 select-none cursor-pointer">
-                위 내용을 모두 확인했습니다.
-              </label>
-            </div>
-            <button onClick={() => { if(document.getElementById('consent').checked) onStart(); else alert('안내 사항을 확인하고 체크해 주세요.'); }} className="w-full py-4 bg-slate-900 text-white rounded-lg font-bold text-lg hover:bg-slate-800 transition shadow-sm">
-              시작하기
-            </button>
           </div>
-        </div>
+        </main>
       );
     }
 
