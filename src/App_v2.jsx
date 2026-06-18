@@ -2878,6 +2878,77 @@
       const [uploading, setUploading] = useState(false);
       const [submissions, setSubmissions] = useState([]);
       const [loading, setLoading] = useState(false);
+      const [candidates, setCandidates] = useState([]);
+      const [setAssignments, setSetAssignments] = useState(() => {
+        try {
+          const saved = localStorage.getItem('visual_rating_set_assignments');
+          return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+          return {};
+        }
+      });
+
+      useEffect(() => {
+        localStorage.setItem('visual_rating_set_assignments', JSON.stringify(setAssignments));
+      }, [setAssignments]);
+
+      useEffect(() => {
+        let active = true;
+        db.collection('admin').doc('current_visual_rating_set').get()
+          .then(doc => {
+            if (!active) return;
+            let data = null;
+            if (doc.exists) {
+              data = doc.data();
+            }
+            if (data && data.selectedCandidates) {
+              const mapped = data.selectedCandidates.map(c => ({
+                id: c.stimulusId,
+                stimulusId: c.stimulusId,
+                typeCode: c.typeGroup,
+                candidateId: c.localCode,
+              }));
+              setCandidates(mapped);
+            } else {
+              fetch('../data/selected_27_for_visual_rating.json')
+                .then(res => res.json())
+                .then(localData => {
+                  if (!active) return;
+                  if (localData && localData.selectedCandidates) {
+                    const mapped = localData.selectedCandidates.map(c => ({
+                      id: c.stimulusId,
+                      stimulusId: c.stimulusId,
+                      typeCode: c.typeGroup,
+                      candidateId: c.localCode,
+                    }));
+                    setCandidates(mapped);
+                  }
+                })
+                .catch(err => console.error('Failed to load local JSON in Admin:', err));
+            }
+          })
+          .catch(err => {
+            if (!active) return;
+            console.error('Firebase error in Admin, falling back to local JSON:', err);
+            fetch('../data/selected_27_for_visual_rating.json')
+              .then(res => res.json())
+              .then(localData => {
+                if (!active) return;
+                if (localData && localData.selectedCandidates) {
+                  const mapped = localData.selectedCandidates.map(c => ({
+                    id: c.stimulusId,
+                    stimulusId: c.stimulusId,
+                    typeCode: c.typeGroup,
+                    candidateId: c.localCode,
+                  }));
+                  setCandidates(mapped);
+                }
+              })
+              .catch(err2 => console.error('Failed to load local JSON in Admin:', err2));
+          });
+
+        return () => { active = false; };
+      }, []);
 
       const fetchFromFirebase = async () => {
         setLoading(true);
@@ -2907,11 +2978,32 @@
           
           await db.collection('admin').doc('current_visual_rating_set').set(parsed);
           alert('데이터가 성공적으로 Firebase에 업로드되었습니다!\n이제 2차 평가 페이지에서 자동으로 데이터를 불러옵니다.');
+
+          if (parsed.selectedCandidates) {
+            const mapped = parsed.selectedCandidates.map(c => ({
+              id: c.stimulusId,
+              stimulusId: c.stimulusId,
+              typeCode: c.typeGroup,
+              candidateId: c.localCode,
+            }));
+            setCandidates(mapped);
+          }
         } catch (err) {
           alert('업로드 실패: ' + err.message);
         }
         setUploading(false);
         e.target.value = null;
+      };
+
+      const triggerDownload = (blob, filename) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       };
 
       const downloadRawResponsesCSV = () => {
@@ -2924,7 +3016,202 @@
           const qual = sub.qualification || sub.evaluatorProfile || sub.basic_info || {};
           const contact = sub.contactProfile || sub.contact_profile || {};
           
-          // Robust fallback from action_events log
+          let actionSubmitBasic = {};
+          if (Array.isArray(sub.action_events || sub.actionEvents)) {
+            const submitEvt = (sub.action_events || sub.actionEvents).find(e => e.action === 'submit_click' || e.action === 'submit');
+            if (submitEvt && submitEvt.details && submitEvt.details.basicInfo) {
+              actionSubmitBasic = submitEvt.details.basicInfo;
+            }
+          }
+          
+          const consent = (basic.incentiveConsent || contact.contactConsent || actionSubmitBasic.incentiveConsent) ? '동의' : '미동의';
+          const email = contact.email || basic.incentiveEmail || basic.email || actionSubmitBasic.incentiveEmail || actionSubmitBasic.email || 'N/A';
+          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || 'N/A';
+          const name = contact.name || basic.name || sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || 'N/A';
+          
+          const ageGroup = qual.ageGroup || basic.ageGroup || '';
+          const mainField = basic.mainField || qual.mainField || qual.workField || basic.workField || '';
+          const designExperience = basic.designExperience || qual.designExperience || qual.designCareer || basic.designCareer || '';
+          const brandProjectExperience = basic.brandProjectExperience || qual.brandProjectExperience || qual.logoCareer || basic.logoCareer || '';
+          const recentProjectExp = basic.recentProjectExp || qual.recentProjectExp || qual.recentBrandProject || basic.recentBrandProject || '';
+          const aiToolExperience = basic.aiToolExperience || basic.aiToolExperience || '';
+          
+          const mainFieldStr = Array.isArray(mainField) ? mainField.join(';') : mainField;
+          const ratingsStr = JSON.stringify(sub.ratings || []);
+
+          return [
+            sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || '',
+            sub.timestamp_submit ? new Date(sub.timestamp_submit).toLocaleString('ko-KR') : '',
+            ageGroup,
+            mainFieldStr,
+            designExperience,
+            brandProjectExperience,
+            recentProjectExp,
+            aiToolExperience,
+            consent,
+            name,
+            phone,
+            email,
+            ratingsStr
+          ];
+        });
+        
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        triggerDownload(blob, `visual_rating_responses_${new Date().getTime()}.csv`);
+      };
+
+      // 1. Calculate candidates' average scores
+      const candidateStats = useMemo(() => {
+        if (candidates.length === 0 || submissions.length === 0) return [];
+        
+        return candidates.map(c => {
+          let naturalnessSum = 0;
+          let harmonySum = 0;
+          let refinementSum = 0;
+          let count = 0;
+          
+          submissions.forEach(sub => {
+            const subRatings = sub.ratings || [];
+            const ratObj = subRatings.find(r => r.stimulusId === c.stimulusId || r.candidateId === c.candidateId);
+            if (ratObj && ratObj.ratings) {
+              const nat = ratObj.ratings.naturalness;
+              const har = ratObj.ratings.harmony;
+              const ref = ratObj.ratings.refinement || ratObj.ratings.elaboration;
+              if (nat !== null && nat !== undefined) {
+                naturalnessSum += nat;
+                harmonySum += har;
+                refinementSum += ref;
+                count++;
+              }
+            }
+          });
+          
+          const naturalnessMean = count > 0 ? Number((naturalnessSum / count).toFixed(2)) : 0;
+          const harmonyMean = count > 0 ? Number((harmonySum / count).toFixed(2)) : 0;
+          const elaborationMean = count > 0 ? Number((refinementSum / count).toFixed(2)) : 0;
+          const visualMean = Number(((naturalnessMean + harmonyMean + elaborationMean) / 3).toFixed(2));
+          
+          return {
+            ...c,
+            naturalnessMean,
+            harmonyMean,
+            elaborationMean,
+            visualMean,
+            count
+          };
+        });
+      }, [candidates, submissions]);
+
+      const runAutoBalance = () => {
+        if (candidateStats.length === 0) {
+          alert('먼저 Firebase에서 평정 데이터를 불러와 주세요.');
+          return;
+        }
+        const nextAssignments = {};
+        
+        // Group candidate stats by typeCode (A, B, C)
+        const groups = { A: [], B: [], C: [] };
+        candidateStats.forEach(s => {
+          const type = s.typeCode || 'A';
+          if (groups[type]) groups[type].push(s);
+        });
+        
+        // Serpentine ordering
+        const serpentine = [1, 2, 3, 3, 2, 1, 1, 2, 3];
+        
+        Object.keys(groups).forEach(type => {
+          // Sort by visualMean descending
+          groups[type].sort((a, b) => b.visualMean - a.visualMean);
+          
+          groups[type].forEach((item, idx) => {
+            const setId = serpentine[idx] || 1;
+            nextAssignments[item.stimulusId] = setId;
+          });
+        });
+        
+        setSetAssignments(nextAssignments);
+        alert('자동 균형 배정이 완료되었습니다! (유형별 균형 배정 적용됨)');
+      };
+
+      const downloadDetailCSV = () => {
+        if (submissions.length === 0) return;
+        const headers = ['evaluatorId', 'candidateId', 'typeCode', 'naturalnessScore', 'harmonyScore', 'elaborationScore'];
+        const rows = [];
+        
+        submissions.forEach(sub => {
+          const evaluatorId = sub.participant_id || sub.evaluatorCode || (sub.basic_info || {}).evaluatorCode || 'N/A';
+          const ratings = sub.ratings || [];
+          ratings.forEach(r => {
+            rows.push([
+              evaluatorId,
+              r.candidateId || r.stimulusId || '',
+              r.typeCode || '',
+              r.ratings?.naturalness ?? '',
+              r.ratings?.harmony ?? '',
+              r.ratings?.refinement ?? r.ratings?.elaboration ?? ''
+            ]);
+          });
+        });
+        
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        triggerDownload(blob, `visual_rating_detail_data_${new Date().getTime()}.csv`);
+      };
+
+      const downloadAveragesCSV = () => {
+        if (candidateStats.length === 0) return;
+        const headers = ['candidateId', 'typeCode', 'naturalnessMean', 'harmonyMean', 'elaborationMean', 'visualMean'];
+        const rows = candidateStats.map(s => [
+          s.candidateId || s.stimulusId,
+          s.typeCode,
+          s.naturalnessMean,
+          s.harmonyMean,
+          s.elaborationMean,
+          s.visualMean
+        ]);
+        
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        triggerDownload(blob, `visual_rating_candidate_averages_${new Date().getTime()}.csv`);
+      };
+
+      const downloadSetCSV = () => {
+        if (candidateStats.length === 0) return;
+        const headers = ['setId', 'candidateId', 'typeCode', 'naturalnessMean', 'harmonyMean', 'elaborationMean', 'visualMean'];
+        
+        const rows = candidateStats
+          .map(s => ({
+            ...s,
+            setId: setAssignments[s.stimulusId] || '미배정'
+          }))
+          .sort((a, b) => {
+            if (a.setId === '미배정') return 1;
+            if (b.setId === '미배정') return -1;
+            return a.setId - b.setId;
+          })
+          .map(s => [
+            s.setId === '미배정' ? '미배정' : `SET ${s.setId}`,
+            s.candidateId || s.stimulusId,
+            s.typeCode,
+            s.naturalnessMean,
+            s.harmonyMean,
+            s.elaborationMean,
+            s.visualMean
+          ]);
+        
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        triggerDownload(blob, `visual_rating_set_configuration_${new Date().getTime()}.csv`);
+      };
+
+      const downloadContactCSV = () => {
+        if (submissions.length === 0) return;
+        const headers = ['evaluatorId', 'contactConsent', 'name', 'phoneNumber', 'email'];
+        const rows = submissions.map(sub => {
+          const basic = sub.basic_info || sub.basicInfo || {};
+          const contact = sub.contactProfile || sub.contact_profile || {};
+          
           let actionSubmitBasic = {};
           if (Array.isArray(sub.action_events || sub.actionEvents)) {
             const submitEvt = (sub.action_events || sub.actionEvents).find(e => e.action === 'submit_click' || e.action === 'submit');
@@ -2938,37 +3225,71 @@
           const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || '';
           const name = contact.name || basic.name || sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || '';
           
-          const ratingsStr = JSON.stringify(sub.ratings || []);
-
           return [
             sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || '',
-            sub.timestamp_submit ? new Date(sub.timestamp_submit).toLocaleString('ko-KR') : '',
-            qual.ageGroup || basic.ageGroup || '',
-            qual.mainField || qual.workField || basic.workField || '',
-            qual.designExperience || qual.designCareer || basic.designCareer || '',
-            qual.brandProjectExperience || qual.logoCareer || basic.logoCareer || '',
-            qual.recentProjectExp || qual.recentBrandProject || basic.recentBrandProject || '',
-            qual.aiToolExperience || basic.aiToolExperience || '',
             consent,
             name,
             phone,
-            email,
-            ratingsStr
+            email
           ];
         });
         
         const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))].join('\n');
         const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('hidden', '');
-        a.setAttribute('href', url);
-        a.setAttribute('download', `visual_rating_responses_${new Date().getTime()}.csv`);
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        triggerDownload(blob, `visual_rating_contacts_${new Date().getTime()}.csv`);
       };
+
+      const setSummary = useMemo(() => {
+        const summary = {
+          1: { count: 0, A: 0, B: 0, C: 0, naturalnessSum: 0, harmonySum: 0, elaborationSum: 0, visualSum: 0 },
+          2: { count: 0, A: 0, B: 0, C: 0, naturalnessSum: 0, harmonySum: 0, elaborationSum: 0, visualSum: 0 },
+          3: { count: 0, A: 0, B: 0, C: 0, naturalnessSum: 0, harmonySum: 0, elaborationSum: 0, visualSum: 0 },
+        };
+        
+        candidateStats.forEach(s => {
+          const setId = setAssignments[s.stimulusId];
+          if (setId && summary[setId]) {
+            summary[setId].count++;
+            const type = s.typeCode;
+            if (type === 'A' || type === 'B' || type === 'C') {
+              summary[setId][type]++;
+            }
+            summary[setId].naturalnessSum += s.naturalnessMean;
+            summary[setId].harmonySum += s.harmonyMean;
+            summary[setId].elaborationSum += s.elaborationMean;
+            summary[setId].visualSum += s.visualMean;
+          }
+        });
+        
+        const result = {};
+        [1, 2, 3].forEach(id => {
+          const s = summary[id];
+          result[id] = {
+            count: s.count,
+            A: s.A,
+            B: s.B,
+            C: s.C,
+            naturalnessMean: s.count > 0 ? Number((s.naturalnessSum / s.count).toFixed(2)) : 0,
+            harmonyMean: s.count > 0 ? Number((s.harmonySum / s.count).toFixed(2)) : 0,
+            elaborationMean: s.count > 0 ? Number((s.elaborationSum / s.count).toFixed(2)) : 0,
+            visualMean: s.count > 0 ? Number((s.visualSum / s.count).toFixed(2)) : 0,
+          };
+        });
+        return result;
+      }, [candidateStats, setAssignments]);
+
+      // Max-Min deviations
+      const deviations = useMemo(() => {
+        const keys = ['naturalnessMean', 'harmonyMean', 'elaborationMean', 'visualMean'];
+        const dev = {};
+        keys.forEach(k => {
+          const val1 = setSummary[1][k];
+          const val2 = setSummary[2][k];
+          const val3 = setSummary[3][k];
+          dev[k] = Number((Math.max(val1, val2, val3) - Math.min(val1, val2, val3)).toFixed(2));
+        });
+        return dev;
+      }, [setSummary]);
 
       return (
         <PasswordProtected>
@@ -2998,77 +3319,369 @@
               </div>
               
               {submissions.length > 0 && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
-                  <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-lg">참여자별 기입 원본 데이터</h3>
-                      <p className="text-xs text-slate-500 mt-1">실험자가 직접 기입한 모든 정보를 원본 그대로 표시합니다.</p>
+                <>
+                  {/* 참여자 원본 데이터 테이블 */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+                    <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg">참여자별 기입 원본 데이터</h3>
+                        <p className="text-xs text-slate-500 mt-1">실험자가 직접 기입한 모든 정보를 원본 그대로 표시합니다.</p>
+                      </div>
+                      <button onClick={downloadRawResponsesCSV} className="bg-slate-900 text-white px-4 py-2 rounded font-bold hover:bg-slate-800 text-sm transition">
+                        전체 응답 CSV 다운로드 (백업용)
+                      </button>
                     </div>
-                    <button onClick={downloadRawResponsesCSV} className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 text-sm transition">
-                      전체 데이터 CSV 다운로드
-                    </button>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
-                          <th className="p-3">기입 ID/이름</th>
-                          <th className="p-3">제출 시각</th>
-                          <th className="p-3">연령대</th>
-                          <th className="p-3">전문 분야</th>
-                          <th className="p-3">실무 경력</th>
-                          <th className="p-3">로고 경험</th>
-                          <th className="p-3">최근 프로젝트</th>
-                          <th className="p-3">AI 경험</th>
-                          <th className="p-3 text-blue-600">사례동의</th>
-                          <th className="p-3 text-blue-600">이름(연락처)</th>
-                          <th className="p-3 text-blue-600">전화번호</th>
-                          <th className="p-3 text-blue-600">이메일</th>
-                          <th className="p-3">평가결과 길이</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700">
-                        {submissions.map((sub, idx) => {
-                          const basic = sub.basic_info || sub.basicInfo || {};
-                          const qual = sub.qualification || sub.evaluatorProfile || sub.basic_info || {};
-                          const contact = sub.contactProfile || sub.contact_profile || {};
-                          
-                          // Robust fallback from action_events log
-                          let actionSubmitBasic = {};
-                          if (Array.isArray(sub.action_events || sub.actionEvents)) {
-                            const submitEvt = (sub.action_events || sub.actionEvents).find(e => e.action === 'submit_click' || e.action === 'submit');
-                            if (submitEvt && submitEvt.details && submitEvt.details.basicInfo) {
-                              actionSubmitBasic = submitEvt.details.basicInfo;
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                            <th className="p-3">기입 ID/이름</th>
+                            <th className="p-3">제출 시각</th>
+                            <th className="p-3">연령대</th>
+                            <th className="p-3">전문 분야</th>
+                            <th className="p-3">실무 경력</th>
+                            <th className="p-3">로고 경험</th>
+                            <th className="p-3">최근 프로젝트</th>
+                            <th className="p-3">AI 경험</th>
+                            <th className="p-3 text-blue-600">사례동의</th>
+                            <th className="p-3 text-blue-600">이름(연락처)</th>
+                            <th className="p-3 text-blue-600">전화번호</th>
+                            <th className="p-3 text-blue-600">이메일</th>
+                            <th className="p-3">평가결과 길이</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {submissions.map((sub, idx) => {
+                            const basic = sub.basic_info || sub.basicInfo || {};
+                            const qual = sub.qualification || sub.evaluatorProfile || sub.basic_info || {};
+                            const contact = sub.contactProfile || sub.contact_profile || {};
+                            
+                            let actionSubmitBasic = {};
+                            if (Array.isArray(sub.action_events || sub.actionEvents)) {
+                              const submitEvt = (sub.action_events || sub.actionEvents).find(e => e.action === 'submit_click' || e.action === 'submit');
+                              if (submitEvt && submitEvt.details && submitEvt.details.basicInfo) {
+                                actionSubmitBasic = submitEvt.details.basicInfo;
+                              }
                             }
-                          }
-                          
-                          const consent = (basic.incentiveConsent || contact.contactConsent || actionSubmitBasic.incentiveConsent) ? '동의' : '미동의';
-                          const email = contact.email || basic.incentiveEmail || basic.email || actionSubmitBasic.incentiveEmail || actionSubmitBasic.email || 'N/A';
-                          const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || 'N/A';
-                          const name = contact.name || basic.name || sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || 'N/A';
-                          
-                          return (
-                            <tr key={idx} className="hover:bg-slate-50">
-                              <td className="p-3 font-mono text-xs font-bold text-blue-600">{sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || 'N/A'}</td>
-                              <td className="p-3 text-xs">{sub.timestamp_submit ? new Date(sub.timestamp_submit).toLocaleString('ko-KR') : 'N/A'}</td>
-                              <td className="p-3 text-xs">{qual.ageGroup || basic.ageGroup || 'N/A'}</td>
-                              <td className="p-3 text-xs">{qual.mainField || qual.workField || basic.workField || 'N/A'}</td>
-                              <td className="p-3 text-xs">{qual.designExperience || qual.designCareer || basic.designCareer || 'N/A'}</td>
-                              <td className="p-3 text-xs">{qual.brandProjectExperience || qual.logoCareer || basic.logoCareer || 'N/A'}</td>
-                              <td className="p-3 text-xs">{qual.recentProjectExp || qual.recentBrandProject || basic.recentBrandProject || 'N/A'}</td>
-                              <td className="p-3 text-xs">{qual.aiToolExperience || basic.aiToolExperience || 'N/A'}</td>
-                              <td className={`p-3 text-xs font-bold ${basic.incentiveConsent ? 'text-blue-600' : 'text-slate-400'}`}>{consent}</td>
-                              <td className="p-3 text-xs">{name}</td>
-                              <td className="p-3 text-xs">{phone}</td>
-                              <td className="p-3 text-xs">{email}</td>
-                              <td className="p-3 text-xs font-mono text-slate-500">{(sub.ratings || []).length}개</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                            
+                            const consent = (basic.incentiveConsent || contact.contactConsent || actionSubmitBasic.incentiveConsent) ? '동의' : '미동의';
+                            const email = contact.email || basic.incentiveEmail || basic.email || actionSubmitBasic.incentiveEmail || actionSubmitBasic.email || 'N/A';
+                            const phone = contact.phoneNumber || contact.phone || basic.incentivePhone || basic.contact || basic.phone || actionSubmitBasic.incentivePhone || actionSubmitBasic.phone || 'N/A';
+                            const name = contact.name || basic.name || sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || 'N/A';
+                            
+                            const ageGroup = qual.ageGroup || basic.ageGroup || '';
+                            const mainField = basic.mainField || qual.mainField || qual.workField || basic.workField || '';
+                            const designExperience = basic.designExperience || qual.designExperience || qual.designCareer || basic.designCareer || '';
+                            const brandProjectExperience = basic.brandProjectExperience || qual.brandProjectExperience || qual.logoCareer || basic.logoCareer || '';
+                            const recentProjectExp = basic.recentProjectExp || qual.recentProjectExp || qual.recentBrandProject || basic.recentBrandProject || '';
+                            const aiToolExperience = basic.aiToolExperience || basic.aiToolExperience || '';
+
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50">
+                                <td className="p-3 font-mono text-xs font-bold text-blue-600">{sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || 'N/A'}</td>
+                                <td className="p-3 text-xs">{sub.timestamp_submit ? new Date(sub.timestamp_submit).toLocaleString('ko-KR') : 'N/A'}</td>
+                                <td className="p-3 text-xs">{ageGroup || 'N/A'}</td>
+                                <td className="p-3 text-xs">{Array.isArray(mainField) ? mainField.join(', ') : (mainField || 'N/A')}</td>
+                                <td className="p-3 text-xs">{designExperience || 'N/A'}</td>
+                                <td className="p-3 text-xs">{brandProjectExperience || 'N/A'}</td>
+                                <td className="p-3 text-xs">{recentProjectExp || 'N/A'}</td>
+                                <td className="p-3 text-xs">{aiToolExperience || 'N/A'}</td>
+                                <td className={`p-3 text-xs font-bold ${basic.incentiveConsent ? 'text-blue-600' : 'text-slate-400'}`}>{consent}</td>
+                                <td className="p-3 text-xs">{name}</td>
+                                <td className="p-3 text-xs">{phone}</td>
+                                <td className="p-3 text-xs">{email}</td>
+                                <td className="p-3 text-xs font-mono text-slate-500">{(sub.ratings || []).length}개</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-wrap gap-2.5">
+                      <button onClick={downloadDetailCSV} className="bg-slate-700 text-white px-3.5 py-2 rounded-lg font-bold hover:bg-slate-800 text-xs transition shadow-sm">
+                        📁 1. 평정 상세 데이터 다운로드 (CSV)
+                      </button>
+                      <button onClick={downloadAveragesCSV} className="bg-slate-700 text-white px-3.5 py-2 rounded-lg font-bold hover:bg-slate-800 text-xs transition shadow-sm">
+                        📊 2. 시안별 평균 데이터 다운로드 (CSV)
+                      </button>
+                      <button onClick={downloadSetCSV} className="bg-slate-700 text-white px-3.5 py-2 rounded-lg font-bold hover:bg-slate-800 text-xs transition shadow-sm">
+                        ⚙️ 3. SET 구성 데이터 다운로드 (CSV)
+                      </button>
+                      <button onClick={downloadContactCSV} className="bg-slate-700 text-white px-3.5 py-2 rounded-lg font-bold hover:bg-slate-800 text-xs transition shadow-sm">
+                        📞 4. 연락처 분리 데이터 다운로드 (CSV)
+                      </button>
+                    </div>
                   </div>
-                </div>
+
+                  {/* 세트별 시각체계 평정 평균 분포 시각화 막대 그래프 */}
+                  {candidateStats.length > 0 && (
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-6">
+                      <h2 className="text-xl font-bold mb-1">세트별 시각체계 평정 평균 분포 시각화</h2>
+                      <p className="text-sm text-slate-500 mb-6">각 SET의 시각적 요소(자연성, 조화성, 정교성) 및 전체 시각체계 평균 분포를 비교하여 편중 여부를 시각적으로 검토합니다.</p>
+                      
+                      <div className="grid gap-6 md:grid-cols-4">
+                        {/* Group 1: 자연성 */}
+                        <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col justify-between">
+                          <p className="text-sm font-black text-slate-800 text-center mb-3">자연성 평균</p>
+                          <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
+                            {[1, 2, 3].map(setId => {
+                              const val = setSummary[setId].naturalnessMean;
+                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              return (
+                                <div key={setId} className="flex flex-col items-center gap-1 w-10">
+                                  <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
+                                  <div 
+                                    style={{ height: heightPct }} 
+                                    className={`w-full rounded-t-sm transition-all duration-500 ${
+                                      setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
+                                    }`}
+                                  />
+                                  <span className="text-[10px] font-black text-slate-800 mt-1">SET {setId}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {/* Group 2: 조화성 */}
+                        <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col justify-between">
+                          <p className="text-sm font-black text-slate-800 text-center mb-3">조화성 평균</p>
+                          <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
+                            {[1, 2, 3].map(setId => {
+                              const val = setSummary[setId].harmonyMean;
+                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              return (
+                                <div key={setId} className="flex flex-col items-center gap-1 w-10">
+                                  <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
+                                  <div 
+                                    style={{ height: heightPct }} 
+                                    className={`w-full rounded-t-sm transition-all duration-500 ${
+                                      setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
+                                    }`}
+                                  />
+                                  <span className="text-[10px] font-black text-slate-800 mt-1">SET {setId}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {/* Group 3: 정교성 */}
+                        <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col justify-between">
+                          <p className="text-sm font-black text-slate-800 text-center mb-3">정교성 평균</p>
+                          <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
+                            {[1, 2, 3].map(setId => {
+                              const val = setSummary[setId].elaborationMean;
+                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              return (
+                                <div key={setId} className="flex flex-col items-center gap-1 w-10">
+                                  <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
+                                  <div 
+                                    style={{ height: heightPct }} 
+                                    className={`w-full rounded-t-sm transition-all duration-500 ${
+                                      setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
+                                    }`}
+                                  />
+                                  <span className="text-[10px] font-black text-slate-800 mt-1">SET {setId}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {/* Group 4: 시각체계 평균 */}
+                        <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col justify-between">
+                          <p className="text-sm font-black text-slate-800 text-center mb-3">시각체계 평균</p>
+                          <div className="h-40 flex items-end justify-center gap-6 px-2 border-b border-slate-300 pb-1">
+                            {[1, 2, 3].map(setId => {
+                              const val = setSummary[setId].visualMean;
+                              const heightPct = val > 0 ? `${(val / 5.0) * 100}%` : '4%';
+                              return (
+                                <div key={setId} className="flex flex-col items-center gap-1 w-10">
+                                  <span className="text-[11px] font-bold text-slate-700">{val.toFixed(2)}</span>
+                                  <div 
+                                    style={{ height: heightPct }} 
+                                    className={`w-full rounded-t-sm transition-all duration-500 ${
+                                      setId === 1 ? 'bg-slate-800' : setId === 2 ? 'bg-slate-500' : 'bg-slate-300'
+                                    }`}
+                                  />
+                                  <span className="text-[10px] font-black text-slate-800 mt-1">SET {setId}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 flex gap-6 justify-center text-xs font-semibold text-slate-600">
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-800 rounded-sm"></div>SET 1</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-500 rounded-sm"></div>SET 2</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-300 rounded-sm"></div>SET 3</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 표 3: 본실험용 시안 SET 구성 기준 */}
+                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-6">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900">[표 3] 본실험용 시안 SET 구성 기준</h2>
+                        <p className="text-xs text-slate-500 mt-1">각 세트에 9개의 시안이 균형 있게 배정되었는지, 그리고 평균 평가 점수가 한쪽 세트에 편중되지 않았는지 확인합니다.</p>
+                      </div>
+                      <button onClick={runAutoBalance} className="px-4 py-2.5 bg-slate-950 text-white font-extrabold rounded-lg hover:bg-slate-800 text-xs transition shadow-sm shrink-0">
+                        ⚡ 자동 균형 배정 (Auto Balance)
+                      </button>
+                    </div>
+                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                      <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                            <th className="p-3">구분</th>
+                            <th className="p-3">SET 1</th>
+                            <th className="p-3">SET 2</th>
+                            <th className="p-3">SET 3</th>
+                            <th className="p-3 text-red-600">최대 편차 (Max - Min)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                          <tr>
+                            <td className="p-3 font-bold bg-slate-50 text-slate-800">전체 시안 수</td>
+                            <td className="p-3 font-semibold">{setSummary[1].count}개</td>
+                            <td className="p-3 font-semibold">{setSummary[2].count}개</td>
+                            <td className="p-3 font-semibold">{setSummary[3].count}개</td>
+                            <td className={`p-3 font-bold ${Math.max(setSummary[1].count, setSummary[2].count, setSummary[3].count) === Math.min(setSummary[1].count, setSummary[2].count, setSummary[3].count) ? 'text-green-600' : 'text-amber-600'}`}>
+                              {Math.max(setSummary[1].count, setSummary[2].count, setSummary[3].count) - Math.min(setSummary[1].count, setSummary[2].count, setSummary[3].count)}개
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 font-bold bg-slate-50 text-slate-800">A 유형 (구상 암시형)</td>
+                            <td className="p-3">{setSummary[1].A}개</td>
+                            <td className="p-3">{setSummary[2].A}개</td>
+                            <td className="p-3">{setSummary[3].A}개</td>
+                            <td className={`p-3 font-bold ${setSummary[1].A === 3 && setSummary[2].A === 3 && setSummary[3].A === 3 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {Math.max(setSummary[1].A, setSummary[2].A, setSummary[3].A) - Math.min(setSummary[1].A, setSummary[2].A, setSummary[3].A)}개
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 font-bold bg-slate-50 text-slate-800">B 유형 (기하학적 추상형)</td>
+                            <td className="p-3">{setSummary[1].B}개</td>
+                            <td className="p-3">{setSummary[2].B}개</td>
+                            <td className="p-3">{setSummary[3].B}개</td>
+                            <td className={`p-3 font-bold ${setSummary[1].B === 3 && setSummary[2].B === 3 && setSummary[3].B === 3 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {Math.max(setSummary[1].B, setSummary[2].B, setSummary[3].B) - Math.min(setSummary[1].B, setSummary[2].B, setSummary[3].B)}개
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 font-bold bg-slate-50 text-slate-800">C 유형 (유기적 추상형)</td>
+                            <td className="p-3">{setSummary[1].C}개</td>
+                            <td className="p-3">{setSummary[2].C}개</td>
+                            <td className="p-3">{setSummary[3].C}개</td>
+                            <td className={`p-3 font-bold ${setSummary[1].C === 3 && setSummary[2].C === 3 && setSummary[3].C === 3 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {Math.max(setSummary[1].C, setSummary[2].C, setSummary[3].C) - Math.min(setSummary[1].C, setSummary[2].C, setSummary[3].C)}개
+                            </td>
+                          </tr>
+                          <tr className="bg-slate-50/50">
+                            <td className="p-3 font-bold bg-slate-50 text-slate-800">자연성 평균</td>
+                            <td className="p-3">{setSummary[1].naturalnessMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[2].naturalnessMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[3].naturalnessMean.toFixed(2)}</td>
+                            <td className={`p-3 font-bold ${deviations.naturalnessMean < 0.2 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {deviations.naturalnessMean.toFixed(2)}
+                            </td>
+                          </tr>
+                          <tr className="bg-slate-50/50">
+                            <td className="p-3 font-bold bg-slate-50 text-slate-800">조화성 평균</td>
+                            <td className="p-3">{setSummary[1].harmonyMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[2].harmonyMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[3].harmonyMean.toFixed(2)}</td>
+                            <td className={`p-3 font-bold ${deviations.harmonyMean < 0.2 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {deviations.harmonyMean.toFixed(2)}
+                            </td>
+                          </tr>
+                          <tr className="bg-slate-50/50">
+                            <td className="p-3 font-bold bg-slate-50 text-slate-800">정교성 평균</td>
+                            <td className="p-3">{setSummary[1].elaborationMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[2].elaborationMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[3].elaborationMean.toFixed(2)}</td>
+                            <td className={`p-3 font-bold ${deviations.elaborationMean < 0.2 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {deviations.elaborationMean.toFixed(2)}
+                            </td>
+                          </tr>
+                          <tr className="bg-slate-50 text-slate-900 font-bold">
+                            <td className="p-3 font-bold bg-slate-100 text-slate-900">시각체계 평균</td>
+                            <td className="p-3">{setSummary[1].visualMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[2].visualMean.toFixed(2)}</td>
+                            <td className="p-3">{setSummary[3].visualMean.toFixed(2)}</td>
+                            <td className={`p-3 font-extrabold ${deviations.visualMean < 0.15 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {deviations.visualMean.toFixed(2)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* 시안별 평정 점수 평균 및 수동 세트 배정 테이블 */}
+                  {candidateStats.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+                      <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-lg">시안별 2차 평정 결과 및 세트 배정</h3>
+                          <p className="text-xs text-slate-500 mt-1">27개 각 시안별 평가 평균 점수를 조회하고, 본실험용 세트를 지정하거나 수동 수정할 수 있습니다.</p>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                              <th className="p-3">시안 이미지</th>
+                              <th className="p-3">시안 ID</th>
+                              <th className="p-3">유형</th>
+                              <th className="p-3">응답자 수</th>
+                              <th className="p-3">자연성 평균</th>
+                              <th className="p-3">조화성 평균</th>
+                              <th className="p-3">정교성 평균</th>
+                              <th className="p-3 font-bold text-slate-900">시각체계 평균</th>
+                              <th className="p-3 text-blue-600 font-bold">본실험 SET 배정</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                            {candidateStats.map((s, idx) => {
+                              const imgUrl = publicAssetPath(`/public/logos/pre-eval/${s.typeCode}/L_${s.stimulusId.split('_').pop()}.png`);
+                              return (
+                                <tr key={idx} className="hover:bg-slate-50">
+                                  <td className="p-3">
+                                    <div className="w-12 h-12 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
+                                      <img src={imgUrl} alt={s.candidateId} className="max-w-full max-h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                                    </div>
+                                  </td>
+                                  <td className="p-3 font-mono font-bold text-slate-800">{s.candidateId || s.stimulusId}</td>
+                                  <td className="p-3 font-semibold text-slate-600">
+                                    {s.typeCode === 'A' ? 'A (구상)' : s.typeCode === 'B' ? 'B (기하)' : s.typeCode === 'C' ? 'C (유기)' : s.typeCode}
+                                  </td>
+                                  <td className="p-3 font-mono text-slate-500">{s.count}명</td>
+                                  <td className="p-3 font-mono">{s.naturalnessMean.toFixed(2)}</td>
+                                  <td className="p-3 font-mono">{s.harmonyMean.toFixed(2)}</td>
+                                  <td className="p-3 font-mono">{s.elaborationMean.toFixed(2)}</td>
+                                  <td className="p-3 font-mono font-bold text-slate-900">{s.visualMean.toFixed(2)}</td>
+                                  <td className="p-3">
+                                    <select
+                                      value={setAssignments[s.stimulusId] || ''}
+                                      onChange={e => setSetAssignments(prev => ({ ...prev, [s.stimulusId]: e.target.value ? Number(e.target.value) : '' }))}
+                                      className="rounded border border-slate-300 bg-white px-2 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-slate-500 shadow-sm"
+                                    >
+                                      <option value="">-- 미배정 --</option>
+                                      <option value="1">SET 1</option>
+                                      <option value="2">SET 2</option>
+                                      <option value="3">SET 3</option>
+                                    </select>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
