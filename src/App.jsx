@@ -2842,7 +2842,7 @@
       if (screen === 'intro') return <IntroScreen mode="visual-rating" onStart={() => goScreen('qualification')} />;
       if (screen === 'qualification') return <QualificationScreen value={qualification} onChange={setQualification} onBack={() => goScreen('intro')} onNext={(data) => { setQualification(data); goScreen('brief'); }} />;
       if (screen === 'brief') return <BriefScreen mode="visual-rating" onBack={() => goScreen('qualification')} onStart={() => goScreen('rating')} />;
-      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={(res) => { setRatings(res); goScreen('basicInfo'); }} onLogEvent={logEvent} />;
+      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={() => goScreen('basicInfo')} onLogEvent={logEvent} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('rating')} onSubmit={(info) => {
         setBasicInfo(info);
         logEvent('submit_click', { basicInfo: info });

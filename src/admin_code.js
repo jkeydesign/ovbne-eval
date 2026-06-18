@@ -50,7 +50,7 @@
 
       if (screen === 'intro') return <IntroScreen mode="visual-rating" onStart={() => goScreen('brief')} />;
       if (screen === 'brief') return <BriefScreen mode="visual-rating" onBack={() => goScreen('upload')} onStart={() => goScreen('rating')} />;
-      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={(res) => { setRatings(res); goScreen('basicInfo'); }} />;
+      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={() => goScreen('basicInfo')} />;
       if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('rating')} onSubmit={(info) => {
         setBasicInfo(info);
         const dimensionRatingsArr = logos.map(logo => ({
