@@ -2413,6 +2413,29 @@
         triggerDownload(new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' }), 'selected_27_for_visual_rating.json');
       };
 
+      const downloadRawResponsesCSV = () => {
+        if (submissions.length === 0) return;
+        
+        const headers = ['raterId', 'submittedAt', 'expertiseField', 'careerYears', 'logoExperienceYears', 'excludedCandidateIds'];
+        
+        const rows = submissions.map(sub => {
+          const profile = sub.evaluatorProfile || {};
+          const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).join(';');
+          return [
+            sub.evaluatorCode || '',
+            sub.submittedAt || '',
+            profile.workField || '',
+            profile.designCareer || '',
+            profile.logoCareer || '',
+            excludedList
+          ];
+        });
+        
+        const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        triggerDownload(blob, `screening_raw_responses_${new Date().getTime()}.csv`);
+      };
+
       const activeLogos = logos.filter(l => l.typeCode === activeTab);
       const activeCandidates = activeLogos.filter(l => !manualExclusions.includes(l.id));
       const activeExcluded = activeLogos.filter(l => manualExclusions.includes(l.id));
@@ -2460,7 +2483,8 @@
               </div>
               
               {logos.length > 0 && submissions.length > 0 && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <>
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                   <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                     <div className="flex gap-2">
                       {['A', 'B', 'C'].map(code => (
@@ -2506,6 +2530,50 @@
                     </div>
                   </div>
                 </div>
+                
+                {/* 참여자별 상세 응답 데이터 표 */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+                  <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-lg">참여자별 상세 응답 데이터 (익명화 완료)</h3>
+                      <p className="text-xs text-slate-500 mt-1">참가자의 실제 이름은 무작위 식별 코드(raterId)로 대체되었습니다.</p>
+                    </div>
+                    <button onClick={downloadRawResponsesCSV} className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 text-sm transition">
+                      엑셀/구글 시트용 CSV 다운로드
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                          <th className="p-3">평가자 ID (raterId)</th>
+                          <th className="p-3">제출 시각 (submittedAt)</th>
+                          <th className="p-3">전문 분야 (expertiseField)</th>
+                          <th className="p-3">실무 경력 (careerYears)</th>
+                          <th className="p-3">로고 경험 (logoExperienceYears)</th>
+                          <th className="p-3">제외 시안 코드 목록</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {submissions.map((sub, idx) => {
+                          const profile = sub.evaluatorProfile || {};
+                          const excludedList = (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).map(id => id.replace(/_L_/g, '')).join(', ');
+                          return (
+                            <tr key={idx} className="hover:bg-slate-50">
+                              <td className="p-3 font-mono text-xs">{sub.evaluatorCode || 'N/A'}</td>
+                              <td className="p-3 text-xs">{sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ko-KR') : 'N/A'}</td>
+                              <td className="p-3 text-xs">{profile.workField || 'N/A'}</td>
+                              <td className="p-3 text-xs">{profile.designCareer || 'N/A'}</td>
+                              <td className="p-3 text-xs">{profile.logoCareer || 'N/A'}</td>
+                              <td className="p-3 text-xs max-w-xs truncate" title={excludedList}>{excludedList || '없음'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
               )}
             </div>
           </div>
