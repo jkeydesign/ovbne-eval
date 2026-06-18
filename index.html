@@ -121,43 +121,76 @@
       }
     };
 
-    function buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds=[], tsElimStart=null, tsEvalStart=null) {
-      const now = new Date();
-      const nowISO = now.toISOString();
-      const logos = evaluationLogos.map(logo => {
-        const r = ratings[logo.id];
-        const b = r?.brand_score ?? null, v = r?.visual_score ?? null;
-        const done = b !== null && v !== null;
-        return { logo_id: logo.id, brand_score: b, visual_score: v, total_score: done ? calcTotalScore(b, v) : null, completed: done, updated_at: r?.updated_at ?? null };
-      });
-      const done = logos.filter(l => l.completed);
-      const avg = k => done.length ? Math.round(done.reduce((s, l) => s + l[k], 0) / done.length * 100) / 100 : null;
-      const top27 = [...done].sort((a, b) => b.total_score - a.total_score).slice(0, 27).map(l => l.logo_id);
-      const secondsSince = ts => ts ? Math.max(0, Math.round((now - new Date(ts)) / 1000)) : null;
-      const elapsedFromElimStart = secondsSince(tsElimStart);
-      const elapsedFromEvalStart = secondsSince(tsEvalStart);
-      const durationSeconds = elapsedFromElimStart ?? secondsSince(tsStart) ?? 0;
-      const eliminationDurationSeconds = elapsedFromElimStart === null ? null : (elapsedFromEvalStart === null ? elapsedFromElimStart : Math.max(0, elapsedFromElimStart - elapsedFromEvalStart));
-      const evaluationDurationSeconds = elapsedFromEvalStart;
-      const distOf = key => { const d={1:0,2:0,3:0,4:0,5:0}; done.forEach(l=>{ if(l[key]!==null) d[l[key]]++; }); return d; };
-      const bDist = distOf('brand_score'), vDist = distOf('visual_score');
-      const bMax = Math.max(...Object.values(bDist)), vMax = Math.max(...Object.values(vDist));
-      const evalTotal = evaluationLogos.length;
-      const quality_check = {
-        duration_seconds: durationSeconds,
-        completed_count: done.length,
-        incomplete_logo_ids: logos.filter(l=>!l.completed).map(l=>l.logo_id),
-        brand_score_distribution: bDist,
-        visual_score_distribution: vDist,
-        brand_same_score_warning:  done.length >= evalTotal*0.8 && bMax >= evalTotal*0.8,
-        visual_same_score_warning: done.length >= evalTotal*0.8 && vMax >= evalTotal*0.8,
-        elimination_duration_seconds: eliminationDurationSeconds,
-        evaluation_duration_seconds:  evaluationDurationSeconds,
-        fast_completion_warning:      durationSeconds < 600,
-        elimination_fast_warning:     eliminationDurationSeconds !== null && eliminationDurationSeconds < 300,
-        evaluation_fast_warning:      evaluationDurationSeconds !== null && evaluationDurationSeconds < 300,
+    function buildScreeningResponse(pid, tsStart, evaluationLogos, eliminatedIds, qualification, basicInfo) {
+      return {
+        mode: "screening",
+        evaluatorCode: pid,
+        evaluatorProfile: {
+          evaluatorCode: pid,
+          ageGroup: basicInfo.ageGroup || "",
+          workField: basicInfo.workField || "",
+          designCareer: basicInfo.designCareer || "",
+          logoCareer: basicInfo.logoCareer || "",
+          recentBrandProject: basicInfo.recentBrandProject || "",
+          aiToolExperience: basicInfo.aiToolExperience || ""
+        },
+        contactProfile: basicInfo.incentiveConsent ? {
+          evaluatorCode: pid,
+          name: basicInfo.name || "",
+          email: basicInfo.email || "",
+          phone: basicInfo.phone || "",
+          portfolioUrl: basicInfo.portfolioUrl || "",
+          contactConsent: basicInfo.incentiveConsent
+        } : undefined,
+        layer1Responses: evaluationLogos.map(l => ({
+          evaluatorCode: pid,
+          stimulusId: l.id,
+          typeGroup: l.typeCode,
+          excludeSelected: eliminatedIds.includes(l.id),
+          excludeReason: "",
+          timestamp: new Date().toISOString()
+        })),
+        selectedCandidateIds: evaluationLogos.filter(l => !eliminatedIds.includes(l.id)).map(l => l.id),
+        excludedCandidateIds: eliminatedIds,
+        submittedAt: new Date().toISOString(),
+        completionStatus: "completed"
       };
-      return { participant_id: pid, timestamp_start: tsStart, timestamp_elimination_start: tsElimStart, timestamp_evaluation_start: tsEvalStart, timestamp_submit: nowISO, eliminated_logo_ids: eliminatedIds, logos, summary: { completed_count: done.length, evaluation_total: evalTotal, brand_average: avg('brand_score'), visual_average: avg('visual_score'), total_average: avg('total_score'), top_logos: top27 }, quality_check };
+    }
+
+    function buildVisualRatingResponse(pid, tsStart, selectedCandidateIds, dimensionRatings, qualification, basicInfo) {
+      return {
+        mode: "visual-rating",
+        evaluatorCode: pid,
+        evaluatorProfile: {
+          evaluatorCode: pid,
+          ageGroup: basicInfo.ageGroup || "",
+          workField: basicInfo.workField || "",
+          designCareer: basicInfo.designCareer || "",
+          logoCareer: basicInfo.logoCareer || "",
+          recentBrandProject: basicInfo.recentBrandProject || "",
+          aiToolExperience: basicInfo.aiToolExperience || ""
+        },
+        contactProfile: basicInfo.incentiveConsent ? {
+          evaluatorCode: pid,
+          name: basicInfo.name || "",
+          email: basicInfo.email || "",
+          phone: basicInfo.phone || "",
+          portfolioUrl: basicInfo.portfolioUrl || "",
+          contactConsent: basicInfo.incentiveConsent
+        } : undefined,
+        selectedCandidateIds: selectedCandidateIds,
+        layer2Responses: dimensionRatings.map(r => ({
+          evaluatorCode: pid,
+          stimulusId: r.stimulusId,
+          typeGroup: r.typeCode,
+          naturalnessScore: r.naturalness,
+          harmonyScore: r.harmony,
+          elaboratenessScore: r.refinement,
+          timestamp: new Date().toISOString()
+        })),
+        submittedAt: new Date().toISOString(),
+        completionStatus: "completed"
+      };
     }
 
     function triggerDownload(blob, filename) {
@@ -165,15 +198,7 @@
       const a = Object.assign(document.createElement('a'), { href: url, download: filename });
       document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     }
-    const downloadJSON = data => triggerDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `ovbne_eval_${data.participant_id}.json`);
-    const downloadCSV = data => {
-      const qc = data.quality_check || {};
-      const eliminatedStr = (data.eliminated_logo_ids || []).join('|');
-      const cols = ['participant_id','logo_id','brand_score','visual_score','total_score','completed','updated_at','timestamp_submit','eliminated_logo_ids','duration_seconds','elimination_duration_seconds','evaluation_duration_seconds','brand_same_score_warning','visual_same_score_warning','fast_completion_warning','elimination_fast_warning','evaluation_fast_warning'];
-      const rows = data.logos.map(l => [data.participant_id, l.logo_id, l.brand_score??'', l.visual_score??'', l.total_score??'', l.completed, l.updated_at??'', data.timestamp_submit, eliminatedStr, qc.duration_seconds??'', qc.elimination_duration_seconds??'', qc.evaluation_duration_seconds??'', qc.brand_same_score_warning??'', qc.visual_same_score_warning??'', qc.fast_completion_warning??'', qc.elimination_fast_warning??'', qc.evaluation_fast_warning??'']);
-      const csv = [cols, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-      triggerDownload(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }), `ovbne_eval_${data.participant_id}.csv`);
-    };
+    const downloadJSON = (data, prefix) => triggerDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `pre_eval_${prefix}_${data.evaluatorCode}_${new Date().getTime()}.json`);
 
     /* ─── IntroScreen ─────────────────────────────────────── */
     const INTRO_CHECKS = [
@@ -183,129 +208,48 @@
       '자연성·조화성·정교성 평가는 시안의 시각적 특성을 파악하기 위한 평가임을 확인했습니다.',
     ];
 
-    function IntroScreen({ onStart }) {
-      const [checked, setChecked] = useState([false, false, false, false]);
-      const allChecked = checked.every(Boolean);
-      const toggle = (i) => setChecked(prev => prev.map((v, idx) => idx === i ? !v : v));
-
-      const processItems = [
-        '1단계: 브랜드 브리프 확인 (중요)',
-        '2단계: 48개 AI 로고 예비시안 확인',
-        '3단계: 실험에 사용하기 어려운 21개 시안 제외',
-        '4단계: 남은 27개 후보 시안의 자연성·조화성·정교성 평가',
-        '5단계: 실험자 기본 정보 확인',
-        '6단계: 제출',
-      ];
-      const cautions = [
-        '가장 좋아 보이는 로고를 고르는 절차가 아닙니다.',
-        '본실험에서 비교·판단 가능한 시안 퀄리티인지 검토해 주세요.',
-        '브랜드 맥락과 현저히 맞지 않는 시안은 제외해 주세요.',
-        '다른 업종으로 오독되는 시안은 제외해 주세요.',
-        '로고의 기본 형식으로 보기 어려운 시안은 제외해 주세요.',
-        '형태가 깨졌거나 식별이 어려울 것 같은 시안은 제외해 주세요.',
-        '자연성·조화성·정교성 점수를 위해 꼭 내용을 숙지하시고 평가해 주세요.',
-      ];
-      const GuideSection = ({ title, children }) => (
-        <section>
-          <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[{title}]</h2>
-          {children}
-        </section>
-      );
-
+    function IntroScreen({ mode, onStart }) {
+      const isVR = mode === 'visual-rating';
       return (
-        <main className="min-h-screen bg-white px-4 py-10 text-[#111111]">
-          <div className="mx-auto py-[46px]" style={{width:'min(1120px, 92vw)'}}>
-            <header className="mb-[52px] text-center">
-              <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">AI 로고 예비시안 구성 평가</h1>
-            </header>
-
-            <div className="mx-auto grid max-w-[820px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
-              <section className="grid gap-3.5">
-                <p>안녕하십니까? 바쁘신 중에도 본 예비평가에 참여해 주셔서 감사합니다.</p>
-
-                <p>
-                  AI로 생성된 로고 시안은 빠르게 많아지고 있지만,
-                  여전히 실무 전문가의 시각적 판단이 필요하다는 취지의 연구를 하고 있습니다.
-                </p>
-
-                <p>
-                  따라서 본 예비평가는 AI가 생성한 48개의 로고 시안들 가운데
-                  본실험에 사용할 수 있는 후보 시안 27개를 선별하기 위한 과정 절차입니다.
-                </p>
-
-                <p>
-                  완성된 로고를 고르는 평가는 아닙니다.<br />
-                  AI 로고 생성 기술을 검증하는 평가도 아닙니다.
-                </p>
-
-                <p>
-                  실무 전문가의 관점에서 본실험에 사용하면 안 되는 시안을 제외해주시고,
-                  27개 선정하신 후보 시안의 시각 체계 점수를 수집하는 데 목적이 있습니다.
-                </p>
-
-                <p>
-                  전문가님의 판단은 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다. 제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다.
-                </p>
-
-                <p className="font-semibold text-[#111111]">
-                  예비평가 실험을 제출해 주신 분들에게는 소정의 사례비 지급 절차가 있습니다.
-                </p>
-
-                <p>감사합니다.</p>
-              </section>
-
-              <GuideSection title="연구 기본 정보">
-                <dl className="grid gap-2">
-                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
-                    <dt className="font-bold text-[#111111]">연구명</dt>
-                    <dd>생성형 AI 기반 브랜드 로고 시안에서 AI 정보 제시 유형이 전문 디자이너의 전략적 판단에 미치는 영향</dd>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
-                    <dt className="font-bold text-[#111111]">연구자</dt>
-                    <dd>박사 연구원 강은영</dd>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
-                    <dt className="font-bold text-[#111111]">소속</dt>
-                    <dd>홍익대학교 대학원 시각디자인과</dd>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-[88px_minmax(0,1fr)]">
-                    <dt className="font-bold text-[#111111]">지도교수</dt>
-                    <dd>허민재 교수</dd>
-                  </div>
-                </dl>
-              </GuideSection>
-
-              <GuideSection title="실험 진행 순서">
-                <ul className="grid list-disc gap-1.5 pl-5">
-                  {processItems.map(item => <li key={item}>{item}</li>)}
-                </ul>
-              </GuideSection>
-
-              <GuideSection title="평가 시 유의사항">
-                <ul className="grid list-disc gap-1.5 pl-5">
-                  {cautions.map(item => <li key={item}>{item}</li>)}
-                </ul>
-              </GuideSection>
-
-              <section>
-                <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[확인 체크]</h2>
-                <p>아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
-                <div className="my-5 grid gap-2">
-                  {INTRO_CHECKS.map((label, i) => (
-                    <label key={i} className="flex cursor-pointer items-start gap-3 text-gray-800">
-                      <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer" style={{accentColor:'#020617'}} />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
-                <button onClick={onStart} disabled={!allChecked}
-                  className={`w-full rounded-lg py-4 text-[16px] font-extrabold transition-colors ${allChecked ? 'bg-black text-white hover:bg-neutral-800' : 'cursor-not-allowed bg-gray-200 text-gray-500'}`}>
-                  예비평가 시작
-                </button>
-              </section>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full bg-white rounded-xl border border-slate-200 shadow-sm p-8 sm:p-12">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">
+              OVBNE 로고 예비시안 {isVR ? '2차 시각체계 평정' : '1차 선별 평가'}
+            </h1>
+            <p className="text-slate-600 mb-8 leading-relaxed">
+              {isVR 
+                ? '본 평가는 1차 선별된 27개 후보 시안에 대해 자연성, 조화성, 정교성을 평가합니다. 본 점수는 로고의 우열을 가리기 위함이 아니며, 본실험 세트 균형 구성을 위한 시각체계 점수 데이터로 사용됩니다.' 
+                : '본 평가는 AI 로고 예비시안 중 본실험 자극으로 사용하기 어려운 시안을 제외하여 최종 후보를 선정하는 1차 선별 과정입니다.'}
+            </p>
+            <div className="bg-amber-50 rounded-lg p-5 mb-8 border border-amber-100">
+              <h2 className="text-sm font-bold text-amber-900 mb-2">진행 안내</h2>
+              <ul className="list-disc pl-5 text-sm text-amber-800 space-y-1.5 leading-relaxed">
+                {isVR ? (
+                  <>
+                    <li>1차 선별을 통해 확정된 27개 시안만 평가합니다.</li>
+                    <li>각 시안별로 자연성, 조화성, 정교성을 1~5점으로 평정합니다.</li>
+                    <li>모든 시안에 대해 점수를 입력해야 제출할 수 있습니다.</li>
+                  </>
+                ) : (
+                  <>
+                    <li>총 48개의 시안 중 A, B, C 각 유형별로 7개씩, 총 21개를 제외합니다.</li>
+                    <li>화면의 드래그 앤 드롭 기능을 통해 본실험 후보와 제외 시안을 나눌 수 있습니다.</li>
+                    <li>선택이 모두 완료되면 기본 정보 입력 후 평가가 종료됩니다.</li>
+                  </>
+                )}
+              </ul>
             </div>
+            <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-lg mb-8 border border-slate-100">
+              <input type="checkbox" id="consent" className="w-4 h-4 text-slate-900 rounded border-slate-300 focus:ring-slate-900" />
+              <label htmlFor="consent" className="text-sm font-medium text-slate-700 select-none cursor-pointer">
+                위 내용을 모두 확인했습니다.
+              </label>
+            </div>
+            <button onClick={() => { if(document.getElementById('consent').checked) onStart(); else alert('안내 사항을 확인하고 체크해 주세요.'); }} className="w-full py-4 bg-slate-900 text-white rounded-lg font-bold text-lg hover:bg-slate-800 transition shadow-sm">
+              시작하기
+            </button>
           </div>
-        </main>
+        </div>
       );
     }
 
@@ -846,180 +790,6 @@
       );
     }
 
-    function EliminationScreen({ logos, excludedIds, onExcludeChange, onNext, onBack }) {
-      const grouped = groupByType(logos);
-      const counts = TYPE_ORDER.reduce((acc, code) => {
-        acc[code] = grouped[code].filter(logo => excludedIds.includes(logo.id)).length;
-        return acc;
-      }, {});
-      const totalExcluded = excludedIds.length;
-      const totalCandidates = logos.length - totalExcluded;
-      const isComplete = TYPE_ORDER.every(code => counts[code] === TYPE_RULES[code].exclude)
-        && totalExcluded === ELIM_LIMIT
-        && totalCandidates === 27;
-
-      const toggle = (logo) => {
-        const selected = excludedIds.includes(logo.id);
-        if (selected) {
-          onExcludeChange(excludedIds.filter(id => id !== logo.id));
-          return;
-        }
-        if (counts[logo.typeCode] >= TYPE_RULES[logo.typeCode].exclude) return;
-        onExcludeChange([...excludedIds, logo.id]);
-      };
-
-      return (
-        <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
-          <div className="mx-auto max-w-[1680px] space-y-6">
-            <header className="sticky top-0 z-30 rounded-xl border border-slate-200 bg-white/95 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] backdrop-blur">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-5xl">
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">1차 실험후보 제외</h1>
-                  <p className="mt-0.5 text-sm font-semibold text-slate-400">본실험에 사용하기 어려운 예비시안 제외</p>
-                  <p className="mt-3 text-base leading-7 text-slate-600">
-                    총 48개의 AI 로고 예비시안을 유형별로 확인합니다. 각 유형에서 7개씩, 총 21개의 본실험에 사용하기 어려운 시안을 제외해 주세요.
-                  </p>
-                </div>
-                <div className="grid min-w-[320px] grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">제외한 시안</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-950">{totalExcluded}개</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">본실험 후보 시안</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-950">{totalCandidates}개</p>
-                  </div>
-                </div>
-              </div>
-              <section className="mt-4 border-t border-slate-100 pt-3">
-                <h2 className="text-base font-bold text-slate-950">OVBNE 브랜드 브리프 요약</h2>
-                <dl className="mt-2 grid gap-x-10 gap-y-2 text-[15px] leading-7 text-slate-600 lg:grid-cols-[1.1fr_2fr_1.25fr_1.25fr]">
-                  <div><dt className="inline font-bold text-slate-500">브랜드명 </dt><dd className="inline">오브네 OVBNE</dd></div>
-                  <div><dt className="inline font-bold text-slate-500">브랜드 성격 </dt><dd className="inline">리빙 오브제·홈데코 큐레이션, 미들 프리미엄 라이프스타일</dd></div>
-                  <div><dt className="inline font-bold text-slate-500">타깃 </dt><dd className="inline">25~35세 도시 거주자</dd></div>
-                  <div><dt className="inline font-bold text-slate-500">핵심 가치 </dt><dd className="inline">일상성 · 균형감 · 취향성</dd></div>
-                </dl>
-                <p className="mt-2 max-w-6xl text-[15px] leading-7 text-slate-600">
-                  OVBNE는 Objet, Value, Balance, New, Everyday의 의미를 결합한 조어로, 일상 오브제가 지닌 가치와 균형 잡힌 생활 감각, 새롭게 감각화된 일상을 의미합니다.
-                </p>
-                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] font-semibold leading-7 text-slate-700">
-                  <span className="font-extrabold text-slate-950">제외 조건: </span>
-                  브랜드 맥락 이탈, 형태 오독 가능성, 조형 붕괴, 텍스트 오류, 장면형 이미지는 본실험 자극으로 사용하기 어려운 시안으로 판단합니다.
-                </p>
-              </section>
-            </header>
-
-            <main className="space-y-6">
-              {TYPE_ORDER.map(code => {
-                const rule = TYPE_RULES[code];
-                const items = grouped[code];
-                const current = counts[code];
-                return (
-                  <section key={code} className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-950">{rule.title}</h2>
-                        <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">아래 시안 중 본실험에 사용하기 어렵다고 판단되는 {rule.exclude}개를 제외해 주세요.</p>
-                      </div>
-                      <div className={`rounded-full px-5 py-2 text-xl font-bold ${current === rule.exclude ? 'bg-slate-950 text-white' : 'bg-blue-50 text-blue-800'}`}>
-                        제외 {current} / {rule.exclude}
-                      </div>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
-                      {items.map(logo => {
-                        const selected = excludedIds.includes(logo.id);
-                        const disabled = !selected && current >= rule.exclude;
-                        return <CandidateCard key={logo.id} logo={logo} selected={selected} disabled={disabled} onToggle={toggle} showTypeName={false} />;
-                      })}
-                    </div>
-                  </section>
-                );
-              })}
-            </main>
-
-            <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
-              <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-semibold text-slate-500">
-                  {isComplete ? '모든 유형의 제외 선택이 완료되었습니다.' : '각 유형에서 안내된 개수만큼 제외 시안을 선택하면 다음 단계로 이동할 수 있습니다.'}
-                </p>
-                <button
-                  onClick={onNext}
-                  disabled={!isComplete}
-                  className={`rounded-lg px-6 py-3 text-sm font-bold transition ${isComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
-                >
-                  본실험 후보 시안 확인으로 이동
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function StaticEliminationReviewScreen({ logos, excludedIds, onBack, onNext }) {
-      const candidates = logos.filter(logo => !excludedIds.includes(logo.id));
-      const grouped = groupByType(candidates);
-      const candidateSets = TYPE_ORDER.reduce((acc, code) => {
-        acc[code] = grouped[code].map(logo => logo.candidateId);
-        return acc;
-      }, {});
-
-      return (
-        <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
-          <div className="mx-auto max-w-[1680px] space-y-6">
-            <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-5xl">
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">본실험 후보 시안 확인</h1>
-                  <p className="mt-4 text-base leading-7 text-slate-600">
-                    유형별 실험후보 제외가 완료되었습니다. 남은 27개 시안은 본 실험 후보 세트 구성을 위한 시안이 됩니다. 본 실험에 사용하기 어렵다고 판단되는 브랜드 맥락에서 벗어나거나, 형태 오독 가능성·조형 불안정성·유사 시안 중복 등을 다시 한번 체크해 주세요.
-                  </p>
-                </div>
-                <div className="grid min-w-[360px] grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">본실험 후보</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-950">{candidates.length}개</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">세트 구성 기준</p>
-                    <p className="mt-1 text-lg font-bold text-slate-950">S1·S2·S3 각 9개</p>
-                  </div>
-                </div>
-              </div>
-            </header>
-
-            <main className="space-y-6">
-              {TYPE_ORDER.map(code => {
-                const rule = TYPE_RULES[code];
-                const items = grouped[code];
-                return (
-                  <section key={code} className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <div className="mb-4 border-b border-slate-100 pb-4">
-                      <h2 className="text-lg font-bold text-slate-950">{rule.title} <span className="font-semibold text-slate-400">| 본실험 후보 {items.length}개</span></h2>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
-                      {items.map(logo => <CandidateCard key={logo.id} logo={logo} readonly showTypeName={false} />)}
-                    </div>
-                  </section>
-                );
-              })}
-            </main>
-
-            <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
-              <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                  뒤로 가서 수정하기
-                </button>
-                <button onClick={() => onNext()} className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
-                  2차 시각 완성도 평가로 이동
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     function ReviewDragCard({ logo, zone, draggingId, onDragStart, onDragEnd, onMove }) {
       const isExcluded = zone === 'excluded';
       const isDragging = draggingId === logo.id;
@@ -1048,27 +818,29 @@
       );
     }
 
-    function EliminationReviewScreen({ logos, excludedIds, onExcludeChange, onBack, onNext }) {
+    function EliminationScreen({ logos, excludedIds, onExcludeChange, onNext, onBack }) {
+      const [activeTab, setActiveTab] = useState('A');
       const [dragId, setDragId] = useState(null);
       const [dragOver, setDragOver] = useState(null);
 
       const excludedSet = new Set(excludedIds);
-      const candidates = logos.filter(logo => !excludedSet.has(logo.id));
-      const excluded = logos.filter(logo => excludedSet.has(logo.id));
-      const groupedCandidates = groupByType(candidates);
-      const groupedExcluded = groupByType(excluded);
+      const groupedCandidates = groupByType(logos.filter(l => !excludedSet.has(l.id)));
+      const groupedExcluded = groupByType(logos.filter(l => excludedSet.has(l.id)));
 
       const counts = TYPE_ORDER.reduce((acc, code) => {
         acc[code] = {
-          candidate: groupedCandidates[code].length,
-          excluded: groupedExcluded[code].length,
+          candidate: (groupedCandidates[code] || []).length,
+          excluded: (groupedExcluded[code] || []).length,
         };
         return acc;
       }, {});
-      const isReady = TYPE_ORDER.every(code =>
-        counts[code].candidate === TYPE_RULES[code].keep &&
-        counts[code].excluded === TYPE_RULES[code].exclude
-      ) && candidates.length === PRE_EVAL_TOTAL_KEEP && excluded.length === PRE_EVAL_TOTAL_EXCLUDE;
+      
+      const totalExcluded = excludedIds.length;
+      const totalCandidates = logos.length - totalExcluded;
+      
+      const isComplete = TYPE_ORDER.every(code => counts[code].excluded === TYPE_RULES[code].exclude)
+        && totalExcluded === ELIM_LIMIT
+        && totalCandidates === PRE_EVAL_TOTAL_KEEP;
 
       const moveTo = (id, target) => {
         const logo = logos.find(item => item.id === id);
@@ -1077,12 +849,15 @@
 
         if (target === 'excluded') {
           if (isCurrentlyExcluded) return;
+          if (counts[logo.typeCode].excluded >= TYPE_RULES[logo.typeCode].exclude) {
+            alert(`${TYPE_RULES[logo.typeCode].title} 유형은 이미 7개를 모두 제외했습니다.`);
+            return;
+          }
           onExcludeChange([...excludedIds, id]);
-          return;
+        } else {
+          if (!isCurrentlyExcluded) return;
+          onExcludeChange(excludedIds.filter(item => item !== id));
         }
-
-        if (!isCurrentlyExcluded) return;
-        onExcludeChange(excludedIds.filter(item => item !== id));
       };
 
       const handleDrop = (target) => {
@@ -1091,120 +866,85 @@
         setDragOver(null);
       };
 
-      const zoneClass = (target) => (
-        `rounded-xl border bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition ${
-          dragOver === target
-            ? target === 'excluded'
-              ? 'border-rose-300 bg-rose-50/50'
-              : 'border-slate-400 bg-slate-50'
-            : 'border-slate-200'
-        }`
-      );
+      const zoneClass = (target) => `rounded-xl border bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition ${
+          dragOver === target ? (target === 'excluded' ? 'border-rose-300 bg-rose-50/50' : 'border-slate-400 bg-slate-50') : 'border-slate-200'
+      }`;
 
-      const renderGroup = (code, zone) => {
-        const rule = TYPE_RULES[code];
-        const items = zone === 'candidate' ? groupedCandidates[code] : groupedExcluded[code];
-        const current = zone === 'candidate' ? counts[code].candidate : counts[code].excluded;
-        const target = zone === 'candidate' ? rule.keep : rule.exclude;
-        return (
-          <section key={`${zone}-${code}`} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-bold text-slate-950">{rule.title}</h3>
-              <span className={`rounded-full px-4 py-2 text-xl font-bold ${current === target ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                {current} / {target}
-              </span>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {items.map(logo => (
-                <ReviewDragCard
-                  key={logo.id}
-                  logo={logo}
-                  zone={zone}
-                  draggingId={dragId}
-                  onDragStart={setDragId}
-                  onDragEnd={() => { setDragId(null); setDragOver(null); }}
-                  onMove={moveTo}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      };
+      const activeItemsCandidate = groupedCandidates[activeTab] || [];
+      const activeItemsExcluded = groupedExcluded[activeTab] || [];
+      const activeRule = TYPE_RULES[activeTab];
 
       return (
         <div className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-900 sm:px-8 lg:px-12">
           <div className="mx-auto max-w-[1680px] space-y-6">
-            <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-5xl">
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">본실험 후보 시안 확인 및 수정</h1>
-                  <p className="mt-4 text-base leading-7 text-slate-600">
-                    1차 실험후보 제외 결과를 확인해 주세요. 변심하거나 잘못 제외한 시안이 있으면 카드를 드래그하거나 카드의 이동 버튼을 눌러 양쪽 칸 사이에서 바로 수정할 수 있습니다.
+            <header className="sticky top-0 z-30 rounded-xl border border-slate-200 bg-white/95 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] backdrop-blur">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-950">1차 실험후보 제외</h1>
+                  <p className="mt-2 text-base leading-7 text-slate-600">
+                    A, B, C 각 유형별 탭에서 본실험에 사용하기 어려운 시안을 드래그하여 우측으로 이동시켜 주세요.
                   </p>
                 </div>
-                <div className="grid min-w-[420px] grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">본실험 후보</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-950">{candidates.length}개</p>
+                <div className="flex gap-4">
+                  {TYPE_ORDER.map(code => (
+                    <div key={code} className="text-center bg-slate-50 border border-slate-200 rounded px-3 py-2">
+                      <p className="text-xs font-bold text-slate-500">{code} 제외</p>
+                      <p className={`font-bold ${counts[code].excluded === TYPE_RULES[code].exclude ? 'text-emerald-600' : 'text-slate-900'}`}>{counts[code].excluded} / {TYPE_RULES[code].exclude}</p>
+                    </div>
+                  ))}
+                  <div className="text-center bg-rose-50 border border-rose-200 rounded px-3 py-2">
+                    <p className="text-xs font-bold text-rose-700">총 제외</p>
+                    <p className="font-bold text-rose-900">{totalExcluded} / {ELIM_LIMIT}</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">실험후보 제외</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-950">{excluded.length}개</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">제외 개수</p>
-                    <p className="mt-1 text-sm font-bold leading-6 text-slate-950">A/B/C<br/>각 7개</p>
+                  <div className="text-center bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+                    <p className="text-xs font-bold text-emerald-700">총 후보</p>
+                    <p className="font-bold text-emerald-900">{totalCandidates} / {PRE_EVAL_TOTAL_KEEP}</p>
                   </div>
                 </div>
               </div>
+              <div className="mt-4 flex gap-2 border-b border-slate-200">
+                {TYPE_ORDER.map(code => (
+                  <button key={code} onClick={() => setActiveTab(code)} className={`px-6 py-3 font-bold border-b-2 transition ${activeTab === code ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+                    {TYPE_RULES[code].title}
+                  </button>
+                ))}
+              </div>
             </header>
 
-            <main className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.55fr)]">
-              <section
-                className={zoneClass('candidate')}
-                onDragOver={e => { e.preventDefault(); setDragOver('candidate'); }}
-                onDragLeave={() => setDragOver(null)}
-                onDrop={() => handleDrop('candidate')}
-              >
-                <div className="mb-5 border-b border-slate-100 pb-4">
-                  <h2 className="text-xl font-bold text-slate-950">선택 후보 시안</h2>
-                  <p className="mt-1 text-sm text-slate-500">다음 단계에서 시각 완성도를 평가할 27개 시안입니다.</p>
+            <main className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(400px,0.6fr)]">
+              <section className={zoneClass('candidate')} onDragOver={e => { e.preventDefault(); setDragOver('candidate'); }} onDragLeave={() => setDragOver(null)} onDrop={() => handleDrop('candidate')}>
+                <div className="mb-5 border-b border-slate-100 pb-4 flex justify-between items-end">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950">본실험 후보 시안 ({activeTab} 유형)</h2>
+                    <p className="mt-1 text-sm text-slate-500">제외할 시안을 우측으로 드래그하거나 [제외로] 버튼을 클릭하세요.</p>
+                  </div>
+                  <span className="font-bold text-slate-400 text-sm">현재 {activeItemsCandidate.length}개</span>
                 </div>
-                <div className="space-y-5">
-                  {TYPE_ORDER.map(code => renderGroup(code, 'candidate'))}
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {activeItemsCandidate.map(logo => <ReviewDragCard key={logo.id} logo={logo} zone="candidate" draggingId={dragId} onDragStart={setDragId} onDragEnd={() => { setDragId(null); setDragOver(null); }} onMove={moveTo} />)}
                 </div>
               </section>
 
-              <section
-                className={`${zoneClass('excluded')} xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto`}
-                onDragOver={e => { e.preventDefault(); setDragOver('excluded'); }}
-                onDragLeave={() => setDragOver(null)}
-                onDrop={() => handleDrop('excluded')}
-              >
-                <div className="mb-5 border-b border-slate-100 pb-4">
-                  <h2 className="text-xl font-bold text-slate-950">제외 후보 시안</h2>
-                  <p className="mt-1 text-sm text-slate-500">본실험 자극으로 사용하기 어렵다고 표시한 21개 시안입니다.</p>
+              <section className={`${zoneClass('excluded')} xl:sticky xl:top-32 xl:max-h-[calc(100vh-10rem)] xl:overflow-y-auto`} onDragOver={e => { e.preventDefault(); setDragOver('excluded'); }} onDragLeave={() => setDragOver(null)} onDrop={() => handleDrop('excluded')}>
+                <div className="mb-5 border-b border-slate-100 pb-4 flex justify-between items-end">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950 text-rose-900">제외 시안 ({activeTab} 유형)</h2>
+                    <p className="mt-1 text-sm text-slate-500">본실험 자극으로 사용하기 어려운 시안입니다.</p>
+                  </div>
+                  <span className={`font-bold text-sm ${counts[activeTab].excluded === activeRule.exclude ? 'text-emerald-600' : 'text-rose-600'}`}>{counts[activeTab].excluded} / {activeRule.exclude} 제외됨</span>
                 </div>
-                <div className="space-y-5">
-                  {TYPE_ORDER.map(code => renderGroup(code, 'excluded'))}
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                  {activeItemsExcluded.map(logo => <ReviewDragCard key={logo.id} logo={logo} zone="excluded" draggingId={dragId} onDragStart={setDragId} onDragEnd={() => { setDragId(null); setDragOver(null); }} onMove={moveTo} />)}
                 </div>
               </section>
             </main>
 
             <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
-              <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                  1차 제외 선택으로 돌아가기
-                </button>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  {!isReady && <p className="text-sm font-bold text-amber-600">A/B/C 각 후보 9개, 제외 7개가 맞아야 다음 단계로 이동할 수 있습니다.</p>}
-                  <button
-                    onClick={() => onNext()}
-                    disabled={!isReady}
-                    className={`rounded-lg px-6 py-3 text-sm font-bold transition ${isReady ? 'bg-slate-950 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}
-                  >
-                    2차 시각 완성도 평가로 이동
-                  </button>
+              <div className="mx-auto flex max-w-[1680px] items-center justify-between">
+                <button onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">이전 화면</button>
+                <div className="flex items-center gap-4">
+                  {!isComplete && <p className="text-sm font-bold text-rose-600">총 제외 21개 (각 유형별 7개씩)를 만족해야 다음 단계로 이동할 수 있습니다.</p>}
+                  <button onClick={onNext} disabled={!isComplete} className={`rounded-lg px-8 py-3 text-sm font-bold transition ${isComplete ? 'bg-slate-950 text-white hover:bg-slate-800 shadow-md' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}>기본 정보 입력으로 이동</button>
                 </div>
               </div>
             </div>
@@ -1818,60 +1558,35 @@
         </section>
       );
     }
-    function BriefScreen({ onStart, onBack }) {
+    function BriefScreen({ mode, onStart, onBack }) {
+      const isVR = mode === 'visual-rating';
       return (
-        <div className="min-h-screen bg-white px-4 py-10 text-[#111111]">
-          <div className="mx-auto py-[46px]" style={{width:'min(1120px, 92vw)'}}>
-            <header className="mb-[52px] text-center">
-              <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">OVBNE 브랜드 브리프</h1>
-              <div className="mx-auto grid max-w-[980px] gap-3.5 text-left text-[16px] leading-[1.85] text-gray-800">
-                <p>
-                  아래 정보는 48개 후보 시안이 OVBNE 브랜드 맥락에서 본실험 자극으로 사용 가능한지 판단하기 위한 참고 기준입니다. 평가자는 완성 로고의 우열을 판단하기보다, 각 시안이 브랜드 맥락과 최소한의 관련성을 갖는지 확인해 주세요.
-                </p>
-                <p>
-                  OVBNE는 대형 라이프스타일 브랜드, 독립 오브제 브랜드, 온라인 감성 셀렉트숍과 경쟁하는 신규 브랜드로 설정됩니다. 본 예비평가에서는 특정 경쟁 브랜드와의 직접 비교가 아니라, 각 시안이 OVBNE 브랜드 맥락에서 과도하게 다른 업종으로 오독되지 않는지를 확인합니다.
-                </p>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="max-w-3xl w-full bg-white rounded-xl border border-slate-200 shadow-sm p-8 sm:p-12">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">OVBNE 브랜드 브리프</h1>
+            <p className="text-slate-600 mb-8 leading-relaxed">
+              {isVR 
+                ? '본실험에 사용될 로고 시안의 조형 판단 맥락을 이해하기 위한 참고 정보입니다.' 
+                : '아래 브랜드 브리프를 읽고, 브랜드 맥락에 맞지 않는 시안을 제외하는 기준으로 삼아 주세요.'}
+            </p>
+            <div className="bg-slate-50 rounded-lg p-6 mb-8 border border-slate-100">
+              <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2 text-sm leading-6">
+                <div><dt className="font-bold text-slate-500">브랜드명</dt><dd className="mt-1 font-semibold text-slate-900">오브네 OVBNE</dd></div>
+                <div><dt className="font-bold text-slate-500">브랜드 성격</dt><dd className="mt-1 font-medium text-slate-900">리빙 오브제·홈데코 큐레이션, 미들 프리미엄 라이프스타일</dd></div>
+                <div><dt className="font-bold text-slate-500">핵심 가치</dt><dd className="mt-1 font-medium text-slate-900">일상성, 균형감, 취향성</dd></div>
+                <div><dt className="font-bold text-slate-500">타깃 고객</dt><dd className="mt-1 font-medium text-slate-900">25~35세 도시 거주자</dd></div>
+              </dl>
+              <div className="mt-6 pt-6 border-t border-slate-200">
+                <p className="text-sm font-bold text-slate-500 mb-2">의미</p>
+                <p className="text-sm text-slate-700 leading-relaxed">OVBNE는 Objet, Value, Balance, New, Everyday의 의미를 결합한 조어로, 일상 오브제가 지닌 가치와 균형 잡힌 생활 감각, 새롭게 감각화된 일상을 의미합니다.</p>
               </div>
-            </header>
-
-            <main className="mx-auto grid max-w-[980px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
-              <div className="grid gap-x-10 gap-y-[34px] lg:grid-cols-2">
-                {BRIEF_BLOCKS.map(item => <BriefInfoBlock key={item.title} {...item} />)}
-
-                <BriefInfoBlock
-                  title="핵심 가치"
-                  description="후보 시안 검토 시 참고할 브랜드 가치 키워드입니다."
-                >
-                  <ul className="grid list-disc gap-1.5 pl-5">
-                    {VALUE_TAGS.map(item => <li key={item}>{item}</li>)}
-                  </ul>
-                </BriefInfoBlock>
-
-                <BriefInfoBlock
-                  title="적용 매체"
-                  description="후보 시안이 기본적으로 활용될 수 있는 매체 범위입니다."
-                >
-                  <ul className="grid list-disc gap-1.5 pl-5 sm:grid-cols-2">
-                    {MEDIA_TAGS.map(item => <li key={item}>{item}</li>)}
-                  </ul>
-                </BriefInfoBlock>
-
-              </div>
-
-              <div className="w-full">
-                <p>브랜드 브리프는 이후 모든 후보 시안을 검토할 때 동일하게 적용되는 참고 기준입니다.</p>
-                <div className="mt-5 grid gap-y-3 lg:grid-cols-2 lg:gap-x-10">
-                  {onBack && (
-                    <button onClick={onBack} className="w-full rounded-lg border border-black/20 bg-white px-5 py-4 text-[16px] font-bold text-gray-800 transition-colors hover:bg-gray-50">
-                      이전
-                    </button>
-                  )}
-                  <button onClick={onStart} className="w-full rounded-lg bg-black px-6 py-4 text-[16px] font-extrabold text-white transition-colors hover:bg-neutral-800">
-                    브리프 확인 후 후보 시안 검토로 이동
-                  </button>
-                </div>
-              </div>
-            </main>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={onBack} className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-50 transition">뒤로가기</button>
+              <button onClick={onStart} className="flex-[2] py-4 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition shadow-sm">
+                {isVR ? '평가 화면으로 이동' : '제외 화면으로 이동'}
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -2446,63 +2161,103 @@
       return { top: Math.max(8, Math.min(rect.top, window.innerHeight - H - 8)), left: Math.max(8, left) };
     }
 
-    function App() {
-      const [screen, setScreen] = useState('intro');
+    function getAppMode() {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      if (hash.includes('#/screening') || search.includes('mode=screening')) return 'screening';
+      if (hash.includes('#/visual-rating') || search.includes('mode=visual-rating')) return 'visual-rating';
+      if (hash.includes('#/admin') || search.includes('mode=admin')) return 'admin';
+      return 'screening';
+    }
+
+    function FileUploadScreen({ onDataLoaded }) {
+      const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (data.fileType !== 'selected_27_for_visual_rating') {
+              alert('유효하지 않은 파일 형식입니다. (fileType: selected_27_for_visual_rating 필요)');
+              return;
+            }
+            onDataLoaded(data);
+          } catch(err) {
+            alert('파일을 파싱하는 중 오류가 발생했습니다.');
+          }
+        };
+        reader.readAsText(file);
+      };
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
+            <h1 className="text-xl font-bold mb-3 text-slate-900">1차 선별 결과 업로드</h1>
+            <p className="text-sm text-slate-600 mb-6">
+              관리자 모드에서 집계된 <code>selected_27_for_visual_rating.json</code> 파일을 업로드해 주세요.
+            </p>
+            <input type="file" accept=".json" onChange={handleFileChange} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" />
+          </div>
+        </div>
+      );
+    }
+
+    function VisualRatingApp() {
+      const [screen, setScreen] = useState('upload');
+      const [candidatesData, setCandidatesData] = useState(null);
       const [ratings, setRatings] = useState({});
-      const [filter, setFilter] = useState('all');
-      const [sort, setSort] = useState('default');
-      const [cardSize, setCardSize] = useState(180);
-      const [previewLogo, setPreviewLogo] = useState(null);
-      const [resultData, setResultData] = useState(null);
-      const [logos, setLogos] = useState([]);
-      const [manifestStatus, setManifestStatus] = useState({ loading: true, error: null });
-      const [setAssignmentResult, setSetAssignmentResult] = useState(null);
-      const [dimensionRatings, setDimensionRatings] = useState(null);
-      const [dimensionRatingDraft, setDimensionRatingDraft] = useState({});
-      const [qualification, setQualification] = useState({});
       const [basicInfo, setBasicInfo] = useState({});
-      const sidebarOpen = true;
-      const [sidebarWidth, setSidebarWidth] = useState(256);
-      const isResizing = useRef(false);
-      const resizeStartX = useRef(0);
-      const resizeStartW = useRef(0);
-
-      const startResize = useCallback((e) => {
-        e.preventDefault();
-        isResizing.current = true;
-        resizeStartX.current = e.clientX;
-        resizeStartW.current = sidebarWidth;
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-      }, [sidebarWidth]);
-
-      useEffect(() => {
-        const onMove = (e) => {
-          if (!isResizing.current) return;
-          const newW = Math.max(160, Math.min(window.innerWidth - 250, resizeStartW.current + e.clientX - resizeStartX.current));
-          setSidebarWidth(newW);
-        };
-        const onUp = () => {
-          if (!isResizing.current) return;
-          isResizing.current = false;
-          document.body.style.cursor = '';
-          document.body.style.userSelect = '';
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-        return () => {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-        };
-      }, []);
-
       const [pid] = useState(generateId);
       const [tsStart] = useState(() => new Date().toISOString());
 
+      const goScreen = (s) => setScreen(s);
+
+      if (screen === 'upload') {
+        return <FileUploadScreen onDataLoaded={(data) => {
+          setCandidatesData(data);
+          goScreen('intro');
+        }} />;
+      }
+      if (!candidatesData) return null;
+
+      const logos = candidatesData.selectedCandidates.map(c => ({
+        id: c.stimulusId,
+        stimulusId: c.stimulusId,
+        typeCode: c.typeGroup,
+        candidateId: c.localCode,
+        imagePath: c.imageSrc,
+      }));
+
+      if (screen === 'intro') return <IntroScreen mode="visual-rating" onStart={() => goScreen('brief')} />;
+      if (screen === 'brief') return <BriefScreen mode="visual-rating" onBack={() => goScreen('upload')} onStart={() => goScreen('rating')} />;
+      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={(res) => { setRatings(res); goScreen('basicInfo'); }} />;
+      if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('rating')} onSubmit={(info) => {
+        setBasicInfo(info);
+        const dimensionRatingsArr = logos.map(logo => ({
+          stimulusId: logo.stimulusId,
+          typeCode: logo.typeCode,
+          naturalness: ratings[logo.id]?.naturalness,
+          harmony: ratings[logo.id]?.harmony,
+          refinement: ratings[logo.id]?.refinement
+        }));
+        const submission = buildVisualRatingResponse(pid, tsStart, logos.map(l => l.id), dimensionRatingsArr, {}, info);
+        triggerDownload(new Blob([JSON.stringify(submission, null, 2)], { type: 'application/json' }), `visual_rating_submission_${pid}.json`);
+        goScreen('complete');
+      }} />;
+      if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => window.location.reload()} />;
+      return null;
+    }
+
+    function ScreeningApp() {
+      const [screen, setScreen] = useState('intro');
+      const [logos, setLogos] = useState([]);
+      const [manifestStatus, setManifestStatus] = useState({ loading: true, error: null });
       const [eliminatedIds, setEliminatedIds] = useState([]);
-      const [tsElimStart, setTsElimStart] = useState(null);
-      const [tsEvalStart, setTsEvalStart] = useState(null);
-      const historyReady = useRef(false);
+      const [qualification, setQualification] = useState({});
+      const [basicInfo, setBasicInfo] = useState({});
+      
+      const [pid] = useState(generateId);
+      const [tsStart] = useState(() => new Date().toISOString());
 
       useEffect(() => {
         let active = true;
@@ -2518,182 +2273,163 @@
           });
         return () => { active = false; };
       }, []);
-      useEffect(() => { const s = loadData(); if (s?.excludedIds || s?.eliminatedIds) setEliminatedIds(s.excludedIds || s.eliminatedIds); }, []);
-      useEffect(() => {
-        const s = loadData();
-        if (s?.dimensionRatingDraft) setDimensionRatingDraft(s.dimensionRatingDraft);
-        if (s?.dimensionRatings) setDimensionRatings(s.dimensionRatings);
-      }, []);
-      useEffect(() => {
-        if (!logos.length || !eliminatedIds.length) return;
-        const validIds = new Set(logos.map(logo => logo.id));
-        const cleaned = eliminatedIds.filter(id => validIds.has(id));
-        if (cleaned.length !== eliminatedIds.length) setEliminatedIds(cleaned);
-      }, [logos, eliminatedIds]);
-      useEffect(() => { if (eliminatedIds.length > 0) saveData({ pid, tsStart, excludedIds: eliminatedIds }); }, [eliminatedIds]);
-      useEffect(() => {
-        if (!evaluationLogos.length) return;
-        const validIds = new Set(evaluationLogos.map(logo => logo.id));
-        const cleaned = Object.fromEntries(Object.entries(dimensionRatingDraft).filter(([id]) => validIds.has(id)));
-        if (Object.keys(cleaned).length !== Object.keys(dimensionRatingDraft).length) {
-          setDimensionRatingDraft(cleaned);
-          saveData({ dimensionRatingDraft: cleaned });
-        }
-      }, [evaluationLogos, dimensionRatingDraft]);
-      useEffect(() => {
-        window.history.replaceState({ screen: 'intro' }, '', window.location.href);
-        historyReady.current = true;
-        const onPopState = (event) => {
-          const nextScreen = event.state?.screen || 'intro';
-          if (nextScreen === 'intro') {
-            // 첫 페이지에서 뒤로가기 차단: 다시 앞으로 밀어넣기
-            window.history.pushState(event.state, '', window.location.href);
-            return;
-          }
-          setScreen(nextScreen);
-        };
-        window.addEventListener('popstate', onPopState);
-        return () => window.removeEventListener('popstate', onPopState);
-      }, []);
-      const goScreen = useCallback((nextScreen) => {
-        if (historyReady.current) {
-          window.history.pushState({ screen: nextScreen }, '', window.location.href);
-        }
+
+      const goScreen = (nextScreen) => {
         setScreen(nextScreen);
-      }, []);
+      };
 
-      const evaluationLogos = logos.filter(l => !eliminatedIds.includes(l.id));
-      const count = evaluationLogos.filter(l => isCompleted(ratings[l.id])).length;
-      const allDone = count === evaluationLogos.length;
-
-      const handleRate = useCallback((id, field, score) => {
-        setRatings(prev => ({ ...prev, [id]: { ...prev[id], [field]: score, updated_at: new Date().toISOString() } }));
-      }, []);
-
-      const goToEliminate = () => { if (!tsElimStart) setTsElimStart(new Date().toISOString()); goScreen('eliminate'); };
-      const goToSetAssignment = () => { goScreen('dimensionRating'); };
-      const handleDimensionRatingDraftChange = (next) => {
-        setDimensionRatingDraft(next);
-        saveData({ dimensionRatingDraft: next });
-      };
-      const handleDimensionRatingNext = (result, draftRatings = dimensionRatingDraft) => {
-        setDimensionRatings(result);
-        setDimensionRatingDraft(draftRatings);
-        saveData({ dimensionRatings: result, dimensionRatingDraft: draftRatings });
-        goScreen('basicInfo');
-      };
-      const handleSetAssignmentNext = (payload) => { setSetAssignmentResult(payload); goScreen('basicInfo'); };
-      const handleSubmit = () => goScreen('review');
-      const handleFinalSubmit = () => {
-        const d = buildResponseData(pid, ratings, tsStart, evaluationLogos, eliminatedIds, tsElimStart, tsEvalStart);
-        setResultData(d); goScreen('result');
-      };
-      const handleQualificationNext = (data) => {
-        setQualification(data);
-        goScreen('brief');
-      };
       const handleBasicInfoSubmit = (data) => {
-        const formationGate = {
-          excludedStimulusIds: eliminatedIds,
-          excludedCandidates: eliminatedIds.map(id => {
-            const logo = logos.find(l => l.id === id);
-            return logo?.candidateId || id;
-          }),
-          confirmedStimulusIds: evaluationLogos.map(l => l.stimulusId),
-          confirmedCandidates: evaluationLogos.map(l => l.candidateId),
-          excludedCountByType: TYPE_ORDER.reduce((acc, code) => { acc[code] = eliminatedIds.filter(id => id.split('_')[0] === code).length; return acc; }, {}),
-          confirmedCountByType: TYPE_ORDER.reduce((acc, code) => { acc[code] = evaluationLogos.filter(l => l.typeCode === code).length; return acc; }, {}),
-          totalExcluded: eliminatedIds.length,
-          totalConfirmed: evaluationLogos.length,
-        };
-        const submission = {
-          participant_id: pid,
-          timestamp_start: tsStart,
-          timestamp_submit: new Date().toISOString(),
-          qualification,
-          basicInfo: data,
-          excluded_candidate_ids: eliminatedIds,
-          formationGate,
-          dimensionRatings: dimensionRatings || [],
-        };
-        // Export dimension ratings CSV
-        if (submission.dimensionRatings && submission.dimensionRatings.length > 0) {
-          const dimCols = ['evaluatorId', 'stimulusId', 'preEvalGroup', 'localStimulusCode', 'candidateId', 'typeCode', 'naturalness', 'harmony', 'refinement'];
-          const dimRows = submission.dimensionRatings.map(r => [pid, r.stimulusId, r.preEvalGroup, r.localStimulusCode, r.candidateId, r.typeCode, r.naturalness, r.harmony, r.refinement]);
-          const dimCsv = [dimCols, ...dimRows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
-          triggerDownload(new Blob(['﻿' + dimCsv], { type: 'text/csv;charset=utf-8;' }), `pretest_dimension_ratings_${pid}.csv`);
-        }
-        // Export full submission JSON
-        triggerDownload(new Blob([JSON.stringify(submission, null, 2)], { type: 'application/json' }), `pretest_submission_${pid}.json`);
         setBasicInfo(data);
-        setResultData(submission);
+        const submission = buildScreeningResponse(pid, tsStart, logos, eliminatedIds, qualification, data);
+        triggerDownload(new Blob([JSON.stringify(submission, null, 2)], { type: 'application/json' }), `screening_submission_${pid}.json`);
         goScreen('complete');
       };
 
-      if (screen === 'intro')  return <IntroScreen onStart={() => goScreen('qualification')} />;
-      if (screen === 'qualification') return <QualificationScreen value={qualification} onChange={setQualification} onBack={() => window.history.back()} onNext={handleQualificationNext} />;
-      if (screen === 'brief')  return <BriefScreen onStart={goToEliminate} onBack={() => window.history.back()} />;
+      if (screen === 'intro') return <IntroScreen mode="screening" onStart={() => goScreen('qualification')} />;
+      if (screen === 'qualification') return <QualificationScreen value={qualification} onChange={setQualification} onBack={() => goScreen('intro')} onNext={(data) => { setQualification(data); goScreen('brief'); }} />;
+      if (screen === 'brief') return <BriefScreen mode="screening" onStart={() => goScreen('eliminate')} onBack={() => goScreen('qualification')} />;
       if (manifestStatus.loading) return (
-        <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-          <div className="mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-lg font-bold text-slate-950">후보 시안 데이터를 불러오는 중입니다.</p>
-            <p className="mt-2 text-sm text-slate-500">manifest와 이미지 경로를 확인하고 있습니다.</p>
-          </div>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <p className="text-lg font-bold text-slate-950">로딩 중...</p>
         </div>
       );
-      if (manifestStatus.error) return (
-        <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-          <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-white p-8 shadow-sm">
-            <h1 className="text-xl font-bold text-red-700">후보 시안 데이터를 불러오지 못했습니다.</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{manifestStatus.error}</p>
-          </div>
-        </div>
-      );
-      if (screen === 'eliminate') return (
-        <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('eliminateReview')} onBack={() => window.history.back()} />
-      );
-      if (screen === 'eliminateReview') return <EliminationReviewScreen key={eliminatedIds.slice().sort().join(',')} logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onBack={() => window.history.back()} onNext={goToSetAssignment} />;
-      if (screen === 'dimensionRating') return <DimensionRatingScreen key={eliminatedIds.slice().sort().join(',')} candidates={evaluationLogos} initialRatings={dimensionRatingDraft} onRatingsChange={handleDimensionRatingDraftChange} onBack={() => window.history.back()} onNext={handleDimensionRatingNext} />;
-      if (screen === 'setAssignment' && new URLSearchParams(window.location.search).has('admin')) return <SetAssignmentScreen candidates={evaluationLogos} onBack={() => window.history.back()} onNext={handleSetAssignmentNext} />;
-      if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => window.history.back()} onSubmit={handleBasicInfoSubmit} />;
-      if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => { window.location.href = 'about:blank'; }} />;
-      if (screen === 'review') return <ReviewScreen logos={evaluationLogos} ratings={ratings} timestampStart={tsStart} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} onBack={() => window.history.back()} onSubmit={handleFinalSubmit} />;
-      if (screen === 'result') return <ResultSummary data={resultData} onDownloadJSON={() => downloadJSON(resultData)} onDownloadCSV={() => downloadCSV(resultData)} />;
+      if (screen === 'eliminate') return <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('basicInfo')} onBack={() => goScreen('brief')} />;
+      if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('eliminate')} onSubmit={handleBasicInfoSubmit} />;
+      if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => window.location.reload()} />;
+      
+      return null;
+    }
+
+    function AdminApp() {
+      const [files, setFiles] = useState([]);
+      const [submissions, setSubmissions] = useState([]);
+      const [result, setResult] = useState(null);
+
+      const handleFiles = async (e) => {
+        const fileList = Array.from(e.target.files);
+        setFiles(fileList);
+        
+        const parsed = [];
+        for (const file of fileList) {
+          const text = await file.text();
+          try {
+            parsed.push(JSON.parse(text));
+          } catch(err) {
+            console.error('Parse error', file.name, err);
+          }
+        }
+        setSubmissions(parsed);
+      };
+
+      const handleAggregate = async () => {
+        if (submissions.length === 0) return alert('파일을 먼저 업로드해 주세요.');
+        
+        // Load original manifest to get full logo info
+        const logos = await loadCandidateManifest();
+        
+        const excludeCounts = {};
+        logos.forEach(l => excludeCounts[l.id] = 0);
+
+        submissions.forEach(sub => {
+          (sub.excluded_candidate_ids || []).forEach(id => {
+            if (excludeCounts[id] !== undefined) excludeCounts[id]++;
+          });
+        });
+
+        // For each type group A, B, C, pick the 9 least excluded
+        const grouped = { A: [], B: [], C: [] };
+        logos.forEach(logo => grouped[logo.typeCode].push(logo));
+
+        const selectedCandidates = [];
+        ['A', 'B', 'C'].forEach(type => {
+          const sorted = grouped[type].sort((a, b) => excludeCounts[a.id] - excludeCounts[b.id]);
+          const kept = sorted.slice(0, 9); // keep the 9 least excluded
+          
+          kept.forEach(l => {
+            selectedCandidates.push({
+              stimulusId: l.stimulusId,
+              typeGroup: l.typeCode,
+              localCode: l.candidateId,
+              imageSrc: l.imagePath,
+              excludeVoteCount: excludeCounts[l.id],
+              keepVoteCount: submissions.length - excludeCounts[l.id],
+              mainExcludeReason: ""
+            });
+          });
+        });
+
+        const output = {
+          fileType: "selected_27_for_visual_rating",
+          version: "1.0",
+          generatedAt: new Date().toISOString(),
+          source: "admin_screening_aggregation",
+          selectionRule: {
+            totalCandidates: 27,
+            typeComposition: { A: 9, B: 9, C: 9 }
+          },
+          selectedCandidates
+        };
+        setResult(output);
+      };
+
+      const handleDownload = () => {
+        if (!result) return;
+        triggerDownload(new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' }), 'selected_27_for_visual_rating.json');
+      };
 
       return (
-        <div className="min-h-screen bg-gray-50 flex">
-          {/* PC 사이드바 */}
-          {sidebarOpen && (
-            <>
-              <aside className="hidden lg:flex flex-col shrink-0 bg-white border-r border-gray-200" style={{width: sidebarWidth + 'px'}}>
-                <div className="sticky top-0 flex flex-col" style={{height:'100vh'}}>
-                  <div className="flex-1 overflow-y-auto"><CriteriaPanel /></div>
+        <div className="min-h-screen bg-slate-50 p-10 text-slate-900">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <h1 className="text-3xl font-bold tracking-tight">관리자 모드: 예비평가 결과 집계 및 SET 자동 구성</h1>
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h2 className="text-xl font-bold mb-4">1차 선별 데이터 업로드</h2>
+              <input type="file" multiple accept=".json" onChange={handleFiles} className="block w-full mb-4 text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:font-semibold file:bg-slate-100 file:text-slate-700" />
+              <p className="text-sm text-slate-600 mb-4">{submissions.length}개의 파일이 업로드되었습니다.</p>
+              <button onClick={handleAggregate} className="bg-slate-900 text-white px-6 py-2 rounded font-bold hover:bg-slate-800">
+                결과 집계하여 27개 후보 확정
+              </button>
+            </div>
+            
+            {result && (
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 className="text-xl font-bold mb-4">집계 완료</h2>
+                <div className="flex gap-4 mb-4 text-sm">
+                  <div className="bg-slate-50 p-4 rounded border border-slate-100">
+                    <p className="font-bold text-slate-500">A 유형</p>
+                    <p className="text-xl font-bold">{result.selectedCandidates.filter(c => c.typeGroup === 'A').length}개</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded border border-slate-100">
+                    <p className="font-bold text-slate-500">B 유형</p>
+                    <p className="text-xl font-bold">{result.selectedCandidates.filter(c => c.typeGroup === 'B').length}개</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded border border-slate-100">
+                    <p className="font-bold text-slate-500">C 유형</p>
+                    <p className="text-xl font-bold">{result.selectedCandidates.filter(c => c.typeGroup === 'C').length}개</p>
+                  </div>
                 </div>
-              </aside>
-              <div
-                className="hidden lg:block shrink-0 bg-gray-200 hover:bg-gray-400 transition-colors duration-150"
-                style={{width:'4px', cursor:'col-resize'}}
-                onMouseDown={startResize}
-                title="드래그하여 패널 너비 조절"
-              />
-            </>
-          )}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* 모바일 */}
-            <div className="lg:hidden sticky top-0 z-20">
-              <CriteriaPanel mobile />
-              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} cardSize={cardSize} onCardSize={setCardSize} logos={evaluationLogos} ratings={ratings} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} />
-            </div>
-            {/* PC */}
-            <div className="hidden lg:block sticky top-0 z-10">
-              <ProgressBar count={count} total={evaluationLogos.length} allDone={allDone} onSubmit={handleSubmit} onBack={() => setScreen('brief')} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} cardSize={cardSize} onCardSize={setCardSize} logos={evaluationLogos} ratings={ratings} timestampElimStart={tsElimStart} timestampEvalStart={tsEvalStart} />
-            </div>
-            <LogoGrid logos={evaluationLogos} ratings={ratings} filter={filter} sort={sort}
-              cardSize={cardSize} onRate={handleRate} onPreview={setPreviewLogo} />
+                <button onClick={handleDownload} className="bg-emerald-600 text-white px-6 py-2 rounded font-bold hover:bg-emerald-700">
+                  selected_27_for_visual_rating.json 다운로드
+                </button>
+              </div>
+            )}
           </div>
-          {previewLogo && <ImagePreviewModal logo={previewLogo} onClose={() => setPreviewLogo(null)} />}
         </div>
       );
+    }
+
+    function App() {
+      const [mode, setMode] = useState(() => getAppMode());
+
+      useEffect(() => {
+        const onHashChange = () => setMode(getAppMode());
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
+      }, []);
+
+      if (mode === 'visual-rating') return <VisualRatingApp />;
+      if (mode === 'admin') return <AdminApp />;
+      
+      return <ScreeningApp />;
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
