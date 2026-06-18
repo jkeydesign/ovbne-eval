@@ -1076,11 +1076,11 @@
       { key: 'refinement',  label: '정교성', desc: '외곽선, 비례, 세부 형태가 본실험 후보 시안으로 검토 가능한 수준으로 정돈되어 보이는 정도' },
     ];
     const DIM_SCALE = [
-      { value: 1, label: '낮음' },
+      { value: 1, label: '매우\n낮음' },
       { value: 2, label: '다소\n낮음' },
       { value: 3, label: '보통' },
       { value: 4, label: '다소\n높음' },
-      { value: 5, label: '높음' },
+      { value: 5, label: '매우\n높음' },
     ];
 
     function DimRatingCard({ logo, rating, onRate }) {
@@ -1187,7 +1187,14 @@
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-slate-400">척도: 1 낮음 · 2 다소 낮음 · 3 보통 · 4 다소 높음 · 5 높음</p>
+                  <div className="flex items-center gap-2.5 rounded-lg bg-indigo-50/80 border border-indigo-100/90 px-3.5 py-2 text-indigo-950 shadow-[0_1px_2px_rgba(99,102,241,0.05)]">
+                    <span className="inline-flex shrink-0 items-center justify-center rounded bg-indigo-600 px-2 py-0.5 text-[11px] font-extrabold text-white tracking-wider">
+                      평가 척도
+                    </span>
+                    <span className="text-[13px] font-bold text-indigo-950">
+                      1 매우낮음 &middot; 2 다소 낮음 &middot; 3 보통 &middot; 4 다소 높음 &middot; 5 매우높음
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-center justify-center border-l border-slate-100 pl-7">
