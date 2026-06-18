@@ -1084,9 +1084,9 @@
 
     /* ─── DimensionRatingScreen ─────────────────────────── */
     const DIM_DEFS = [
-      { key: 'naturalness', label: '자연성', desc: '형태가 지나치게 어색하거나 인위적으로 깨져 보이지 않고, 하나의 로고 시안으로 자연스럽게 인식되는 정도' },
-      { key: 'harmony',     label: '조화성', desc: '심볼 내부 요소와 문자 요소가 시각적으로 균형 있게 연결되어 보이는 정도' },
-      { key: 'refinement',  label: '정교성', desc: '외곽선, 비례, 세부 형태가 본실험 후보 시안으로 검토 가능한 수준으로 정돈되어 보이는 정도' },
+      { key: 'naturalness', label: '자연성', desc: '로고 형태가 일상적으로 경험 가능한 대상성이나 유기적 형태 단서를 어느 정도 포함하는가?' },
+      { key: 'harmony',     label: '조화성', desc: '로고를 구성하는 시각 요소들이 서로 어울리며 하나의 전체 안에서 균형 있게 조직되는가?' },
+      { key: 'refinement',  label: '정교성', desc: '로고 시안의 시각적 풍부함과 형태의 복잡성·밀도·깊이감이 적절하게 이루어지는가?' },
     ];
     const DIM_SCALE = [
       { value: 1, label: '매우\n낮음' },
