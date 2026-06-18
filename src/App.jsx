@@ -1192,6 +1192,11 @@
                       본 평가는 완성형이나 순위 판단이 아니라, 동일한 갯수의 평균 품질의 SET 시안들의 시각 체계 분포를 확인하기 위한 실험입니다.
                     </p>
                   </div>
+ 
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 text-[13px] text-amber-950 leading-relaxed">
+                    <span className="font-extrabold text-amber-950">💡 실험방법: </span>
+                    1. 자연성 내용을 숙지하고, 자연성만 전체 평가합니다. 순차대로 반복하면 효율적이고 정확하게 평가할 수 있습니다.
+                  </div>
 
                   <div className="grid grid-cols-3 gap-3">
                     {DIM_DEFS.map(d => (
