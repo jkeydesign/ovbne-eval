@@ -1,4 +1,4 @@
-﻿    const firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyDl_O6dQuLzZ2gtt4Yt1Q4D52Rq882nQm8",
       authDomain: "ovbne-eval-74bb6.firebaseapp.com",
       projectId: "ovbne-eval-74bb6",
@@ -2373,10 +2373,10 @@
       if (screen === 'waiting') {
         return (
           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">?곗씠???湲?以?/h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">Data Waiting</h1>
             <p className="text-slate-600">
-              <code>data/selected_27_for_visual_rating.json</code> ?뚯씪??遺덈윭?ㅼ? 紐삵뻽?듬땲??<br/>
-              ?대떦 寃쎈줈???뚯씪???щ컮瑜닿쾶 議댁옱?섎뒗吏 ?뺤씤??二쇱꽭??
+              <code>data/selected_27_for_visual_rating.json</code> is missing.<br/>
+              Please check the folder.
             </p>
           </div>
         );
