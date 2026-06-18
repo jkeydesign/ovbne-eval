@@ -1,4 +1,4 @@
-    const firebaseConfig = {
+﻿    const firebaseConfig = {
       apiKey: "AIzaSyDl_O6dQuLzZ2gtt4Yt1Q4D52Rq882nQm8",
       authDomain: "ovbne-eval-74bb6.firebaseapp.com",
       projectId: "ovbne-eval-74bb6",
@@ -2514,12 +2514,14 @@
       const [tsStart] = useState(() => new Date().toISOString());
 
       useEffect(() => {
+        // Try Firebase first
         db.collection('admin').doc('current_visual_rating_set').get()
           .then(doc => {
             if (doc.exists) {
               setCandidatesData(doc.data());
               setScreen('intro');
             } else {
+              // Fallback to local JSON
               fetch('../data/selected_27_for_visual_rating.json')
                 .then(res => {
                   if (!res.ok) throw new Error('파일을 찾을 수 없습니다.');
@@ -2537,6 +2539,7 @@
           })
           .catch(err => {
             console.error('Firebase error, falling back to local JSON:', err);
+            // Fallback to local JSON
             fetch('../data/selected_27_for_visual_rating.json')
               .then(res => {
                 if (!res.ok) throw new Error('파일을 찾을 수 없습니다.');
@@ -2607,176 +2610,6 @@
       if (screen === 'thanks') return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800 font-bold text-xl">참여해 주셔서 감사합니다! (2차 평가 완료)</div>;
 
       return null;
-    }
-
-        if (!dragId || dragId === targetId) return;
-
-        setManualExclusions(prev => {
-          const newExclusions = new Set(prev);
-          if (isExcludingTarget) {
-            newExclusions.add(dragId);
-            newExclusions.delete(targetId);
-          } else {
-            newExclusions.delete(dragId);
-            newExclusions.add(targetId);
-          }
-          return Array.from(newExclusions);
-        });
-        setDragId(null);
-      };
-
-      const downloadResultJSON = () => {
-        const finalSet = logos.filter(l => !manualExclusions.includes(l.id));
-        if (finalSet.length !== 27) {
-          alert(`현재 선정된 시안이 ${finalSet.length}개입니다. 27개여야만 다운로드할 수 있습니다.\n각 유형(A, B, C)당 9개씩 선정되었는지 확인해 주세요.`);
-          return;
-        }
-
-        const typeA = finalSet.filter(l => l.id.startsWith('A')).length;
-        const typeB = finalSet.filter(l => l.id.startsWith('B')).length;
-        const typeC = finalSet.filter(l => l.id.startsWith('C')).length;
-
-        if (typeA !== 9 || typeB !== 9 || typeC !== 9) {
-          alert(`각 유형별로 9개씩 선정해야 합니다.\n현재 A: ${typeA}개, B: ${typeB}개, C: ${typeC}개`);
-          return;
-        }
-
-        const outData = {
-          fileType: "selected_27_for_visual_rating",
-          exportedAt: new Date().toISOString(),
-          selectedCandidates: finalSet.map(l => ({
-            stimulusId: l.id,
-            typeGroup: l.id.charAt(0),
-            localCode: l.id.substring(1),
-            imageSrc: l.src,
-          })),
-        };
-        const blob = new Blob([JSON.stringify(outData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'selected_27_for_visual_rating.json';
-        a.click();
-      };
-
-      return (
-        <PasswordProtected>
-          <div className="min-h-screen bg-slate-50 p-10 text-slate-900">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">관리자 모드: 1차 평가 집계</h1>
-                <button onClick={downloadResultJSON} className="bg-slate-900 text-white px-5 py-2.5 rounded-lg font-bold shadow hover:bg-slate-800 transition">최종 27개 데이터 내보내기 (JSON)</button>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center">
-                <button onClick={fetchFromFirebase} disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50">Firebase에서 응답 불러오기</button>
-                <div className="text-sm text-slate-500">또는 파일 업로드:</div>
-                <input type="file" multiple accept=".json" onChange={handleFiles} className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition" />
-                <div className="ml-auto text-sm font-medium bg-slate-100 px-3 py-1.5 rounded-full">총 응답 수: {submissions.length}명</div>
-              </div>
-
-              <div className="flex space-x-1 border-b border-slate-200">
-                {['A', 'B', 'C'].map(tab => (
-                  <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>유형 {tab}</button>
-                ))}
-              </div>
-
-              {['A', 'B', 'C'].map(tab => {
-                if (tab !== activeTab) return null;
-                const tabLogos = logos.filter(l => l.id.startsWith(tab));
-                
-                let selectedList = tabLogos.filter(l => !manualExclusions.includes(l.id));
-                let excludedList = tabLogos.filter(l => manualExclusions.includes(l.id));
-                
-                selectedList.sort((a, b) => (stats[b.id]?.keep || 0) - (stats[a.id]?.keep || 0));
-                excludedList.sort((a, b) => (stats[b.id]?.exclude || 0) - (stats[a.id]?.exclude || 0));
-
-                return (
-                  <div key={tab} className="grid grid-cols-2 gap-8">
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                      <div className="flex justify-between items-end mb-4">
-                        <div>
-                          <h2 className="text-xl font-bold text-slate-800">선정 후보</h2>
-                          <p className="text-sm text-slate-500">다음 실험에 사용될 9개 시안 (드래그하여 순위 변경/제외)</p>
-                        </div>
-                        <div className={`text-lg font-black ${selectedList.length === 9 ? 'text-green-600' : 'text-red-500'}`}>{selectedList.length} / 9</div>
-                      </div>
-                      <div className="space-y-3 min-h-[400px]">
-                        {selectedList.map((l, i) => (
-                          <div 
-                            key={l.id} 
-                            draggable 
-                            onDragStart={(e) => handleDragStart(e, l.id)}
-                            onDragOver={(e) => handleDragOver(e, l.id)}
-                            onDrop={(e) => handleDrop(e, l.id, false)}
-                            className={`flex items-center gap-4 p-3 rounded-lg border-2 bg-slate-50 cursor-grab active:cursor-grabbing transition-all ${dragOver === l.id ? 'border-blue-400 bg-blue-50' : 'border-slate-100 hover:border-slate-300'}`}
-                          >
-                            <div className="text-lg font-black text-slate-400 w-6 text-center">{i + 1}</div>
-                            <img src={l.src} alt={l.id} className="w-16 h-16 object-contain bg-white rounded shadow-sm" />
-                            <div className="flex-1">
-                              <div className="font-bold text-slate-900">{l.id}</div>
-                              <div className="text-xs text-slate-500">유지 표: <span className="font-bold text-blue-600">{stats[l.id]?.keep || 0}</span> | 제외 표: {stats[l.id]?.exclude || 0}</div>
-                            </div>
-                            <button onClick={() => toggleExclusion(l.id)} className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 rounded hover:bg-red-100 transition">제외하기 ➔</button>
-                          </div>
-                        ))}
-                        {selectedList.length === 0 && <div className="py-10 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">후보가 없습니다. 우측에서 드래그해 오세요.</div>}
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-100 p-6 rounded-xl border border-slate-200">
-                      <div className="flex justify-between items-end mb-4">
-                        <div>
-                          <h2 className="text-xl font-bold text-slate-800">제외된 시안</h2>
-                          <p className="text-sm text-slate-500">실험에서 탈락할 7개 시안</p>
-                        </div>
-                        <div className={`text-lg font-black ${excludedList.length === 7 ? 'text-green-600' : 'text-slate-500'}`}>{excludedList.length} / 7</div>
-                      </div>
-                      <div className="space-y-3 min-h-[400px]">
-                        {excludedList.map((l, i) => (
-                          <div 
-                            key={l.id} 
-                            draggable 
-                            onDragStart={(e) => handleDragStart(e, l.id)}
-                            onDragOver={(e) => handleDragOver(e, l.id)}
-                            onDrop={(e) => handleDrop(e, l.id, true)}
-                            className={`flex items-center gap-4 p-3 rounded-lg border-2 bg-white cursor-grab active:cursor-grabbing opacity-75 transition-all ${dragOver === l.id ? 'border-blue-400 bg-blue-50 opacity-100' : 'border-slate-200 hover:border-slate-300 hover:opacity-100'}`}
-                          >
-                            <img src={l.src} alt={l.id} className="w-12 h-12 object-contain bg-slate-50 rounded" />
-                            <div className="flex-1">
-                              <div className="font-bold text-slate-700">{l.id}</div>
-                              <div className="text-xs text-slate-500">제외 표: <span className="font-bold text-red-500">{stats[l.id]?.exclude || 0}</span> | 유지 표: {stats[l.id]?.keep || 0}</div>
-                            </div>
-                            <button onClick={() => toggleExclusion(l.id)} className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition">⬅ 살리기</button>
-                          </div>
-                        ))}
-                        {excludedList.length === 0 && <div className="py-10 text-center text-slate-400 border-2 border-dashed border-slate-300 rounded-lg">제외된 항목이 없습니다. 좌측에서 드래그해 오세요.</div>}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </PasswordProtected>
-      );
-    }
-
-    function PasswordProtected({ children }) {
-      const [pwd, setPwd] = useState('');
-      const [authed, setAuthed] = useState(false);
-      
-      if (authed) return children;
-      
-      return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 max-w-sm w-full">
-            <h2 className="text-xl font-bold mb-4">관리자 로그인</h2>
-            <input type="password" value={pwd} onChange={e => setPwd(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { if (pwd === '1234') setAuthed(true); else alert('비밀번호가 틀렸습니다.'); } }} placeholder="비밀번호 입력" className="w-full border rounded p-2 mb-4" />
-            <button onClick={() => { if (pwd === '1234') setAuthed(true); else alert('비밀번호가 틀렸습니다.'); }} className="w-full bg-slate-900 text-white font-bold py-2 rounded">확인</button>
-          </div>
-        </div>
-      );
     }
 
     function Admin2App() {
