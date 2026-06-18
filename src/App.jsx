@@ -2680,6 +2680,7 @@
                     <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                          <th className="p-3 text-center w-28 bg-slate-100/50">작업</th>
                           <th className="p-3">기입 ID/이름</th>
                           <th className="p-3">제출 시각</th>
                           <th className="p-3">연령대</th>
@@ -2693,7 +2694,6 @@
                           <th className="p-3 text-blue-600">전화번호</th>
                           <th className="p-3 text-blue-600">이메일</th>
                           <th className="p-3">제외 시안 코드 목록</th>
-                          <th className="p-3 text-center">작업</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -2718,6 +2718,24 @@
                           const name = contact.name || basic.name || sub.evaluatorCode || basic.evaluatorCode || actionSubmitBasic.name || actionSubmitBasic.evaluatorCode || 'N/A';
                           return (
                             <tr key={idx} className="hover:bg-slate-50">
+                              <td className="p-3 text-xs text-center border-r border-slate-100 bg-slate-50/30">
+                                <div className="flex gap-1 justify-center">
+                                  <button
+                                    onClick={() => setSelectedSubmission(sub)}
+                                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded transition text-[10px]"
+                                    title="상세 보기"
+                                  >
+                                    🔍 상세
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSubmission(sub)}
+                                    className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded transition text-[10px]"
+                                    title="삭제"
+                                  >
+                                    ❌ 삭제
+                                  </button>
+                                </div>
+                              </td>
                               <td className="p-3 font-mono text-xs font-bold text-blue-600">{sub.evaluatorCode || basic.evaluatorCode || 'N/A'}</td>
                               <td className="p-3 text-xs">{sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ko-KR') : 'N/A'}</td>
                               <td className="p-3 text-xs">{profile.ageGroup || basic.ageGroup || 'N/A'}</td>
@@ -2731,22 +2749,6 @@
                               <td className="p-3 text-xs">{phone}</td>
                               <td className="p-3 text-xs">{email}</td>
                               <td className="p-3 text-xs max-w-xs truncate" title={excludedList}>{excludedList || '없음'}</td>
-                              <td className="p-3 text-xs text-center flex gap-1 justify-center">
-                                <button
-                                  onClick={() => setSelectedSubmission(sub)}
-                                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded transition text-[10px]"
-                                  title="상세 보기"
-                                >
-                                  🔍 상세
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteSubmission(sub)}
-                                  className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded transition text-[10px]"
-                                  title="삭제"
-                                >
-                                  ❌ 삭제
-                                </button>
-                              </td>
                             </tr>
                           );
                         })}
@@ -3495,6 +3497,7 @@
                       <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                            <th className="p-3 text-center w-28 bg-slate-100/50">작업</th>
                             <th className="p-3">기입 ID/이름</th>
                             <th className="p-3">제출 시각</th>
                             <th className="p-3">연령대</th>
@@ -3508,7 +3511,6 @@
                             <th className="p-3 text-blue-600">전화번호</th>
                             <th className="p-3 text-blue-600">이메일</th>
                             <th className="p-3">평가결과 길이</th>
-                            <th className="p-3 text-center">작업</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -3539,6 +3541,24 @@
 
                             return (
                               <tr key={idx} className="hover:bg-slate-50">
+                                <td className="p-3 text-xs text-center border-r border-slate-100 bg-slate-50/30">
+                                  <div className="flex gap-1 justify-center">
+                                    <button
+                                      onClick={() => setSelectedSubmission(sub)}
+                                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded transition text-[10px]"
+                                      title="상세 보기"
+                                    >
+                                      🔍 상세
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteSubmission(sub)}
+                                      className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded transition text-[10px]"
+                                      title="삭제"
+                                    >
+                                      ❌ 삭제
+                                    </button>
+                                  </div>
+                                </td>
                                 <td className="p-3 font-mono text-xs font-bold text-blue-600">{sub.participant_id || sub.evaluatorCode || basic.evaluatorCode || 'N/A'}</td>
                                 <td className="p-3 text-xs">{sub.timestamp_submit ? new Date(sub.timestamp_submit).toLocaleString('ko-KR') : 'N/A'}</td>
                                 <td className="p-3 text-xs">{ageGroup || 'N/A'}</td>
@@ -3552,22 +3572,6 @@
                                 <td className="p-3 text-xs">{phone}</td>
                                 <td className="p-3 text-xs">{email}</td>
                                 <td className="p-3 text-xs font-mono text-slate-500">{(sub.ratings || []).length}개</td>
-                                <td className="p-3 text-xs text-center flex gap-1 justify-center">
-                                  <button
-                                    onClick={() => setSelectedSubmission(sub)}
-                                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded transition text-[10px]"
-                                    title="상세 보기"
-                                  >
-                                    🔍 상세
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteSubmission(sub)}
-                                    className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded transition text-[10px]"
-                                    title="삭제"
-                                  >
-                                    ❌ 삭제
-                                  </button>
-                                </td>
                               </tr>
                             );
                           })}
