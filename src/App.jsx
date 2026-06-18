@@ -2188,237 +2188,77 @@
       );
     }
 
-    function ResultTable({ title, rows, startRank, dim = false }) {
-      return (
-        <section className="mb-8">
-          <h2 className={`text-sm font-semibold mb-3 ${dim ? 'text-gray-600' : 'text-gray-800'}`}>{title}</h2>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  {['순위','시안','브랜드(B)','시각(V)','종합'].map((h,i) => (
-                    <th key={h} className={`py-2.5 px-3 text-xs font-medium text-gray-500 ${i<2?'text-left':'text-right'} ${i===0?'w-12':i===1?'w-16':''}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rows.map((l, i) => (
-                  <tr key={l.logo_id} className="hover:bg-gray-50">
-                    <td className="py-2 px-3 text-xs text-gray-400">{i + startRank}</td>
-                    <td className={`py-2 px-3 font-mono text-xs font-medium ${dim?'text-gray-500':'text-gray-800'}`}>{l.logo_id}</td>
-                    <td className={`py-2 px-3 text-right text-sm ${dim?'text-gray-400':'text-gray-700'}`}>{l.brand_score}</td>
-                    <td className={`py-2 px-3 text-right text-sm ${dim?'text-gray-400':'text-gray-700'}`}>{l.visual_score}</td>
-                    <td className={`py-2 px-3 text-right text-sm font-semibold ${dim?'text-gray-500':'text-gray-900'}`}>{l.total_score?.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      );
-    }
-
-    /* ─── ProgressBar ─────────────────────────────────────── */
-    const PB_FILTERS = [{value:'all',label:'전체'},{value:'incomplete',label:'미완료'},{value:'completed',label:'완료'}];
-    const PB_SORTS = [{value:'default',label:'기본 순서'},{value:'brand_desc',label:'브랜드 점수 높은 순'},{value:'visual_desc',label:'시각 점수 높은 순'},{value:'total_desc',label:'종합 점수 높은 순'},{value:'incomplete_first',label:'미완료 우선'}];
-
-    function ProgressBar({ count, total, allDone, onSubmit, onBack, filter, onFilter, sort, onSort, cardSize, onCardSize, logos, ratings: rtgs, timestampElimStart, timestampEvalStart }) {
-      const filteredCount = logos
-        ? filter==='incomplete' ? logos.filter(l=>!(rtgs[l.id]?.brand_score&&rtgs[l.id]?.visual_score)).length
-        : filter==='completed'  ? logos.filter(l=> (rtgs[l.id]?.brand_score&&rtgs[l.id]?.visual_score)).length
-        : logos.length : total;
-      const calcMin = ts => ts ? Math.floor((Date.now()-new Date(ts).getTime())/60000) : 0;
-      const [totalMin, setTotalMin] = useState(()=>calcMin(timestampElimStart));
-      const [evalMin,  setEvalMin]  = useState(()=>calcMin(timestampEvalStart));
-      useEffect(() => {
-        const tick = () => { setTotalMin(calcMin(timestampElimStart)); setEvalMin(calcMin(timestampEvalStart)); };
-        const id = setInterval(tick, 30000);
-        return () => clearInterval(id);
-      }, [timestampElimStart, timestampEvalStart]);
-      return (
-        <div className="bg-white border-b border-gray-200">
-          {/* 1행 */}
-          <div className="px-4 py-2.5 flex items-center gap-3">
-            {onBack && (
-              <button onClick={onBack} className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">← 이전</button>
-            )}
-            <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              평가 완료: <span className="font-bold text-gray-900">{count}</span><span className="text-gray-400"> / {total}</span>
-            </div>
-            <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-gray-800 h-1.5 rounded-full transition-all duration-300" style={{width:`${count/total*100}%`}} />
-            </div>
-            {timestampElimStart && (
-              <div className={`text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded flex flex-col items-end gap-0.5 ${totalMin<10?'text-amber-600 bg-amber-50':'text-gray-400'}`}>
-                <span>총 <span className="font-semibold">{totalMin}분</span> 경과{totalMin<10&&<span className="ml-1" style={{fontSize:'10px'}}>(권장 10분)</span>}</span>
-                {timestampEvalStart && <span style={{fontSize:'10px'}}>평가 {evalMin}분 / 탈락 {totalMin-evalMin}분</span>}
-              </div>
-            )}
-            <div className="flex flex-col items-end gap-0.5">
-              <button onClick={onSubmit} disabled={!allDone}
-                title={!allDone?'아직 평가가 완료되지 않은 로고가 있습니다.':undefined}
-                className={`px-4 py-1.5 text-xs font-semibold rounded whitespace-nowrap transition-colors ${allDone?'bg-gray-900 text-white hover:bg-gray-700':'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
-                제출 전 검토
-              </button>
-              {!allDone && <span className="text-gray-400 whitespace-nowrap" style={{fontSize:'10px'}}>미완료 {total-count}개 남음</span>}
-            </div>
-          </div>
-          {/* 2행: 필터·정렬·슬라이더 */}
-          {onFilter && (
-            <div className="px-4 pb-2 flex items-center gap-2 border-t border-gray-100 pt-2">
-              <div className="flex gap-1">
-                {PB_FILTERS.map(f=>(
-                  <button key={f.value} onClick={()=>onFilter(f.value)}
-                    className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${filter===f.value?'bg-gray-800 text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-              <select value={sort} onChange={e=>onSort(e.target.value)}
-                className="text-xs px-2 py-1 border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:border-gray-400">
-                {PB_SORTS.map(s=><option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-              <div className="flex items-center gap-2 ml-auto">
-                <span className="text-gray-400 shrink-0" style={{fontSize:'10px'}}>카드 크기</span>
-                <input type="range" min="100" max="600" step="10" value={cardSize}
-                  onChange={e=>onCardSize(Number(e.target.value))}
-                  style={{width:'112px', accentColor:'#1f2937', cursor:'pointer'}} />
-                <span className="text-gray-400 shrink-0" style={{fontSize:'10px', width:'40px', textAlign:'right'}}>{cardSize}px</span>
-              </div>
-              <span className="text-xs text-gray-400 shrink-0">{filteredCount}개 표시 중</span>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    /* ─── App ─────────────────────────────────────────────── */
-    function calcPreviewPos(rect) {
-      const W=240, H=270;
-      let left = rect.right + 10;
-      if (left + W > window.innerWidth - 8) left = rect.left - W - 10;
-      return { top: Math.max(8, Math.min(rect.top, window.innerHeight - H - 8)), left: Math.max(8, left) };
-    }
-
-    function getAppMode() {
-      const hash = window.location.hash;
-      const search = window.location.search;
-      if (hash.includes('#/screening') || search.includes('mode=screening')) return 'screening';
-      if (hash.includes('#/visual-rating') || search.includes('mode=visual-rating')) return 'visual-rating';
-      if (hash.includes('#/admin') || search.includes('mode=admin')) return 'admin';
-      return 'screening';
-    }
-
-    function FileUploadScreen({ onDataLoaded }) {
-      const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          try {
-            const data = JSON.parse(ev.target.result);
-            if (data.fileType !== 'selected_27_for_visual_rating') {
-              alert('유효하지 않은 파일 형식입니다. (fileType: selected_27_for_visual_rating 필요)');
-              return;
-            }
-            onDataLoaded(data);
-          } catch(err) {
-            alert('파일을 파싱하는 중 오류가 발생했습니다.');
-          }
-        };
-        reader.readAsText(file);
-      };
-      return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
-            <h1 className="text-xl font-bold mb-3 text-slate-900">1차 선별 결과 업로드</h1>
-            <p className="text-sm text-slate-600 mb-6">
-              관리자 모드에서 집계된 <code>selected_27_for_visual_rating.json</code> 파일을 업로드해 주세요.
-            </p>
-            <input type="file" accept=".json" onChange={handleFileChange} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" />
-          </div>
-        </div>
-      );
-    }
-
-    function VisualRatingApp() {
-      const [screen, setScreen] = useState('loading');
-      const [candidatesData, setCandidatesData] = useState(null);
-      const [ratings, setRatings] = useState({});
+    function ScreeningApp() {
+      const [screen, setScreen] = useState('intro');
+      const [logos, setLogos] = useState([]);
+      const [manifestStatus, setManifestStatus] = useState({ loading: true, error: null });
+      const [eliminatedIds, setEliminatedIds] = useState([]);
+      const [qualification, setQualification] = useState({});
       const [basicInfo, setBasicInfo] = useState({});
+      
       const [pid] = useState(generateId);
       const [tsStart] = useState(() => new Date().toISOString());
 
       useEffect(() => {
-        fetch('../data/selected_27_for_visual_rating.json')
-          .then(res => {
-            if (!res.ok) throw new Error('파일을 찾을 수 없습니다.');
-            return res.json();
+        let active = true;
+        loadCandidateManifest()
+          .then(records => {
+            if (!active) return;
+            setLogos(records);
+            setManifestStatus({ loading: false, error: null });
           })
-          .then(data => {
-            setCandidatesData(data);
-            setScreen('intro');
-          })
-          .catch(err => {
-            console.error('Failed to load dataset:', err);
-            setScreen('waiting');
+          .catch(error => {
+            if (!active) return;
+            setManifestStatus({ loading: false, error: error.message });
           });
+        return () => { active = false; };
       }, []);
 
-      const goScreen = (s) => setScreen(s);
+      const goScreen = (nextScreen) => {
+        setScreen(nextScreen);
+      };
 
-      if (screen === 'loading') {
-        return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">데이터를 불러오는 중입니다...</div>;
-      }
-      if (screen === 'waiting') {
-        return (
-          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">데이터 대기 중</h1>
-            <p className="text-slate-600">
-              <code>data/selected_27_for_visual_rating.json</code> 파일을 불러오지 못했습니다.<br/>
-              해당 경로에 파일이 올바르게 존재하는지 확인해 주세요.
-            </p>
-          </div>
-        );
-      }
-      if (!candidatesData) return null;
-
-      const logos = candidatesData.selectedCandidates.map(c => ({
-        id: c.stimulusId,
-        stimulusId: c.stimulusId,
-        typeCode: c.typeGroup,
-        candidateId: c.localCode,
-        imagePath: c.imageSrc,
-      }));
-
-      if (screen === 'intro') return <IntroScreen mode="visual-rating" onStart={() => goScreen('brief')} />;
-      if (screen === 'brief') return <BriefScreen mode="visual-rating" onBack={() => goScreen('upload')} onStart={() => goScreen('rating')} />;
-      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={(res) => { setRatings(res); goScreen('basicInfo'); }} />;
-      if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('rating')} onSubmit={(info) => {
-        setBasicInfo(info);
-        const dimensionRatingsArr = logos.map(logo => ({
-          stimulusId: logo.stimulusId,
-          typeCode: logo.typeCode,
-          candidateId: logo.candidateId,
-          ratings: ratings[logo.id]
-        }));
-        const docData = {
-          participant_id: pid,
-          timestamp_start: tsStart,
-          timestamp_submit: new Date().toISOString(),
-          basic_info: info,
-          ratings: dimensionRatingsArr,
-        };
-        db.collection('visual_rating_submissions').add(docData)
-          .then(() => goScreen('thanks'))
-          .catch(err => {
-            console.error(err);
-            alert('데이터 저장 실패. 다시 시도해 주세요.');
+      const handleBasicInfoSubmit = (data) => {
+        setBasicInfo(data);
+        const submission = buildScreeningResponse(pid, tsStart, logos, eliminatedIds, qualification, data);
+        db.collection('screening_submissions').add(submission)
+          .then(() => goScreen('complete'))
+          .catch(error => {
+            console.error(error);
+            alert('제출에 실패했습니다. 다시 시도해 주세요.\n' + error.message);
           });
-      }} />;
-      if (screen === 'thanks') return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800 font-bold text-xl">참여해 주셔서 감사합니다! (2차 평가 완료)</div>;
+      };
 
+      if (screen === 'intro') return <IntroScreen mode="screening" onStart={() => goScreen('qualification')} />;
+      if (screen === 'qualification') return <QualificationScreen value={qualification} onChange={setQualification} onBack={() => goScreen('intro')} onNext={(data) => { setQualification(data); goScreen('brief'); }} />;
+      if (screen === 'brief') return <BriefScreen mode="screening" onStart={() => goScreen('eliminate')} onBack={() => goScreen('qualification')} />;
+      if (manifestStatus.loading) return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <p className="text-lg font-bold text-slate-950">로딩 중...</p>
+        </div>
+      );
+      if (screen === 'eliminate') return <EliminationScreen logos={logos} excludedIds={eliminatedIds} onExcludeChange={setEliminatedIds} onNext={() => goScreen('basicInfo')} onBack={() => goScreen('brief')} />;
+      if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('eliminate')} onSubmit={handleBasicInfoSubmit} />;
+      if (screen === 'complete') return <SubmissionCompleteScreen onFinish={() => window.location.reload()} />;
+      
       return null;
+    }
+
+    function PasswordProtected({ children }) {
+      const [pwd, setPwd] = useState('');
+      const [authed, setAuthed] = useState(false);
+      
+      if (authed) return children;
+      
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">관리자 로그인</h2>
+            <input type="password" value={pwd} onChange={e => setPwd(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { if (pwd === '1234') setAuthed(true); else alert('비밀번호가 틀렸습니다.'); } }} placeholder="비밀번호 입력" className="w-full border rounded p-2 mb-4" />
+            <button onClick={() => { if (pwd === '1234') setAuthed(true); else alert('비밀번호가 틀렸습니다.'); }} className="w-full bg-slate-900 text-white font-bold py-2 rounded">확인</button>
+          </div>
+        </div>
+      );
     }
 
     function AdminApp() {
@@ -2460,60 +2300,315 @@
           try {
             parsed.push(JSON.parse(text));
           } catch(err) {
-            console.error('Failed to parse', file.name);
+            console.error('Parse error', file.name, err);
           }
         }
         setSubmissions(parsed);
       };
 
       useEffect(() => {
-        if (window.LOGOS) {
-          setLogos(window.LOGOS);
-          const initialExclusions = window.LOGOS.map(l => l.id).filter(id => {
-            const idx = parseInt(id.replace(/[^0-9]/g, ''));
-            return idx > 9;
+        if (submissions.length === 0) return;
+        loadCandidateManifest().then(manifest => {
+          setLogos(manifest);
+          
+          const excludeCounts = {};
+          manifest.forEach(l => excludeCounts[l.id] = 0);
+          
+          submissions.forEach(sub => {
+            (sub.excludedCandidateIds || sub.excluded_candidate_ids || []).forEach(id => {
+              if (excludeCounts[id] !== undefined) excludeCounts[id]++;
+            });
           });
-          setManualExclusions(initialExclusions);
+          
+          setStats(excludeCounts);
+          
+          const grouped = { A: [], B: [], C: [] };
+          manifest.forEach(logo => grouped[logo.typeCode].push(logo));
+          
+          const defaultExclusions = [];
+          ['A', 'B', 'C'].forEach(type => {
+            const sorted = grouped[type].sort((a, b) => excludeCounts[b.id] - excludeCounts[a.id]);
+            const excluded = sorted.slice(0, 7);
+            excluded.forEach(l => defaultExclusions.push(l.id));
+          });
+          
+          setManualExclusions(defaultExclusions);
+        });
+      }, [submissions]);
+
+      const moveTo = (id, target) => {
+        const logo = logos.find(item => item.id === id);
+        if (!logo) return;
+        const isCurrentlyExcluded = manualExclusions.includes(id);
+
+        if (target === 'excluded') {
+          if (isCurrentlyExcluded) return;
+          const currentExcludedCount = manualExclusions.filter(eid => logos.find(l => l.id === eid)?.typeCode === logo.typeCode).length;
+          if (currentExcludedCount >= 7) {
+             alert(`유형별 제외 시안은 7개여야 합니다. (A, B, C 그룹별로 각각 9개 유지, 7개 제외)`);
+             return;
+          }
+          setManualExclusions([...manualExclusions, id]);
+        } else {
+          if (!isCurrentlyExcluded) return;
+          const currentSelectedCount = logos.filter(l => l.typeCode === logo.typeCode && !manualExclusions.includes(l.id)).length;
+          if (currentSelectedCount >= 9) {
+             alert(`유형별 선정 시안은 9개여야 합니다. (A, B, C 그룹별로 각각 9개 유지, 7개 제외)`);
+             return;
+          }
+          setManualExclusions(manualExclusions.filter(item => item !== id));
         }
-      }, []);
+      };
+
+      const handleDrop = (target) => {
+        if (dragId) moveTo(dragId, target);
+        setDragId(null);
+        setDragOver(null);
+      };
+
+      const handleDownload = () => {
+        const finalSet = logos.filter(l => !manualExclusions.includes(l.id));
+        if (finalSet.length !== 27) {
+          alert(`현재 선정된 시안이 ${finalSet.length}개입니다. 27개여야만 다운로드할 수 있습니다.\n각 유형(A, B, C)당 9개씩 선정되었는지 확인해 주세요.`);
+          return;
+        }
+
+        const typeA = finalSet.filter(l => l.id.startsWith('A')).length;
+        const typeB = finalSet.filter(l => l.id.startsWith('B')).length;
+        const typeC = finalSet.filter(l => l.id.startsWith('C')).length;
+
+        if (typeA !== 9 || typeB !== 9 || typeC !== 9) {
+          alert(`각 유형별로 9개씩 선정해야 합니다.\n현재 A: ${typeA}개, B: ${typeB}개, C: ${typeC}개`);
+          return;
+        }
+
+        const selectedCandidates = finalSet.map(l => ({
+          stimulusId: l.stimulusId,
+          typeGroup: l.typeCode,
+          localCode: l.candidateId,
+          imageSrc: l.imagePath,
+          excludeVoteCount: stats[l.id] || 0,
+          keepVoteCount: submissions.length - (stats[l.id] || 0),
+          mainExcludeReason: ""
+        }));
+
+        const output = {
+          fileType: "selected_27_for_visual_rating",
+          version: "1.0",
+          generatedAt: new Date().toISOString(),
+          source: "admin_screening_aggregation_manual",
+          selectionRule: {
+            totalCandidates: 27,
+            typeComposition: { A: 9, B: 9, C: 9 }
+          },
+          selectedCandidates
+        };
+        
+        triggerDownload(new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' }), 'selected_27_for_visual_rating.json');
+      };
+
+      const activeLogos = logos.filter(l => l.typeCode === activeTab);
+      const activeCandidates = activeLogos.filter(l => !manualExclusions.includes(l.id));
+      const activeExcluded = activeLogos.filter(l => manualExclusions.includes(l.id));
+
+      const LogoCard = ({ logo }) => {
+        const excl = stats[logo.id] || 0;
+        const keep = submissions.length - excl;
+        return (
+          <div
+            draggable
+            onDragStart={(e) => { setDragId(logo.id); e.dataTransfer.setData('text/plain', logo.id); }}
+            className="bg-white border border-slate-200 rounded p-2 text-center shadow-sm cursor-grab active:cursor-grabbing hover:border-slate-400"
+          >
+            <img src={logo.imagePath} alt={logo.id} className="w-full aspect-square object-contain mb-2" />
+            <div className="font-bold text-xs text-slate-800">{logo.candidateId}</div>
+            <div className="text-[11px] mt-1 bg-slate-100 rounded py-0.5">
+              <span className="text-rose-600 font-bold">제외 {excl}</span> / <span className="text-emerald-600 font-bold">유지 {keep}</span>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <PasswordProtected>
+          <div className="min-h-screen bg-slate-50 p-10 text-slate-900">
+            <div className="max-w-6xl mx-auto space-y-6">
+              <h1 className="text-3xl font-bold tracking-tight">관리자 모드: 1차 예비시안 결과 집계 및 SET 구성</h1>
+              
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">데이터 취합</h2>
+                  <p className="text-sm text-slate-600">Firebase에서 결과를 불러오거나 JSON 파일을 업로드하세요. 현재 {submissions.length}개의 응답 데이터가 로드되었습니다.</p>
+                </div>
+                <div className="flex gap-4">
+                  <button onClick={fetchFromFirebase} disabled={loading} className="px-4 py-2 bg-slate-900 text-white font-bold rounded hover:bg-slate-800 transition">
+                    {loading ? '불러오는 중...' : 'Firebase에서 자동으로 불러오기'}
+                  </button>
+                  <label className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded cursor-pointer hover:bg-slate-200 border border-slate-200">
+                    파일 업로드
+                    <input type="file" multiple accept=".json" onChange={handleFiles} className="hidden" />
+                  </label>
+                </div>
+              </div>
+              
+              {logos.length > 0 && submissions.length > 0 && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <div className="flex gap-2">
+                      {['A', 'B', 'C'].map(code => (
+                        <button key={code} onClick={() => setActiveTab(code)} className={`px-4 py-2 rounded font-bold transition ${activeTab === code ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}>
+                          {code} 유형
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={handleDownload} className="bg-emerald-600 text-white px-6 py-2 rounded font-bold hover:bg-emerald-700">
+                      최종 27개 세트 다운로드
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 grid grid-cols-2 gap-8 bg-slate-100">
+                    <div 
+                      className={`bg-white rounded-xl border-2 p-4 transition ${dragOver === 'candidate' ? 'border-blue-400 bg-blue-50' : 'border-transparent'}`}
+                      onDragOver={(e) => { e.preventDefault(); setDragOver('candidate'); }}
+                      onDragLeave={() => setDragOver(null)}
+                      onDrop={(e) => { e.preventDefault(); handleDrop('candidate'); }}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-slate-800 text-lg">선정된 후보</h3>
+                        <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded text-sm">{activeCandidates.length} / 9</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {activeCandidates.map(logo => <LogoCard key={logo.id} logo={logo} />)}
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`bg-white rounded-xl border-2 p-4 transition ${dragOver === 'excluded' ? 'border-blue-400 bg-blue-50' : 'border-transparent'}`}
+                      onDragOver={(e) => { e.preventDefault(); setDragOver('excluded'); }}
+                      onDragLeave={() => setDragOver(null)}
+                      onDrop={(e) => { e.preventDefault(); handleDrop('excluded'); }}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-slate-800 text-lg">제외된 시안</h3>
+                        <span className="bg-rose-100 text-rose-800 font-bold px-2 py-1 rounded text-sm">{activeExcluded.length} / 7</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {activeExcluded.map(logo => <LogoCard key={logo.id} logo={logo} />)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </PasswordProtected>
+      );
+    }
+
+    function VisualRatingApp() {
+      const [screen, setScreen] = useState('loading');
+      const [candidatesData, setCandidatesData] = useState(null);
+      const [ratings, setRatings] = useState({});
+      const [basicInfo, setBasicInfo] = useState({});
+      const [pid] = useState(generateId);
+      const [tsStart] = useState(() => new Date().toISOString());
 
       useEffect(() => {
-        if (!submissions.length || !logos.length) return;
-        const newStats = {};
-        logos.forEach(l => {
-          newStats[l.id] = { keep: 0, exclude: 0 };
-        });
-        submissions.forEach(sub => {
-          if (!sub.eliminated_logos) return;
-          const eliminatedSet = new Set(sub.eliminated_logos);
-          logos.forEach(l => {
-            if (eliminatedSet.has(l.id)) newStats[l.id].exclude++;
-            else newStats[l.id].keep++;
+        db.collection('admin').doc('current_visual_rating_set').get()
+          .then(doc => {
+            if (doc.exists) {
+              setCandidatesData(doc.data());
+              setScreen('intro');
+            } else {
+              fetch('../data/selected_27_for_visual_rating.json')
+                .then(res => {
+                  if (!res.ok) throw new Error('파일을 찾을 수 없습니다.');
+                  return res.json();
+                })
+                .then(data => {
+                  setCandidatesData(data);
+                  setScreen('intro');
+                })
+                .catch(err => {
+                  console.error('Failed to load local dataset:', err);
+                  setScreen('waiting');
+                });
+            }
+          })
+          .catch(err => {
+            console.error('Firebase error, falling back to local JSON:', err);
+            fetch('../data/selected_27_for_visual_rating.json')
+              .then(res => {
+                if (!res.ok) throw new Error('파일을 찾을 수 없습니다.');
+                return res.json();
+              })
+              .then(data => {
+                setCandidatesData(data);
+                setScreen('intro');
+              })
+              .catch(err2 => {
+                console.error('Failed to load local dataset:', err2);
+                setScreen('waiting');
+              });
           });
-        });
-        setStats(newStats);
-      }, [submissions, logos]);
+      }, []);
 
-      const toggleExclusion = (logoId) => {
-        setManualExclusions(prev => {
-          if (prev.includes(logoId)) return prev.filter(id => id !== logoId);
-          return [...prev, logoId];
-        });
-      };
+      const goScreen = (s) => setScreen(s);
 
-      const handleDragStart = (e, id) => {
-        setDragId(id);
-        e.dataTransfer.effectAllowed = 'move';
-      };
+      if (screen === 'loading') {
+        return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">데이터를 불러오는 중입니다...</div>;
+      }
+      if (screen === 'waiting') {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">데이터 대기 중</h1>
+            <p className="text-slate-600">
+              <code>data/selected_27_for_visual_rating.json</code> 파일을 불러오지 못했습니다.<br/>
+              해당 경로에 파일이 올바르게 존재하는지 확인해 주세요.
+            </p>
+          </div>
+        );
+      }
+      if (!candidatesData) return null;
 
-      const handleDragOver = (e, id) => {
-        e.preventDefault();
-        setDragOver(id);
-      };
+      const logos = candidatesData.selectedCandidates.map(c => ({
+        id: c.stimulusId,
+        stimulusId: c.stimulusId,
+        typeCode: c.typeGroup,
+        candidateId: c.localCode,
+        imagePath: publicAssetPath(`/public/logos/pre-eval/${c.typeGroup}/L_${c.localCode}.png`),
+      }));
 
-      const handleDrop = (e, targetId, isExcludingTarget) => {
-        e.preventDefault();
-        setDragOver(null);
+      if (screen === 'intro') return <IntroScreen mode="visual-rating" onStart={() => goScreen('brief')} />;
+      if (screen === 'brief') return <BriefScreen mode="visual-rating" onBack={() => goScreen('intro')} onStart={() => goScreen('rating')} />;
+      if (screen === 'rating') return <DimensionRatingScreen candidates={logos} initialRatings={ratings} onRatingsChange={setRatings} onBack={() => goScreen('brief')} onNext={(res) => { setRatings(res); goScreen('basicInfo'); }} />;
+      if (screen === 'basicInfo') return <BasicInfoScreen value={basicInfo} onChange={setBasicInfo} onBack={() => goScreen('rating')} onSubmit={(info) => {
+        setBasicInfo(info);
+        const dimensionRatingsArr = logos.map(logo => ({
+          stimulusId: logo.stimulusId,
+          typeCode: logo.typeCode,
+          candidateId: logo.candidateId,
+          ratings: ratings[logo.id]
+        }));
+        const docData = {
+          participant_id: pid,
+          timestamp_start: tsStart,
+          timestamp_submit: new Date().toISOString(),
+          basic_info: info,
+          ratings: dimensionRatingsArr,
+        };
+        db.collection('visual_rating_submissions').add(docData)
+          .then(() => goScreen('thanks'))
+          .catch(err => {
+            console.error(err);
+            alert('데이터 저장 실패. 다시 시도해 주세요.');
+          });
+      }} />;
+      if (screen === 'thanks') return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800 font-bold text-xl">참여해 주셔서 감사합니다! (2차 평가 완료)</div>;
+
+      return null;
+    }
+
         if (!dragId || dragId === targetId) return;
 
         setManualExclusions(prev => {
