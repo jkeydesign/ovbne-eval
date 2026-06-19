@@ -278,14 +278,13 @@
                 </div>
 
                 <p className="text-sm font-medium text-slate-700 leading-relaxed">
-                  제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다.
+                  제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다. 감사합니다.
                 </p>
 
-                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="pt-2 border-t border-slate-100 flex items-center">
                   <p className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200/60 text-amber-800 text-xs font-bold rounded-lg shrink-0">
                     🎁 자격 확인 후 사례비 상품권이 지급됩니다.
                   </p>
-                  <p className="text-xs text-slate-400 font-semibold">감사합니다.</p>
                 </div>
               </section>
 
