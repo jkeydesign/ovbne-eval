@@ -1272,7 +1272,7 @@
                       </span>
                     </div>
                     <div className="text-[13px] font-extrabold text-slate-800 md:border-l md:border-slate-300 md:pl-4">
-                      💡 <span className="font-black text-black">평가방법:</span> 먼저 자연성의 의미를 기억하시면서 27개 전체 시안을 자연성만 먼저 평가 해주세요. 그 다음 조화성, 그 다음 정교성 순차적으로 평가하시면 더 신속하고 정확합니다.
+                      💡 <span className="font-black text-black">평가방법:</span> 먼저 자연성의 의미를 기억하시면서 27개 전체 시안을 자연성만 먼저 평가 해주세요.<br />그 다음 조화성, 그 다음 정교성 순차적으로 평가하시면 더 신속하고 정확합니다.
                     </div>
                   </div>
                 </div>
