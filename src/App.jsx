@@ -221,7 +221,7 @@
       const toggle = (i) => setChecked(prev => prev.map((v, idx) => idx === i ? !v : v));
 
       const processItems = isVR ? [
-        '1단계: 브랜드 브리프 확인 (중요)',
+        '1단계: 시각 체계 정보 확인(중요!)',
         '2단계: 27개 시안별 자연성·조화성·정교성 평가',
         '3단계: 실험자 기본 정보 확인 및 제출',
       ] : [
