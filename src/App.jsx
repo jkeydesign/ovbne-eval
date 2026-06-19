@@ -209,7 +209,6 @@
       '본실험에 사용하기 어려운 시안을 제외하겠습니다.',
     ];
     const INTRO_CHECKS_VR = [
-      '본 평가는 완성된 로고 선정이 아니라 본실험의 자극 구성을 위한 절차임을 확인했습니다.',
       '자연성·조화성·정교성 평가는 시안의 시각적 특성을 파악하기 위한 평가임을 확인했습니다.',
     ];
 
@@ -246,9 +245,9 @@
       ];
 
       const GuideSection = ({ title, children }) => (
-        <section>
-          <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">{title}</h2>
-          {children}
+        <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-4 text-base font-medium text-slate-750" style={{ wordBreak: 'keep-all' }}>
+          <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">{title}</h2>
+          <div>{children}</div>
         </section>
       );
 
@@ -338,22 +337,22 @@
                 )}
               </GuideSection>
 
-              <section>
-                <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">확인 체크</h2>
-                <p>아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
-                <div className="my-5 grid gap-2">
+              <GuideSection title="확인 체크">
+                <p className="mb-4">아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
+                <div className="grid gap-3">
                   {checks.map((label, i) => (
-                    <label key={i} className="flex cursor-pointer items-start gap-3 text-gray-800">
+                    <label key={i} className="flex cursor-pointer items-start gap-3 text-slate-700 hover:text-slate-900 transition-colors">
                       <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer" style={{accentColor:'#020617'}} />
                       <span>{label}</span>
                     </label>
                   ))}
                 </div>
-                <button onClick={onStart} disabled={!allChecked}
-                  className={`w-full rounded-lg py-4 text-[16px] font-extrabold transition-colors ${allChecked ? 'bg-black text-white hover:bg-neutral-800' : 'cursor-not-allowed bg-gray-200 text-gray-500'}`}>
-                  예비평가 시작
-                </button>
-              </section>
+              </GuideSection>
+
+              <button onClick={onStart} disabled={!allChecked}
+                className={`w-full rounded-lg py-4 text-[16px] font-extrabold transition shadow-sm ${allChecked ? 'bg-black text-white hover:bg-neutral-800' : 'cursor-not-allowed bg-gray-200 text-gray-500'}`}>
+                예비평가 시작
+              </button>
             </div>
           </div>
         </main>
