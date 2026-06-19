@@ -263,25 +263,25 @@
             </header>
 
             <div className="mx-auto grid max-w-[820px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
-              <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-4" style={{ wordBreak: 'keep-all' }}>
-                <p className="text-base md:text-lg font-bold text-slate-900">
+              <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-4 text-base font-medium text-slate-750" style={{ wordBreak: 'keep-all' }}>
+                <p>
                   안녕하십니까? 바쁘신 중에도 본 예비평가에 참여해 주셔서 감사합니다.
                 </p>
 
-                <p className="text-[15px] font-semibold text-slate-800 leading-relaxed">
+                <p className="leading-relaxed">
                   AI로 생성된 로고 시안은 빠르게 많아지고 있지만, 여전히 실무 전문가의 시각적 판단이 필요하다고 생각합니다.
                 </p>
 
-                <p className="text-sm text-slate-650 leading-relaxed">
+                <p className="leading-relaxed">
                   따라서 AI 정보에 따라 전문 디자이너의 판단에 관한 박사 연구를 진행하고 있습니다.<br />
                   이는 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다.
                 </p>
 
-                <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                <p className="leading-relaxed">
                   제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다. 감사합니다.
                 </p>
 
-                <p className="text-xs font-semibold text-slate-500 pt-2 border-t border-slate-100">
+                <p className="pt-2 border-t border-slate-100">
                   ※ 전문가 자격 확인 절차 후 사례비 상품권이 지급됩니다.
                 </p>
               </section>
