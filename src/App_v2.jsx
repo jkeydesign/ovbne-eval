@@ -1324,7 +1324,7 @@
                     disabled={!isComplete}
                     className={`rounded-lg px-6 py-3 text-sm font-bold transition ${isComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}
                   >
-                    SET 구성안 작성으로 이동
+                    평가 제출
                   </button>
                 </div>
               </div>
