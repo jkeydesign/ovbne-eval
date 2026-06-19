@@ -1204,11 +1204,15 @@
 
       const handleRate = (id, dim, value) => {
         onLogEvent?.('rate_dimension', { logoId: id, dimension: dim, value: value });
-        setRatings(prev => {
-          const next = { ...prev, [id]: { ...prev[id], [dim]: value } };
-          onRatingsChange?.(next);
-          return next;
-        });
+        const next = {
+          ...ratings,
+          [id]: {
+            ...ratings[id],
+            [dim]: value
+          }
+        };
+        setRatings(next);
+        onRatingsChange?.(next);
       };
 
       const ratedCount = candidates.filter(c => DIM_DEFS.every(d => ratings[c.id][d.key] !== null)).length;
@@ -1307,7 +1311,7 @@
             <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
               <div className="mx-auto flex max-w-[1680px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                  뒤로 가서 수정하기
+                  뒤로가기
                 </button>
                 <div className="flex items-center gap-4">
                   {!isComplete && (
