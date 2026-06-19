@@ -1775,8 +1775,9 @@
           <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-[#111111]">
             <div className="max-w-4xl w-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 shadow-sm">
               <header className="mb-8 text-center">
-                <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111] mb-2">OVBNE 브랜드 브리프</h1>
-                <p className="text-base font-medium text-slate-700">2차 실험 안내</p>
+                <h1 className="text-[22px] sm:text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">
+                  OVBNE 브랜드 로고 시각 체계 평가 실험 _ 2차 예비 평가 안내
+                </h1>
               </header>
 
               <main className="mx-auto max-w-[820px] text-base font-medium leading-[1.85] text-slate-800 space-y-8" style={{ wordBreak: 'keep-all' }}>
