@@ -636,20 +636,78 @@
 
     function SubmissionCompleteScreen({ onFinish }) {
       return (
-        <main className="min-h-screen bg-white px-4 py-10 text-[#111111]">
-          <div className="mx-auto grid min-h-[70vh] place-items-center" style={{width:'min(1120px, 92vw)'}}>
-            <section className="mx-auto max-w-[820px] text-center text-[16px] leading-[1.85] text-gray-800">
-              <h1 className="mb-6 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">예비평가가 정상적으로 제출되었습니다.</h1>
-              <div className="space-y-5 text-left">
-                <p>귀한 시간에 실험에 참여해 주셔서 감사합니다. 검토해주신 시안은 본 실험에 소중하게 사용하겠습니다.</p>
-                <p>전문가님께서 제공해 주신 판단 자료는 AI 시대에 실무 전문 디자이너의 판단 역량과 디자인 전문성을 연구하는 데 중요한 기반이 됩니다.</p>
-                <p>예비평가자 자격 요건이 확인되면 사례비 지급 안내를 위해 기재하신 연락처로 개별 연락드리며 연구 결과를 메일로 보내드리겠습니다.</p>
-                <p>디자인 실무와 연구의 연결을 위해 귀한 시간을 나누어 주셔서 감사합니다.</p>
+        <main className="min-h-screen bg-slate-50/50 flex items-center justify-center px-4 py-12 text-[#111111] font-sans">
+          <div className="mx-auto max-w-2xl w-full bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-100/40 p-8 md:p-12 flex flex-col items-center">
+            {/* Success Icon Badge */}
+            <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200/60 flex items-center justify-center mb-6 shadow-sm">
+              <svg className="w-8 h-8 text-slate-800" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+
+            {/* Subtitle / Badge */}
+            <span className="inline-block bg-slate-100 text-slate-800 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
+              Submission Completed
+            </span>
+
+            {/* Main Title */}
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 mb-4 text-center leading-tight" style={{ wordBreak: 'keep-all' }}>
+              예비평가가 정상적으로 제출되었습니다.
+            </h1>
+
+            {/* Introduction message */}
+            <p className="text-sm md:text-[15px] font-medium text-slate-500 mb-8 leading-relaxed text-center max-w-lg" style={{ wordBreak: 'keep-all' }}>
+              귀한 시간을 내어 실험에 참여해 주셔서 대단히 감사합니다.<br className="hidden sm:inline" />
+              전문가님께서 검토해 주신 소중한 데이터는 본 연구의 목적에 부합하게 귀중히 활용될 예정입니다.
+            </p>
+
+            {/* Section Card (Verbal Design details) */}
+            <div className="w-full text-left space-y-5 text-sm text-slate-700 leading-relaxed border-t border-b border-slate-200/50 py-6 mb-8">
+              <div>
+                <h3 className="font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-800"></span>
+                  실무와 연구의 가치 있는 연결
+                </h3>
+                <p className="text-xs md:text-sm text-slate-600 pl-3.5" style={{ wordBreak: 'keep-all' }}>
+                  전문가님께서 제공해 주신 판단 자료는 AI 정보 제시 유형의 효과를 검증하고, 디자인 실무와 학술 연구 간의 간극을 좁히며 디자이너의 전문성 및 판단 역량을 실증적으로 규명하는 중요한 기초 자산이 됩니다.
+                </p>
               </div>
-              <button type="button" onClick={onFinish} className="mt-8 rounded-lg bg-black px-8 py-4 text-[16px] font-extrabold text-white transition-colors hover:bg-neutral-800">
-                종료하기
-              </button>
-            </section>
+
+              {/* Informative block */}
+              <div className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-5 md:p-6 space-y-3.5 mt-2">
+                <span className="font-bold text-slate-900 block text-xs md:text-sm tracking-tight flex items-center gap-2">
+                  🎁 사례비 지급 및 연구 결과 안내
+                </span>
+                <ul className="space-y-2 text-xs md:text-[13px] text-slate-600 pl-1 list-none">
+                  <li className="flex items-start gap-2" style={{ wordBreak: 'keep-all' }}>
+                    <span className="text-slate-400 select-none shrink-0">•</span>
+                    <span>
+                      <strong>사례비 지급 절차:</strong> 예비평가자 자격 요건이 최종 확인되는 대로 기재해 주신 연락처로 사례비 지급을 위한 상세 정보 및 지급 절차를 개별 연락해 드립니다.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2" style={{ wordBreak: 'keep-all' }}>
+                    <span className="text-slate-400 select-none shrink-0">•</span>
+                    <span>
+                      <strong>연구 보고서 공유:</strong> 본 실험의 최종 분석 결과가 도출되면 소중한 참여에 대한 보답으로 입력하신 이메일을 통해 학술 연구 요약 보고서를 공유해 드리겠습니다.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Closing text */}
+            <p className="text-[13px] font-semibold text-slate-400 mb-8 text-center" style={{ wordBreak: 'keep-all' }}>
+              디자인 실무와 학계의 발전을 함께 이끌어 주셔서 감사드립니다.
+            </p>
+
+            {/* Primary Action Button */}
+            <button 
+              type="button" 
+              onClick={onFinish} 
+              className="w-full sm:w-auto px-12 py-4 bg-slate-950 hover:bg-slate-800 text-white text-[15px] font-extrabold rounded-xl transition-all duration-200 transform hover:scale-[1.01] hover:shadow-lg hover:shadow-slate-200 active:scale-[0.99] outline-none"
+            >
+              실험 종료하기
+            </button>
           </div>
         </main>
       );
