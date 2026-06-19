@@ -1773,7 +1773,7 @@
             <div className="max-w-4xl w-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 shadow-sm">
               <header className="mb-8 text-center">
                 <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111] mb-2">OVBNE 브랜드 브리프</h1>
-                <p className="text-base font-medium text-slate-700">2차 시각체계 평정 기준 안내</p>
+                <p className="text-base font-medium text-slate-700">2차 실험 안내</p>
               </header>
 
               <main className="mx-auto max-w-[820px] text-base font-medium leading-[1.85] text-slate-800 space-y-8" style={{ wordBreak: 'keep-all' }}>
@@ -1793,7 +1793,7 @@
                 {/* 시각체계 평정 기준 안내 */}
                 <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-4">
                   <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">
-                    시각체계 평정 기준 안내
+                    실험 안내
                   </h2>
                   <div className="space-y-4">
                     <p>
@@ -1812,7 +1812,7 @@
                 {/* 평가 항목 */}
                 <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-6">
                   <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">
-                    평가 항목
+                    시각 체계 평가 항목
                   </h2>
                   
                   {/* 자연성 */}
@@ -1825,7 +1825,7 @@
                       로고 형태가 일상적으로 경험 가능한 대상성이나 유기적 형태 단서를 어느 정도 포함하는가?
                     </p>
                     <p className="text-slate-500 text-sm leading-relaxed">
-                      Henderson and Cote(1998)는 자연성을 디자인이 사람들이 흔히 경험하는 대상을 어느 정도 묘사하는가로 설명합니다. 이를 대표성(representative)과 유기성(organic)으로 구성된 시각 특성으로 보았습니다.
+                      Henderson and Cote(1998)는 자연성을 디자인이 사람들이 흔히 경험하는 대상을 어느 정도 묘사하는가로 설명합니다. 이를 대표성과 유기성으로 구성된 시각 특성으로 보았습니다.
                     </p>
                     <div className="border border-slate-200 bg-white rounded-xl p-5 space-y-3">
                       <p className="font-semibold text-slate-900 text-sm">평가 관점</p>
