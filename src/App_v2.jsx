@@ -248,7 +248,7 @@
 
       const GuideSection = ({ title, children }) => (
         <section>
-          <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[{title}]</h2>
+          <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">{title}</h2>
           {children}
         </section>
       );
@@ -273,7 +273,8 @@
                 </p>
 
                 <p className="text-sm text-slate-650 leading-relaxed">
-                  따라서 AI 정보에 따라 전문 디자이너의 판단에 관한 박사 연구를 진행하고 있습니다. 이는 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다.
+                  따라서 AI 정보에 따라 전문 디자이너의 판단에 관한 박사 연구를 진행하고 있습니다.<br />
+                  이는 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다.
                 </p>
 
                 <p className="text-sm font-medium text-slate-700 leading-relaxed">
@@ -324,7 +325,7 @@
               </GuideSection>
 
               <section>
-                <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">[확인 체크]</h2>
+                <h2 className="mb-2.5 text-[18px] font-extrabold leading-7 text-[#111111]">확인 체크</h2>
                 <p>아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
                 <div className="my-5 grid gap-2">
                   {checks.map((label, i) => (
@@ -497,7 +498,7 @@
 
               {/* 성함 또는 예비평가자 ID */}
               <div>
-                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[성함 혹은 연구자에게 부여받은 예비평가자 ID]</h2>
+                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">성함 혹은 연구자에게 부여받은 예비평가자 ID</h2>
                 <input
                   type="text"
                   value={info.evaluatorCode || ''}
@@ -510,7 +511,7 @@
               {/* 선택형 항목 */}
               {BASIC_INFO_FIELDS.map(field => (
                 <div key={field.key}>
-                  <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[{field.label}]</h2>
+                  <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">{field.label}</h2>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {field.options.map(option => {
                       const selected = isMultiField(field.key)
@@ -533,7 +534,7 @@
 
               {/* 예비평가 기준 이해 여부 */}
               <div>
-                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">[예비평가 기준 이해 여부]</h2>
+                <h2 className="mb-3 text-[18px] font-extrabold leading-7 text-[#111111]">예비평가 기준 이해 여부</h2>
                 <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-black/20 bg-white px-4 py-4 transition-colors hover:bg-gray-50">
                   <input
                     type="checkbox"
