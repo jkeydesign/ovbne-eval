@@ -263,40 +263,30 @@
             </header>
 
             <div className="mx-auto grid max-w-[820px] gap-[34px] text-[16px] leading-[1.85] text-gray-800">
-              <section className="grid gap-3.5">
-                <p>안녕하십니까? 바쁘신 중에도 본 예비평가에 참여해 주셔서 감사합니다.</p>
-
-                <p>
-                  AI로 생성된 로고 시안은 빠르게 많아지고 있지만,
-                  여전히 실무 전문가의 시각적 판단이 필요하다는 취지의 연구를 하고 있습니다.
+              <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-5" style={{ wordBreak: 'keep-all' }}>
+                <p className="text-base md:text-lg font-bold text-slate-900">
+                  안녕하십니까? 바쁘신 중에도 본 예비평가에 참여해 주셔서 감사합니다.
                 </p>
 
-                {isVR ? (
-                  <p>
-                    따라서 본 평가는 1차 선별된 27개의 후보 시안에 대해 자연성, 조화성, 정교성 등 시각체계 점수를 수집하기 위한 2차 평가 과정입니다.
+                <div className="bg-white border-l-4 border-slate-950 rounded-r-xl p-5 shadow-sm space-y-3">
+                  <p className="text-[15px] font-semibold text-slate-800 leading-relaxed">
+                    AI로 생성된 로고 시안은 빠르게 많아지고 있지만, 여전히 실무 전문가의 시각적 판단이 필요하다고 생각합니다.
                   </p>
-                ) : (
-                  <p>
-                    따라서 본 예비평가는 AI가 생성한 48개의 로고 시안들 가운데
-                    본실험에 사용할 수 있는 후보 시안 27개를 선별하기 위한 1차 평가 과정입니다.
+                  <p className="text-sm text-slate-650 leading-relaxed">
+                    따라서 AI 정보에 따라 전문 디자이너의 판단에 관한 박사 연구를 진행하고 있습니다. 이는 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다.
                   </p>
-                )}
+                </div>
 
-                <p>
-                  완성된 로고를 고르는 평가는 아닙니다.<br />
-                  AI 로고 생성 기술을 검증하는 평가도 아닙니다.
-                </p>
-
-                <p>
-                  전문가님의 판단은 AI 시대에 전문 디자이너의 판단 기준과 역할을 이해하는 데 중요한 자료가 됩니다.<br />
+                <p className="text-sm font-medium text-slate-700 leading-relaxed">
                   제시되는 아래의 설명을 차분히 검토해 주시기 바랍니다.
                 </p>
 
-                <p className="font-semibold text-[#111111] mt-2">
-                  ※ 예비평가 실험을 제출해 주신 분들 중 자격 확인 후 상품권을 지급해드립니다.
-                </p>
-
-                <p>감사합니다.</p>
+                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <p className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200/60 text-amber-800 text-xs font-bold rounded-lg shrink-0">
+                    🎁 자격 확인 후 사례비 상품권이 지급됩니다.
+                  </p>
+                  <p className="text-xs text-slate-400 font-semibold">감사합니다.</p>
+                </div>
               </section>
 
               <GuideSection title="연구 기본 정보">
