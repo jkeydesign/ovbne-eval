@@ -256,7 +256,14 @@
           <div className="mx-auto py-[46px]" style={{width:'min(1120px, 92vw)'}}>
             <header className="mb-[52px] text-center">
               <h1 className="mb-3 text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111]">
-                OVBNE 로고 예비시안 {isVR ? '2차 시각체계 평정' : '1차 선별 평가'}
+                {isVR ? (
+                  <>
+                    OVBNE 브랜드 로고 시각체계 평가
+                    <span className="block mt-2 text-[18px] font-bold text-slate-500">2차 예비평가 실험 안내</span>
+                  </>
+                ) : (
+                  'OVBNE 로고 예비시안 1차 선별 평가'
+                )}
               </h1>
             </header>
 
