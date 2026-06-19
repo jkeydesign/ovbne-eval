@@ -338,7 +338,6 @@
               </GuideSection>
 
               <GuideSection title="확인 체크">
-                <p className="mb-4">아래 내용을 확인한 뒤 예비평가를 시작해 주세요.</p>
                 <div className="grid gap-3">
                   {checks.map((label, i) => (
                     <label key={i} className="flex cursor-pointer items-start gap-3 text-slate-700 hover:text-slate-900 transition-colors">
