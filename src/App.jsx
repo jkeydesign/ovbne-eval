@@ -1812,7 +1812,7 @@
                 {/* 평가 항목 */}
                 <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-6">
                   <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">
-                    시각 체계 평가 항목
+                    시각 체계 평가 항목을 잘 읽어 보시고 기억해주세요!
                   </h2>
                   
                   {/* 자연성 */}
