@@ -1143,9 +1143,9 @@
 
     /* ─── DimensionRatingScreen ─────────────────────────── */
     const DIM_DEFS = [
-      { key: 'naturalness', label: '자연성', desc: '로고 형태가 일상적으로 경험 가능한 대상성이나 유기적 형태 단서를 어느 정도 포함하는가?' },
+      { key: 'naturalness', label: '자연성', desc: '일상적으로 경험 가능한 대상성이나 유기적 형태 단서를 어느 정도 포함하는가?' },
       { key: 'harmony',     label: '조화성', desc: '로고를 구성하는 시각 요소들이 서로 어울리며 하나의 전체 안에서 균형 있게 조직되는가?' },
-      { key: 'refinement',  label: '정교성', desc: '로고 시안의 시각적 풍부함과 형태의 복잡성·밀도·깊이감이 적절하게 이루어지는가?' },
+      { key: 'refinement',  label: '정교성', desc: '제한된 시각 형식 안에서 의미를 충분히 담아낸 형태 완성도를 갖추고 있는가?' },
     ];
     const DIM_SCALE = [
       { value: 1, label: '매우\n낮음' },
@@ -1822,7 +1822,7 @@
                       자연성
                     </h3>
                     <p className="text-slate-700">
-                      로고 형태가 일상적으로 경험 가능한 대상성이나 유기적 형태 단서를 어느 정도 포함하는가?
+                      일상적으로 경험 가능한 대상성이나 유기적 형태 단서를 어느 정도 포함하는가?
                     </p>
                     <p className="text-slate-500 text-sm leading-relaxed">
                       Henderson and Cote(1998)는 자연성을 디자인이 사람들이 흔히 경험하는 대상을 어느 정도 묘사하는가로 설명합니다. 이를 대표성과 유기성으로 구성된 시각 특성으로 보았습니다.
