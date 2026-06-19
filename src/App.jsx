@@ -1766,6 +1766,184 @@
     function BriefScreen({ mode, onStart, onBack }) {
       const isVR = mode === 'visual-rating';
       const [confirmed, setConfirmed] = useState(false);
+
+      if (isVR) {
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-[#111111]">
+            <div className="max-w-4xl w-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 shadow-sm">
+              <header className="mb-8 text-center">
+                <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#111111] mb-2">OVBNE 브랜드 브리프</h1>
+                <p className="text-base font-medium text-slate-700">2차 시각체계 평정 기준 안내</p>
+              </header>
+
+              <main className="mx-auto max-w-[820px] text-base font-medium leading-[1.85] text-slate-800 space-y-8" style={{ wordBreak: 'keep-all' }}>
+                
+                {/* OVBNE 브랜드 소개 */}
+                <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-4">
+                  <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">
+                    OVBNE 브랜드 소개
+                  </h2>
+                  <div className="space-y-2">
+                    <p><span className="font-semibold text-slate-900 mr-2">브랜드명:</span> 오브네 OVBNE</p>
+                    <p><span className="font-semibold text-slate-900 mr-2">브랜드 의미:</span> Objet, Value, Balance, New, Everyday</p>
+                    <p><span className="font-semibold text-slate-900 mr-2">업종:</span> 리빙 오브제·홈데코 큐레이션 브랜드</p>
+                  </div>
+                </section>
+
+                {/* 시각체계 평정 기준 안내 */}
+                <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-4">
+                  <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">
+                    시각체계 평정 기준 안내
+                  </h2>
+                  <div className="space-y-4">
+                    <p>
+                      아래 기준은 27개 로고 후보 시안을 평가하기 위한 필수 정보입니다.<br />
+                      완성된 로고인지 평가, 비교하거나 디자이너의 능력을 살펴보는 실험은 아닙니다.
+                    </p>
+                    <p>
+                      본실험에 앞서 예비평가로 실험에 들어갈 시안의 세트 구성을 위한 점수입니다.
+                    </p>
+                    <p>
+                      각 시안이 로고 후보로서 어떤 시각적 특성을 보이는지 자연성, 조화성, 정교성의 세 기준에 따라 직관적이고 평가해 주세요.
+                    </p>
+                  </div>
+                </section>
+
+                {/* 평가 항목 */}
+                <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-6">
+                  <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">
+                    평가 항목
+                  </h2>
+                  
+                  {/* 자연성 */}
+                  <div className="space-y-3">
+                    <h3 className="text-base font-extrabold text-[#111111] flex items-center gap-2">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-900" />
+                      자연성
+                    </h3>
+                    <p className="text-slate-700">
+                      로고 형태가 일상적으로 경험 가능한 대상성이나 유기적 형태 단서를 어느 정도 포함하는가?
+                    </p>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                      Henderson and Cote(1998)는 자연성을 디자인이 사람들이 흔히 경험하는 대상을 어느 정도 묘사하는가로 설명합니다. 이를 대표성(representative)과 유기성(organic)으로 구성된 시각 특성으로 보았습니다.
+                    </p>
+                    <div className="border border-slate-200 bg-white rounded-xl p-5 space-y-3">
+                      <p className="font-semibold text-slate-900 text-sm">평가 관점</p>
+                      <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1.5">
+                        <li>구체적인 어떤 대상성으로 읽히는가</li>
+                        <li>친숙한 형태 단서가 읽히는가</li>
+                        <li>과도하게 어색하지 않고 시각적으로 수용 가능한 형태인가</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-200" />
+
+                  {/* 조화성 */}
+                  <div className="space-y-3">
+                    <h3 className="text-base font-extrabold text-[#111111] flex items-center gap-2">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-900" />
+                      조화성
+                    </h3>
+                    <p className="text-slate-700">
+                      로고를 구성하는 시각 요소들이 서로 어울리며 하나의 전체 안에서 균형 있게 구성되었는가?
+                    </p>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                      Henderson and Cote(1998)는 조화성을 대칭성과 균형을 포함하는 부분들의 일치된 패턴 또는 배열로 설명합니다. 패턴, 형태, 크기, 문자와 관련하여 전체 시각 맥락에 어울리는 정도를 말합니다.
+                    </p>
+                    <div className="border border-slate-200 bg-white rounded-xl p-5 space-y-3">
+                      <p className="font-semibold text-slate-900 text-sm">평가 관점</p>
+                      <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1.5">
+                        <li>심볼과 글자, 형태적 요소가 잘 어울리는가</li>
+                        <li>전체 비례와 여백이 안정적인가</li>
+                        <li>구성 요소 간 크기와 위치가 균형을 이루는가</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-200" />
+
+                  {/* 정교성 */}
+                  <div className="space-y-3">
+                    <h3 className="text-base font-extrabold text-[#111111] flex items-center gap-2">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-900" />
+                      정교성
+                    </h3>
+                    <p className="text-slate-700">
+                      제한된 시각 형식 안에서 의미를 충분히 담아낸 형태 완성도를 갖추고 있는가?
+                    </p>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                      Henderson and Cote(1998)는 정교성을 단순한 복잡함으로 보지 않고, 디자인의 풍부함과 복잡성, 활동성, 깊이와 연결되는 시각 특성이라 말합니다. 의미 전달과 사용 목적에 맞게 조절되어 있는지를 검토하는 판단 차원이라 말합니다.
+                    </p>
+                    <div className="border border-slate-200 bg-white rounded-xl p-5 space-y-3">
+                      <p className="font-semibold text-slate-900 text-sm">평가 관점</p>
+                      <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1.5">
+                        <li>형태의 마감이 정돈되어 보이는가</li>
+                        <li>선이나 면의 처리가 안정적인가</li>
+                        <li>세부 조형 요소가 흐트러져 보이지 않는가</li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+
+                {/* 평정 방식 */}
+                <section className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-4">
+                  <h2 className="text-[18px] font-extrabold leading-tight text-[#111111] pb-2 border-b border-slate-200">
+                    평정 방식
+                  </h2>
+                  <p>
+                    각 항목은 1점부터 5점까지 평가합니다.
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1.5">
+                    <li>1점: 매우 낮음</li>
+                    <li>2점: 낮음</li>
+                    <li>3점: 보통</li>
+                    <li>4점: 높음</li>
+                    <li>5점: 매우 높음</li>
+                  </ul>
+                </section>
+
+                <div className="w-full mt-6 pt-6 border-t border-slate-200">
+                  <p className="text-[15px] text-slate-700">평정 기준과 평가 항목을 모두 읽고 이해하였습니다.</p>
+                  
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:bg-slate-100 mt-4">
+                    <input
+                      type="checkbox"
+                      checked={confirmed}
+                      onChange={e => setConfirmed(e.target.checked)}
+                      className="mt-1 h-5 w-5 shrink-0 cursor-pointer"
+                      style={{accentColor:'#111827'}}
+                    />
+                    <span className={`text-[15px] font-bold leading-relaxed transition-colors ${confirmed ? 'text-[#111111]' : 'text-gray-500'}`}>
+                      평정 기준과 평가 항목을 모두 숙지하였습니다.
+                    </span>
+                  </label>
+
+                  <div className="mt-5 flex gap-4">
+                    {onBack && (
+                      <button onClick={onBack} className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-50 transition">
+                        이전 화면
+                      </button>
+                    )}
+                    <button 
+                      onClick={onStart} 
+                      disabled={!confirmed}
+                      className={`flex-[2] py-4 rounded-lg font-bold transition shadow-sm ${
+                        confirmed 
+                          ? 'bg-slate-900 text-white hover:bg-slate-800' 
+                          : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                      }`}
+                    >
+                      브리프 확인 후 2차 평가로 이동
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-[#111111]">
           <div className="max-w-4xl w-full bg-white rounded-xl border border-slate-200 p-8 sm:p-12 shadow-sm">
